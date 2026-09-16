@@ -1,5 +1,6 @@
 import process from 'node:process';
 import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Job, JobSourceId, RawJob } from '@chinook/contracts';
@@ -131,11 +132,42 @@ export async function runIngest(opts: {
 }
 
 const isMain = process.argv[1] && import.meta.url.endsWith(process.argv[1].replaceAll('\\', '/'));
+
+const EMBEDDED_VAR = /[A-Z][A-Z0-9_]{3,}=/;
+
+/**
+ * Loads root .env (KEY=VALUE lines) without dependencies; tsx ignores node's --env-file.
+ * Guards against merged lines (a var appended without a leading newline corrupts
+ * the previous value — this exact bug poisoned ADZUNA_APP_KEY once).
+ */
+export function loadRootEnv(envPath: string, target: Record<string, string | undefined> = process.env): string[] {
+  const warnings: string[] = [];
+  let content: string;
+  try {
+    content = readFileSync(envPath, 'utf8');
+  } catch {
+    return warnings; // no .env — rely on real environment variables
+  }
+  for (const line of content.split('\n')) {
+    const match = /^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/.exec(line);
+    if (!match) continue;
+    const [, key, value] = match as unknown as [string, string, string];
+    if (EMBEDDED_VAR.test(value)) {
+      warnings.push(`${key}: value contains another VAR= assignment (merged line?) — skipped`);
+      continue;
+    }
+    if (target[key] === undefined) target[key] = value;
+  }
+  return warnings;
+}
+
 if (isMain) {
+  const warnings = loadRootEnv(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../.env'));
+  for (const w of warnings) console.error(`env warning: ${w}`);
   const fixtures = process.argv.includes('--fixtures');
   const queryFlag = process.argv.indexOf('--query');
   const queryArg = queryFlag > 0 ? process.argv[queryFlag + 1] : undefined;
   const started = Date.now();
   const summary = await runIngest({ fixtures, ...(queryArg ? { query: queryArg } : {}) });
-  console.log(JSON.stringify({ ...summary, ms: Date.now() - started }, null, 2));
+  console.log(JSON.stringify({ ...summary, ms: Date.now() - started, envWarnings: warnings.length }, null, 2));
 }

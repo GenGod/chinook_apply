@@ -8,6 +8,20 @@ on:
 jobs:
   pipeline:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: chinook
+          POSTGRES_PASSWORD: chinook_dev
+          POSTGRES_DB: chinook
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U chinook -d chinook"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       # ubuntu-latest no longer ships git-lfs; snapshots live in LFS,
       # so install it BEFORE checkout can pull them.
@@ -35,6 +49,11 @@ jobs:
 
       - name: Pipeline (lint → arch-lint → typecheck → test → build → e2e)
         run: pnpm pipeline:check
+
+      - name: Integration tests (fixtures → postgres service)
+        env:
+          DATABASE_URL: postgres://chinook:chinook_dev@localhost:5432/chinook
+        run: pnpm --filter @chinook/tests exec vitest run --config vitest.integration.config.ts
 
       - name: Upload test artifacts (diffs)
         if: always()

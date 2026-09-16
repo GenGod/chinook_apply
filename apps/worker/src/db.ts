@@ -87,7 +87,7 @@ export function createDb(connectionString: string): Kysely<Database> {
 }
 
 export async function ensureSchema(db: Kysely<Database>): Promise<void> {
-  await db.executeQuery({ sql: SCHEMA_SQL, parameters: [] } as never);
+  await sql.raw(SCHEMA_SQL).execute(db);
 }
 
 /** Upserts by canonical_hash: urls merged+deduped, earliest posted_at kept, first non-null salary kept. */

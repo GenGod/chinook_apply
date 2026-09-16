@@ -8,7 +8,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "ingest": "tsx --env-file-if-exists=../../.env src/ingest.ts",
-    "ingest:fixtures": "tsx --env-file-if-exists=../../.env src/ingest.ts --fixtures"
+    "ingest:fixtures": "tsx --env-file-if-exists=../../.env src/ingest.ts --fixtures",
+    "test": "vitest run"
   },
   "dependencies": {
     "@chinook/adapters": "workspace:*",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@types/pg": "^8.23.1",
-    "tsx": "^4.23.13"
+    "tsx": "^4.23.13",
+    "vitest": "^5.0.0"
   }
 }

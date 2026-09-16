@@ -43,7 +43,22 @@
 | pnpm/action-setup | v6 | читает packageManager |
 | Runner | ubuntu-latest | git-lfs ставится шагом (в образе отсутствует) |
 
+## Данные и персистентность (S1)
+
+| Позиция | Версия | Примечание |
+|---|---|---|
+| PostgreSQL | 17-alpine (docker) | локально порт 5433 (5432 занят нативным сервисом PO); CI — service-контейнер |
+| zod | 4.6.5 | контракты Job/RawJob |
+| kysely | 0.29.5 | типобезопасный SQL без ORM-магии |
+| pg | 8.23.0 | драйвер |
+| fast-xml-parser | 5.11.1 | Atom-feed Job Bank |
+| fast-check | 4.10.0 | property-тесты ядра (dev) |
+| tsx | 4.23.13 | CLI-раннер worker (dev) |
+
 ## Changelog
+- 1.2 (2026-09-16) — S1 (PO-approved со спекой): добавлены postgres 17-alpine,
+  zod, kysely, pg, fast-xml-parser, fast-check, tsx; docker-compose (postgres only,
+  порт 5433 из-за конфликта с нативным Postgres на хосте PO).
 - 1.1 (2026-09-16) — PO-approved: экшены CI подняты на мажоры без Node-20 deprecation (setup-node v7, upload-artifact v7, action-setup v6, checkout v7); добавлена таблица CI в фиксацию стека.
 - 1.0 (2026-09-16) — начальная фиксация по итогам S0. Отклонение зафиксировано: TypeScript
   ограничен 6.0.x из-за peer-диапазона typescript-eslint (>=4.8.4 <6.1.0); eslint-plugin-boundaries
