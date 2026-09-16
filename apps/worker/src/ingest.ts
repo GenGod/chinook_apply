@@ -4,12 +4,13 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Job, JobSourceId, RawJob } from '@chinook/contracts';
-import { normalizeJob, dedupe } from '@chinook/core';
+import { normalizeJob, dedupe, applyRules, loadProfileSearch, type ProfileSearch } from '@chinook/core';
 import { jobbankAdapter } from '@chinook/adapters/jobbank';
 import { adzunaAdapter } from '@chinook/adapters/adzuna';
 import { createDbFromEnv, ensureSchema, upsertJobs, countJobs } from '@chinook/core';
 
 export interface IngestSummary {
+  ruleBuckets?: { relevant: number; review: number; excluded: number };
   sources: Array<{
     source: JobSourceId;
     fetched: number;
@@ -71,10 +72,15 @@ async function fetchLive(query: string): Promise<RawFeed[]> {
   return feeds;
 }
 
-export async function runIngest(opts: { fixtures?: boolean; query?: string; close?: boolean }): Promise<IngestSummary> {
-  const { fixtures = false, query = 'software developer', close = true } = opts;
+export async function runIngest(opts: { fixtures?: boolean; query?: string; close?: boolean; profile?: ProfileSearch; fresh?: boolean }): Promise<IngestSummary> {
+  const { fixtures = false, query = 'software developer', close = true, profile, fresh = false } = opts;
   const db = createDbFromEnv();
   await ensureSchema(db);
+  if (fresh) {
+    // deterministic e2e/integration seeding: local dev DBs accumulate live runs
+    await db.deleteFrom('application');
+    await db.deleteFrom('job');
+  }
 
   const feeds = fixtures ? await loadFixtures() : await fetchLive(query);
   const sourceSummaries: IngestSummary['sources'] = [];
@@ -93,7 +99,11 @@ export async function runIngest(opts: { fixtures?: boolean; query?: string; clos
   }
 
   const { unique, merged, fuzzyPairs } = dedupe(allJobs);
-  const { inserted, updated } = await upsertJobs(db, unique);
+  const search = profile ?? loadProfileSearch();
+  const rules = new Map(unique.map((job) => [job.id, applyRules(job, search)]));
+  const ruleBuckets = { relevant: 0, review: 0, excluded: 0 };
+  for (const r of rules.values()) ruleBuckets[r.status] += 1;
+  const { inserted, updated } = await upsertJobs(db, unique, rules);
   const jobsInDb = await countJobs(db);
 
   for (const s of sourceSummaries) {
@@ -120,6 +130,7 @@ export async function runIngest(opts: { fixtures?: boolean; query?: string; clos
     updated,
     jobsInDb,
     fuzzyPairs: fuzzyPairs.length,
+    ruleBuckets,
   };
 }
 
@@ -157,9 +168,10 @@ if (isMain) {
   const warnings = loadRootEnv(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../.env'));
   for (const w of warnings) console.error(`env warning: ${w}`);
   const fixtures = process.argv.includes('--fixtures');
+  const fresh = process.argv.includes('--fresh');
   const queryFlag = process.argv.indexOf('--query');
   const queryArg = queryFlag > 0 ? process.argv[queryFlag + 1] : undefined;
   const started = Date.now();
-  const summary = await runIngest({ fixtures, ...(queryArg ? { query: queryArg } : {}) });
+  const summary = await runIngest({ fixtures, fresh, ...(queryArg ? { query: queryArg } : {}) });
   console.log(JSON.stringify({ ...summary, ms: Date.now() - started, envWarnings: warnings.length }, null, 2));
 }

@@ -5,7 +5,7 @@ const LEGAL_SUFFIXES = new Set([
   'corporation', 'co', 'company', 'gmbh', 'sarl', 'sa', 'bv', 'pty', 'plc', 'group',
 ]);
 
-const PROVINCES: Record<string, string> = {
+export const PROVINCES: Record<string, string> = {
   alberta: 'AB', 'british columbia': 'BC', manitoba: 'MB', 'new brunswick': 'NB',
   'newfoundland and labrador': 'NL', 'nova scotia': 'NS', ontario: 'ON',
   'prince edward island': 'PE', quebec: 'QC', saskatchewan: 'SK',

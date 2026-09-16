@@ -2,6 +2,7 @@ import { Kysely, PostgresDialect, sql, type Generated } from 'kysely';
 export type { Kysely } from 'kysely';
 import { Pool } from 'pg';
 import type { Job } from '@chinook/contracts';
+import type { RuleResult } from './rules';
 
 export interface JobRow {
   id: string;
@@ -23,6 +24,9 @@ export interface JobRow {
   raw: unknown;
   ingested_at: Date;
   updated_at: Date;
+  rule_status: string | null;
+  rule_reasons: unknown;
+  rule_scored_at: Date | null;
 }
 
 export interface IngestRunRow {
@@ -97,6 +101,10 @@ CREATE TABLE IF NOT EXISTS application (
   UNIQUE (job_id, status, channel)
 );
 CREATE INDEX IF NOT EXISTS application_job_idx ON application (job_id);
+ALTER TABLE job ADD COLUMN IF NOT EXISTS rule_status TEXT;
+ALTER TABLE job ADD COLUMN IF NOT EXISTS rule_reasons JSONB;
+ALTER TABLE job ADD COLUMN IF NOT EXISTS rule_scored_at TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS job_rule_status_idx ON job (rule_status);
 `;
 
 /** Local docker-compose default (port 5433 — host 5432 is taken by a native service). */
@@ -121,10 +129,11 @@ export async function ensureSchema(db: Kysely<Database>): Promise<void> {
   await sql.raw(SCHEMA_SQL).execute(db);
 }
 
-/** Upserts by canonical_hash: urls merged+deduped, earliest posted_at kept, first non-null salary kept. */
+/** Upserts by canonical_hash: urls merged+deduped, earliest posted_at kept, first non-null salary kept; rule_* always overwritten by the latest scoring. */
 export async function upsertJobs(
   db: Kysely<Database>,
   jobs: Job[],
+  rules?: Map<string, RuleResult>,
 ): Promise<{ inserted: number; updated: number }> {
   const existing = new Set(
     (
@@ -135,6 +144,7 @@ export async function upsertJobs(
   let updated = 0;
   for (const job of jobs) {
     const isNew = !existing.has(job.canonicalHash);
+    const rule = rules?.get(job.id);
     await db
       .insertInto('job')
       .values({
@@ -157,6 +167,9 @@ export async function upsertJobs(
         raw: job.raw == null ? null : sql`${JSON.stringify(job.raw)}::jsonb`,
         ingested_at: new Date(job.ingestedAt),
         updated_at: new Date(),
+        rule_status: rule?.status ?? null,
+        rule_reasons: rule ? sql`${JSON.stringify(rule.reasons)}::jsonb` : null,
+        rule_scored_at: rule ? new Date() : null,
       })
       .onConflict((oc) =>
         oc
@@ -167,6 +180,9 @@ export async function upsertJobs(
             salary_min: sql`COALESCE(job.salary_min, EXCLUDED.salary_min)`,
             salary_max: sql`COALESCE(job.salary_max, EXCLUDED.salary_max)`,
             updated_at: new Date(),
+            rule_status: sql`EXCLUDED.rule_status`,
+            rule_reasons: sql`EXCLUDED.rule_reasons`,
+            rule_scored_at: sql`EXCLUDED.rule_scored_at`,
           }),
       )
       .executeTakeFirst();

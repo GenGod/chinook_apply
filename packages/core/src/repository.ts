@@ -2,18 +2,21 @@ import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
 import type { Database } from './db';
 import type { Job, JobSourceId } from '@chinook/contracts';
+import type { RuleStatus } from './rules';
 
 export interface JobFilters {
   source?: JobSourceId;
   days?: number;
   salaryMin?: number;
   sort?: 'posted' | 'salary';
+  rule?: RuleStatus;
   limit?: number;
 }
 
-/** Job plus the manual-application flag for the Jobs Explorer screen. */
+/** Job plus the manual-application flag and rule status for the Jobs Explorer screen. */
 export interface JobListItem extends Job {
   appliedManually: boolean;
+  ruleStatus: RuleStatus | null;
 }
 
 export interface ApplicationRow {
@@ -44,6 +47,7 @@ type ListRow = {
   raw: unknown;
   ingested_at: Date;
   applied_manually: boolean | null;
+  rule_status: string | null;
 };
 
 function toJob(row: ListRow): JobListItem {
@@ -65,12 +69,13 @@ function toJob(row: ListRow): JobListItem {
     raw: row.raw,
     ingestedAt: row.ingested_at.toISOString(),
     appliedManually: row.applied_manually != null,
+    ruleStatus: (row.rule_status as RuleStatus | null) ?? null,
   };
 }
 
 /** Filtered, sorted job list with the manual-application flag (LEFT JOIN application). */
 export async function listJobs(db: Kysely<Database>, filters: JobFilters): Promise<JobListItem[]> {
-  const { source, days, salaryMin, sort = 'posted', limit = 50 } = filters;
+  const { source, days, salaryMin, sort = 'posted', rule, limit = 50 } = filters;
 
   let query = db
     .selectFrom('job')
@@ -100,10 +105,14 @@ export async function listJobs(db: Kysely<Database>, filters: JobFilters): Promi
       'job.raw as raw',
       'job.ingested_at as ingested_at',
       'application.id as applied_manually',
+      'job.rule_status as rule_status',
     ]);
 
   if (source) {
     query = query.where('job.source', '=', source);
+  }
+  if (rule) {
+    query = query.where('job.rule_status', '=', rule);
   }
   if (days !== undefined) {
     query = query.where('job.posted_at', '>=', new Date(Date.now() - days * 24 * 3600 * 1000));

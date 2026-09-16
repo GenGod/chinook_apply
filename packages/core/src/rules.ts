@@ -1,5 +1,5 @@
 import type { Job } from '@chinook/contracts';
-import { normalizeTitle } from './normalize.js';
+import { normalizeTitle } from './normalize';
 
 /** NOC 21231/21234 title families — data, not logic; calibrated per S2 report. */
 export const NOC_TITLE_FAMILIES: string[] = [

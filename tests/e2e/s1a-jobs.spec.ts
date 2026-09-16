@@ -83,3 +83,11 @@ test('jobs screen visual snapshot (masked layout gate)', async ({ page }) => {
     maskColor: '#1a2f4a',
   });
 });
+
+test('rule filter narrows the list (S2 AC4)', async ({ request }) => {
+  const all = await (await request.get('/api/jobs?limit=100')).json();
+  const relevant = await (await request.get('/api/jobs?rule=relevant&limit=100')).json();
+  expect(relevant.jobs.every((j: { ruleStatus: string }) => j.ruleStatus === 'relevant')).toBe(true);
+  expect(relevant.jobs.length).toBeLessThanOrEqual(all.jobs.length);
+  expect(relevant.jobs.length).toBeGreaterThan(0);
+});
