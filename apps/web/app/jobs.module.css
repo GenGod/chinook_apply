@@ -14,13 +14,19 @@
   flex-direction: column;
   gap: 4px;
   height: 64px;
+  width: 180px;
 }
 
 .field label {
+  width: 180px;
+  height: 16px;
+  line-height: 16px;
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #7d93b2;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .field select,

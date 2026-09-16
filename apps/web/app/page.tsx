@@ -53,8 +53,8 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
   return (
     <main style={{ minHeight: '100vh', background: '#0d1b2a', color: '#e0e6ed', padding: '24px 32px' }}>
       <div className={styles.heading}>
-        <h1 style={{ margin: 0, fontSize: '28px' }}>Chinook</h1>
-        <span className={styles.muted} style={{ fontSize: '15px' }}>
+        <h1 style={{ margin: 0, width: '140px', height: '56px', lineHeight: '56px', fontSize: '28px' }}>Chinook</h1>
+        <span className={styles.muted} style={{ display: 'inline-block', width: '320px', height: '56px', lineHeight: '56px', fontSize: '15px' }}>
           Jobs — Alberta (Express Entry)
         </span>
       </div>
