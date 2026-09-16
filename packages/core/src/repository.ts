@@ -109,10 +109,8 @@ export async function listJobs(db: Kysely<Database>, filters: JobFilters): Promi
     query = query.where('job.posted_at', '>=', new Date(Date.now() - days * 24 * 3600 * 1000));
   }
   if (salaryMin !== undefined) {
-    // null salaries are kept ("unknown"), known ones must pass the threshold
-    query = query.where((eb) =>
-      eb.or([eb('job.salary_min', 'is', null), eb('job.salary_min', '>=', salaryMin)]),
-    );
+    // strict: a salary filter means "known salary must pass" (nulls excluded)
+    query = query.where('job.salary_min', '>=', salaryMin);
   }
 
   query =

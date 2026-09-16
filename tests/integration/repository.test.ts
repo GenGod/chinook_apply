@@ -44,7 +44,7 @@ describe('job repository (S1a)', () => {
     if (withSalary.length > 0) {
       const threshold = withSalary[0]!.salaryMin!;
       const filtered = await listJobs(db, { salaryMin: threshold });
-      expect(filtered.every((j) => j.salaryMin === null || j.salaryMin >= threshold)).toBe(true);
+      expect(filtered.every((j) => j.salaryMin !== null && j.salaryMin >= threshold)).toBe(true);
     }
     const recent = await listJobs(db, { days: 7 });
     const cutoff = Date.now() - 7 * 24 * 3600 * 1000;

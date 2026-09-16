@@ -16,8 +16,8 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "build": "turbo run build",
-    "e2e": "pnpm --filter @chinook/tests exec playwright test",
-    "e2e:update-snapshots": "pnpm run build && pnpm --filter @chinook/tests exec playwright test --update-snapshots",
+    "e2e": "pnpm --filter @chinook/worker run ingest --fixtures && pnpm --filter @chinook/tests exec playwright test",
+    "e2e:update-snapshots": "pnpm run build && pnpm --filter @chinook/worker run ingest --fixtures && pnpm --filter @chinook/tests exec playwright test --update-snapshots",
     "prepare": "husky"
   },
   "devDependencies": {

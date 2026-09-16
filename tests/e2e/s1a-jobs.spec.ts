@@ -1,0 +1,65 @@
+import { test, expect } from '@playwright/test';
+
+test('jobs table renders fixture rows (S1a AC3)', async ({ page }) => {
+  await page.goto('/');
+  const rows = page.getByTestId('jobs-table').locator('tbody tr');
+  await expect(rows.first()).toBeVisible();
+  expect(await rows.count()).toBeGreaterThan(10);
+});
+
+test('title links open in a new tab with noopener (S1a AC3)', async ({ page }) => {
+  await page.goto('/');
+  const link = page.getByTestId('jobs-table').locator('tbody tr a').first();
+  await expect(link).toHaveAttribute('target', '_blank');
+  await expect(link).toHaveAttribute('rel', /noopener/);
+});
+
+test('filter by source narrows the list (S1a AC1/AC4)', async ({ page }) => {
+  await page.goto('/');
+  const all = await page.getByTestId('jobs-table').locator('tbody tr').count();
+  await page.locator('#source').selectOption('adzuna');
+  await page.getByRole('button', { name: 'Apply filters' }).click();
+  await page.waitForURL(/source=adzuna/);
+  const filtered = await page.getByTestId('jobs-table').locator('tbody tr').count();
+  expect(filtered).toBeGreaterThan(0);
+  expect(filtered).toBeLessThan(all);
+  const badges = await page.getByTestId('jobs-table').locator('tbody .source').allTextContents();
+  expect(badges.every((b) => b === 'adzuna')).toBe(true);
+});
+
+test('Applied toggle persists after reload (S1a AC2/AC3)', async ({ page }) => {
+  await page.goto('/');
+  // State-agnostic: DB may already contain an application for the first row
+  // from earlier runs — then the assertion chain still must hold end-to-end.
+  const firstRow = page.getByTestId('jobs-table').locator('tbody tr').first();
+  const markButton = firstRow.locator('button:not([data-applied])', { hasText: 'Applied' }).first();
+  if (await markButton.count()) {
+    await markButton.click();
+  }
+  await expect(firstRow.locator('button[data-applied="true"]')).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByTestId('jobs-table').locator('tbody tr').first().locator('button[data-applied="true"]'),
+  ).toBeVisible();
+});
+
+test('empty state is reachable via strict filter', async ({ page }) => {
+  await page.goto('/?salaryMin=999999');
+  await expect(page.getByTestId('empty')).toBeVisible();
+});
+
+test('jobs screen visual snapshot (masked layout gate)', async ({ page }) => {
+  await page.goto('/');
+  // Text-heavy data table is covered by DOM assertions above; the pixel gate
+  // protects layout chrome (header, filter bar, table frame) — text-bearing
+  // elements are masked to stay deterministic across OS font rasterization.
+  await expect(page).toHaveScreenshot('s1a-jobs.png', {
+    mask: [
+      page.getByTestId('jobs-table').locator('tbody'),
+      page.getByTestId('jobs-table').locator('thead'),
+      page.getByRole('heading', { level: 1 }),
+      page.locator('main h1 + span'),
+    ],
+    maskColor: '#1a2f4a',
+  });
+});

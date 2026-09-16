@@ -48,6 +48,8 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Pipeline (lint → arch-lint → typecheck → test → build → e2e)
+        env:
+          DATABASE_URL: postgres://chinook:chinook_dev@localhost:5432/chinook
         run: pnpm pipeline:check
 
       - name: Integration tests (fixtures → postgres service)
