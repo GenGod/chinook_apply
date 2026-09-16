@@ -74,6 +74,7 @@
 }
 
 .table {
+  table-layout: fixed;
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
@@ -97,6 +98,8 @@
   border-top: 1px solid #16293f;
   vertical-align: middle;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .table tr:hover td {

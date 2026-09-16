@@ -103,6 +103,15 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
       ) : (
         <div className={styles.tableWrap}>
           <table className={styles.table} data-testid="jobs-table">
+            <colgroup>
+              <col style={{ width: 320 }} />
+              <col style={{ width: 190 }} />
+              <col style={{ width: 150 }} />
+              <col style={{ width: 90 }} />
+              <col style={{ width: 130 }} />
+              <col style={{ width: 100 }} />
+              <col style={{ width: 140 }} />
+            </colgroup>
             <thead>
               <tr>
                 <th>Title</th>
