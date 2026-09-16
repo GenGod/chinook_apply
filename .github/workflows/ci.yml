@@ -35,3 +35,11 @@ jobs:
 
       - name: Pipeline (lint → arch-lint → typecheck → test → build → e2e)
         run: pnpm pipeline:check
+
+      - name: Upload test artifacts (diffs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: tests/test-results/
+          retention-days: 7
