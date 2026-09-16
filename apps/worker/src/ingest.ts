@@ -5,10 +5,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Job, JobSourceId, RawJob } from '@chinook/contracts';
 import { normalizeJob, dedupe } from '@chinook/core';
-import { jobbankAdapter } from '@chinook/adapters/jobbank.js';
-import { adzunaAdapter } from '@chinook/adapters/adzuna.js';
-import { createDb, ensureSchema, upsertJobs, countJobs, type Database } from './db.js';
-import type { Kysely } from 'kysely';
+import { jobbankAdapter } from '@chinook/adapters/jobbank';
+import { adzunaAdapter } from '@chinook/adapters/adzuna';
+import { createDbFromEnv, ensureSchema, upsertJobs, countJobs } from '@chinook/core';
 
 export interface IngestSummary {
   sources: Array<{
@@ -72,16 +71,9 @@ async function fetchLive(query: string): Promise<RawFeed[]> {
   return feeds;
 }
 
-export async function runIngest(opts: {
-  db?: Kysely<Database>;
-  fixtures?: boolean;
-  query?: string;
-  close?: boolean;
-}): Promise<IngestSummary> {
+export async function runIngest(opts: { fixtures?: boolean; query?: string; close?: boolean }): Promise<IngestSummary> {
   const { fixtures = false, query = 'software developer', close = true } = opts;
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) throw new Error('DATABASE_URL is not set');
-  const db = opts.db ?? createDb(connectionString);
+  const db = createDbFromEnv();
   await ensureSchema(db);
 
   const feeds = fixtures ? await loadFixtures() : await fetchLive(query);

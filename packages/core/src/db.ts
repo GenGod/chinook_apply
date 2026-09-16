@@ -1,4 +1,5 @@
 import { Kysely, PostgresDialect, sql, type Generated } from 'kysely';
+export type { Kysely } from 'kysely';
 import { Pool } from 'pg';
 import type { Job } from '@chinook/contracts';
 
@@ -37,9 +38,18 @@ export interface IngestRunRow {
   error: string | null;
 }
 
+export interface ApplicationTable {
+  id: Generated<number>;
+  job_id: string;
+  status: string;
+  channel: string;
+  created_at: Generated<Date>;
+}
+
 export interface Database {
   job: JobRow;
   ingest_run: IngestRunRow;
+  application: ApplicationTable;
 }
 
 export const SCHEMA_SQL = `
@@ -78,12 +88,33 @@ CREATE TABLE IF NOT EXISTS ingest_run (
   updated INT NOT NULL DEFAULT 0,
   error TEXT
 );
+CREATE TABLE IF NOT EXISTS application (
+  id BIGSERIAL PRIMARY KEY,
+  job_id UUID NOT NULL REFERENCES job(id) ON DELETE CASCADE,
+  status TEXT NOT NULL,
+  channel TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (job_id, status, channel)
+);
+CREATE INDEX IF NOT EXISTS application_job_idx ON application (job_id);
 `;
+
+/** Local docker-compose default (port 5433 — host 5432 is taken by a native service). */
+export const DEV_DATABASE_URL = 'postgres://chinook:chinook_dev@localhost:5433/chinook';
 
 export function createDb(connectionString: string): Kysely<Database> {
   return new Kysely<Database>({
     dialect: new PostgresDialect({ pool: new Pool({ connectionString }) }),
   });
+}
+
+/** Resolves DATABASE_URL with a dev fallback so local/CI wiring stays trivial. */
+export function resolveDatabaseUrl(): string {
+  return process.env.DATABASE_URL ?? DEV_DATABASE_URL;
+}
+
+export function createDbFromEnv(): Kysely<Database> {
+  return createDb(resolveDatabaseUrl());
 }
 
 export async function ensureSchema(db: Kysely<Database>): Promise<void> {

@@ -25,6 +25,9 @@
     "paths": {
       "@chinook/contracts": [
         "../../packages/contracts/src/index.ts"
+      ],
+      "@/*": [
+        "./src/*"
       ]
     }
   },

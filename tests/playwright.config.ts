@@ -11,7 +11,7 @@ export default defineConfig({
   use: {
     ...devices['Desktop Chrome'],
     viewport: { width: 1280, height: 720 },
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:3999',
   },
   expect: {
     toHaveScreenshot: {
@@ -23,9 +23,9 @@ export default defineConfig({
   },
   outputDir: './test-results',
   webServer: {
-    command: 'pnpm --filter @chinook/web run start',
-    url: 'http://localhost:3000',
+    command: 'pnpm --filter @chinook/web exec next start --port 3999',
+    url: 'http://localhost:3999',
     timeout: 180_000,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false, // dedicated port + no reuse: a stale dev server must never serve the gate
   },
 });

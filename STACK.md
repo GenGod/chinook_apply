@@ -56,6 +56,9 @@
 | tsx | 4.23.13 | CLI-раннер worker (dev) |
 
 ## Changelog
+- 1.3 (2026-09-16) — S1a (PO-approved со спекой): новых зависимостей нет (zod уже в стеке);
+  db-слой перенесён из apps/worker в packages/core; moduleResolution проекта переведён
+  на bundler (требование Turbopack); zod добавлен в apps/web для валидации роутов.
 - 1.2 (2026-09-16) — S1 (PO-approved со спекой): добавлены postgres 17-alpine,
   zod, kysely, pg, fast-xml-parser, fast-check, tsx; docker-compose (postgres only,
   порт 5433 из-за конфликта с нативным Postgres на хосте PO).
