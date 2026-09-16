@@ -1,1 +1,4 @@
-pnpm pipeline:quick
+# husky sets core.hookspath to this dir, which bypasses .git/hooks —
+# delegate to git-lfs first so LFS objects upload on every push (GH008 fix).
+git lfs pre-push "$@"
+exec pnpm pipeline:quick
