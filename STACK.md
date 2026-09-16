@@ -33,7 +33,18 @@
 | React | 19.3.0 | |
 | react-dom | 19.3.0 | |
 
+## CI (GitHub Actions)
+
+| Позиция | Версия | Примечание |
+|---|---|---|
+| actions/checkout | v7 | lfs: true |
+| actions/setup-node | v7 | node 26, кэш pnpm |
+| actions/upload-artifact | v7 | test-results (diffs) |
+| pnpm/action-setup | v6 | читает packageManager |
+| Runner | ubuntu-latest | git-lfs ставится шагом (в образе отсутствует) |
+
 ## Changelog
+- 1.1 (2026-09-16) — PO-approved: экшены CI подняты на мажоры без Node-20 deprecation (setup-node v7, upload-artifact v7, action-setup v6, checkout v7); добавлена таблица CI в фиксацию стека.
 - 1.0 (2026-09-16) — начальная фиксация по итогам S0. Отклонение зафиксировано: TypeScript
   ограничен 6.0.x из-за peer-диапазона typescript-eslint (>=4.8.4 <6.1.0); eslint-plugin-boundaries
   заменён собственным правилом (pnpm-строгая резолюция необъявленных импортов ломает
