@@ -13,7 +13,7 @@
 | 4 | Фильтры/сортировка через URL (server-side, e2e: source=adzuna сужает список) | ✅ |
 | 5 | Visual: новый baseline s1a-jobs.png (LFS); до(scaffold)/после(jobs) — осознанная замена (s0-тест удалён вместе со scaffold-страницей); инверсия: кнопка #2f81f7→#ff5500 → exit 1 (3660 px, ratio 0.01), откат → exit 0 | ✅ |
 | 6 | arch-lint чист после переноса db в core; все turbo-задачи зелёные | ✅ |
-| 7 | `pnpm pipeline:check` зелёный; CI — см. ниже | ✅ |
+| 7 | `pnpm pipeline:check` зелёный; **CI success** (run ea71218) | ✅ |
 
 ## Тесты (цифры)
 
@@ -66,6 +66,20 @@ bugfixes: 8, regression cases: 8 — совпадают. Оба CI-only бага
 - Фильтр «давность» по posted_at; у части adzuna-записей postedAt может быть null —
   показываются при любом фильтре дат (null не отсекается days-фильтром — осознанное
   «не прятать неизвестное»).
+
+## Дополнение после CI-марафона (9 итераций до зелёного)
+
+| Баг | Регресс-защита |
+|---|---|
+| **Ложные baseline: живой старый next-сервер + reuseExistingServer** — playwright снимал маски со STALE-сборки (маска h1 140px при коде 150px) | e2e-сервер на выделенном порту 3999, reuseExistingServer: false всегда |
+| Платформенные скроллбары linux (30px колонка) | scrollbar-hide инжект стиля в тесте (продукт не тронут) |
+| Ширина таблицы/текста контентная → бокс маски зависит от шрифта ОС | table-layout:fixed + colgroup; фиксированные боксы у всех текстовых элементов |
+| AA-подтекание на стыках отдельных масок h1/span | маска всего heading-блока целиком (fixed box 1216×56) |
+| CI делит postgres между e2e и integration → порядок влияет на состояние | integration-тест выбирает unapplied-цель детерминированно |
+| pnpm run start -- --port передаёт лишний '--' | webServer через pnpm exec next start --port |
+
+bugfixes total: 14, защит: 14.
+Вывод в процесс (S7 учтёт): masked-layout-gate требует fixed-box дисциплины верстки с первого дня; без неё cross-platform pixel-гейт вырождается в охоту за AA-пикселями.
 
 ## Вердикт
 
