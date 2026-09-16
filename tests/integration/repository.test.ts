@@ -64,16 +64,19 @@ describe('job repository (S1a)', () => {
 
   it('appliedManually defaults to false and markAppliedManually is idempotent (S1a AC2)', async () => {
     const db = createDb(databaseUrl);
-    const [first] = await listJobs(db, { limit: 1 });
-    expect(first?.appliedManually).toBe(false);
+    // Pick a job with no application yet: e2e runs against the same database
+    // in CI and may already have marked the first rows applied.
+    const jobs = await listJobs(db, { limit: 50 });
+    const target = jobs.find((j) => !j.appliedManually);
+    expect(target).toBeTruthy();
 
-    const a = await markAppliedManually(db, first!.id);
-    const b = await markAppliedManually(db, first!.id);
+    const a = await markAppliedManually(db, target!.id);
+    const b = await markAppliedManually(db, target!.id);
     expect(a.status).toBe('applied_manual');
     expect(b.id).toBe(a.id); // idempotent — same row, no duplicate
 
-    const [marked] = await listJobs(db, { limit: 1 });
-    expect(marked?.appliedManually).toBe(true);
+    const after = await listJobs(db, { limit: 50 });
+    expect(after.find((j) => j.id === target!.id)?.appliedManually).toBe(true);
     await db.destroy();
   });
 
