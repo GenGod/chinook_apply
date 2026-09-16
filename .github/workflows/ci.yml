@@ -9,6 +9,11 @@ jobs:
   pipeline:
     runs-on: ubuntu-latest
     steps:
+      # ubuntu-latest no longer ships git-lfs; snapshots live in LFS,
+      # so install it BEFORE checkout can pull them.
+      - name: Install git-lfs
+        run: sudo apt-get update -q && sudo apt-get install -y -q git-lfs
+
       - uses: actions/checkout@v5
         with:
           lfs: true
