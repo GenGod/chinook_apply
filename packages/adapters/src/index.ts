@@ -1,2 +1,3 @@
-// Source adapters placeholder — populated by S1. May only depend on @chinook/contracts (arch-lint).
-export const ADAPTERS_MARKER = 's0-scaffold';
+export { jobbankAdapter, JOBBANK_FEED_URL, JOBBANK_UA } from './jobbank.js';
+export { adzunaAdapter, ADZUNA_BASE } from './adzuna.js';
+export const ADAPTERS_MARKER = 's1';

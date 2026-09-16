@@ -6,7 +6,9 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "ingest": "tsx --env-file-if-exists=../../.env src/ingest.ts",
+    "ingest:fixtures": "tsx --env-file-if-exists=../../.env src/ingest.ts --fixtures"
   },
   "dependencies": {
     "@chinook/adapters": "workspace:*",
