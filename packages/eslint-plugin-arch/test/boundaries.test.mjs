@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { Linter } from 'eslint';
-import { flatConfig } from '../src/index.js';
+import { flatConfig, repoRoot } from '../src/index.js';
+
+// ESLint's flat Linter resolves the virtual filename against process.cwd()
+// and only matches configs for files inside it — vitest starts us in the
+// package dir, so point the process at the repo root first.
+process.chdir(repoRoot);
 
 const linter = new Linter({ configType: 'flat' });
 const config = flatConfig();
@@ -27,7 +32,7 @@ describe('arch boundaries — S0 AC3 (gate must catch violations)', () => {
 
   it('forbids any package importing apps', () => {
     const msgs = lint(
-      "import { X } from '../../apps/web/app/layout';\nexport const y = X;\n",
+      "import { X } from '../../../apps/web/app/layout';\nexport const y = X;\n",
       'packages/core/src/bad.ts',
     );
     expect(msgs.length).toBeGreaterThan(0);
@@ -64,6 +69,12 @@ describe('arch boundaries — S0 AC3 (gate must catch violations)', () => {
     ).toHaveLength(0);
     expect(
       lint("import { ADAPTERS_MARKER } from '@chinook/adapters';\n", 'apps/worker/src/ok.ts'),
+    ).toHaveLength(0);
+  });
+
+  it('allows tests importing scripts (pipeline sequencer is a test target)', () => {
+    expect(
+      lint("import { planStages } from '../../scripts/pipeline.mjs';\n", 'tests/unit/ok.ts'),
     ).toHaveLength(0);
   });
 });

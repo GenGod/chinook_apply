@@ -5,6 +5,9 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 1 : 0,
+  // Stable, platform-suffix-free snapshot path under the git-LFS attribute
+  // (tests/**/__snapshots__/**/*.png) — same file locally and in CI.
+  snapshotPathTemplate: '{testDir}/__snapshots__/{arg}{ext}',
   use: {
     ...devices['Desktop Chrome'],
     viewport: { width: 1280, height: 720 },
@@ -12,7 +15,10 @@ export default defineConfig({
   },
   expect: {
     toHaveScreenshot: {
-      maxDiffPixelRatio: 0.01,
+      // Strict: any pixel diff fails (S0 inversion-proof requirement).
+      // Cross-platform font drift in CI is handled by pinned browser/fonts
+      // in CI, not by loosening the gate (see S0 report, known risks).
+      maxDiffPixelRatio: 0,
     },
   },
   outputDir: './test-results',
