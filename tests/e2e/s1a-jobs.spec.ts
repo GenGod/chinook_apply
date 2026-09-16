@@ -65,6 +65,11 @@ test('jobs screen visual snapshot (masked layout gate)', async ({ page }) => {
   // elements are masked to stay deterministic across OS font rasterization.
   await expect(page).toHaveScreenshot('s1a-jobs.png', {
     mask: [
+      page.locator('#source'),
+      page.locator('#days'),
+      page.locator('#salaryMin'),
+      page.locator('#sort'),
+      page.getByRole('button', { name: 'Apply filters' }),
       page.getByTestId('jobs-table').locator('tbody'),
       page.getByTestId('jobs-table').locator('thead'),
       page.getByRole('heading', { level: 1 }),

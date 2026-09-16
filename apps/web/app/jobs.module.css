@@ -26,7 +26,8 @@
 .field select,
 .field input {
   height: 36px;
-  min-width: 130px;
+  width: 180px;
+  box-sizing: border-box;
   padding: 0 10px;
   border-radius: 6px;
   border: 1px solid #2a4a6e;
@@ -37,6 +38,7 @@
 
 .submit {
   height: 36px;
+  width: 150px;
   padding: 0 18px;
   border-radius: 6px;
   border: none;
