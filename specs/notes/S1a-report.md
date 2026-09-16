@@ -20,7 +20,7 @@
 - Unit: 39 passed (S1: 35 + worker env-loader 4 — без изменений).
 - Integration: **9 passed** (repository 6 новых: сортировка default/salary, фильтры
   source/salary/days, applied-идемпотентность, limit; ingest 3).
-- E2E: **6 passed** (рендер, ссылка-атрибуты, фильтр, applied-persist, empty-state, visual).
+- E2E: **7 passed** (рендер, ссылка-атрибуты, фильтр, applied-persist, **PATCH API-контракт**, empty-state, visual) — финальный прогон на чистой БД (volume пересоздан).
 - RED→GREEN: repository-сьют закоммичен красным (6 падений на отсутствии модуля).
 
 ## Метрики
@@ -33,6 +33,8 @@
 
 | Баг | Регресс-защита |
 |---|---|
+| **API-роуты в `src/app` молча игнорировались** (страницы в `app/`; Next выбирает один корень) → PATCH получал HTML-404. Локально маскировалось готовым applied-состоянием БД | роуты перенесены в `app/api`; новый e2e-тест бьёт в PATCH напрямую и проверяет JSON-контракт (ловит и пустые 404-страницы) |
+| Подписи кнопок совпадали в обоих состояниях («✓ Applied» как action и как state) — маскировало сбой в yaml-диагностике | разведены: действие «Mark applied», состояние «✓ Applied»; тест по role+name |
 | Turbopack не резолвит NodeNext `.js`-суффиксы в TS-импортах | проект переведён на moduleResolution=bundler (tsconfig.base), фиксация в STACK 1.3 |
 | CSS Modules: глобальные селекторы (table/th/td) — «not pure» | все селекторы скоупы под .table (фиксация паттерна) |
 | Salary-фильтр пропускал null-зарплаты → empty-state недостижим | strict-семантика фильтра + e2e-тест empty-state |
@@ -40,7 +42,8 @@
 | appliedManually: number(id) сравнивался с true | интеграционный тест ловит (false-positive устранил) |
 | Integration-файлы гоняли одну БД параллельно | fileParallelism:false + детерминированная сортировка (tie-break canonical_hash) |
 
-bugfixes: 6, regression cases: 6 — совпадают.
+bugfixes: 8, regression cases: 8 — совпадают. Оба CI-only бага пойманы свежим CI-прогоном
+(логично: локальная БД «помнила» прошлые состояния) — кейс за машинные гейты: e2e на чистой среде.
 
 ## Security-аудит (G5)
 

@@ -32,7 +32,7 @@ export function AppliedToggle({ jobId, initiallyApplied }: { jobId: string; init
         }
       }}
     >
-      {busy ? '…' : '✓ Applied'}
+      {busy ? '…' : 'Mark applied'}
     </button>
   );
 }

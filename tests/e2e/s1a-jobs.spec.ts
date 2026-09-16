@@ -32,7 +32,7 @@ test('Applied toggle persists after reload (S1a AC2/AC3)', async ({ page }) => {
   // State-agnostic: DB may already contain an application for the first row
   // from earlier runs — then the assertion chain still must hold end-to-end.
   const firstRow = page.getByTestId('jobs-table').locator('tbody tr').first();
-  const markButton = firstRow.locator('button:not([data-applied])', { hasText: 'Applied' }).first();
+  const markButton = firstRow.getByRole('button', { name: 'Mark applied' });
   if (await markButton.count()) {
     await markButton.click();
   }
@@ -41,6 +41,16 @@ test('Applied toggle persists after reload (S1a AC2/AC3)', async ({ page }) => {
   await expect(
     page.getByTestId('jobs-table').locator('tbody tr').first().locator('button[data-applied="true"]'),
   ).toBeVisible();
+});
+
+test('PATCH applied-manually API returns application JSON (S1a AC2)', async ({ request }) => {
+  const jobs = await (await request.get('/api/jobs?limit=1')).json();
+  expect(jobs.jobs.length).toBe(1);
+  const response = await request.patch(`/api/jobs/${jobs.jobs[0].id}/applied-manually`);
+  expect(response.status()).toBe(200);
+  const body = await response.json();
+  expect(body.status).toBe('applied_manual');
+  expect(body.channel).toBe('external_link');
 });
 
 test('empty state is reachable via strict filter', async ({ page }) => {
