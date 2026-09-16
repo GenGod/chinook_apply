@@ -78,8 +78,7 @@ test('jobs screen visual snapshot (masked layout gate)', async ({ page }) => {
       page.getByRole('button', { name: 'Apply filters' }),
       page.getByTestId('jobs-table').locator('tbody'),
       page.getByTestId('jobs-table').locator('thead'),
-      page.getByRole('heading', { level: 1 }),
-      page.locator('main h1 + span'),
+      page.locator('main > div').first(), // whole heading row: fixed box, all text+AA inside mask
     ],
     maskColor: '#1a2f4a',
   });
