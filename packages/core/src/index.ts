@@ -28,4 +28,13 @@ export {
   type JobListItem,
   type ApplicationRow,
 } from './repository';
+export {
+  applyRules,
+  NOC_TITLE_FAMILIES,
+  JUNIOR_MARKERS,
+  type RuleStatus,
+  type RuleResult,
+  type ProfileSearch,
+} from './rules';
+export { loadProfileSearch, DEFAULT_PROFILE_SEARCH } from './profile';
 export const CORE_MARKER = 's1';

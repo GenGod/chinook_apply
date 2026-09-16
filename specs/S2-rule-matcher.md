@@ -1,6 +1,6 @@
 # S2: Rule matcher — правило-фильтр потока под профиль PO
 
-Статус: **draft** (ждёт G1 approve PO) · Версия: 1.0 · Milestone: **M1**
+Статус: done (G6 approved 2026-09-16) · Версия: 1.0 · Milestone: **M1**
 Реестр: DESIGN.md §6.1 · зависит от S1/S1a (done).
 
 ## Проблема и цель

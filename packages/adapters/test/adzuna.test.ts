@@ -37,3 +37,15 @@ describe('adzuna adapter', () => {
     expect(raws.some((r) => r.salaryMin === null)).toBe(true);
   });
 });
+
+describe('adzuna region hint (S2)', () => {
+  it('appends the Alberta hint when location lacks a province', () => {
+    const raws = adzunaAdapter.parse({ results: [{ id: 1, title: 'Dev', company: { display_name: 'X' }, location: { display_name: 'Calgary, Canada' }, redirect_url: 'https://a', created: '2026-09-16T00:00:00Z' }] });
+    expect(raws[0]!.locationRaw).toBe('Calgary, Canada, Alberta');
+  });
+
+  it('keeps locations that already carry a province', () => {
+    const raws = adzunaAdapter.parse({ results: [{ id: 2, title: 'Dev', company: { display_name: 'X' }, location: { display_name: 'Toronto, Ontario, Canada' }, redirect_url: 'https://b', created: '2026-09-16T00:00:00Z' }] });
+    expect(raws[0]!.locationRaw).toBe('Toronto, Ontario, Canada');
+  });
+});

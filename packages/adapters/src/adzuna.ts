@@ -34,12 +34,12 @@ export const adzunaAdapter = {
     return response.json();
   },
 
-  parse(payload: unknown): RawJob[] {
+  parse(payload: unknown, regionHint = 'Alberta'): RawJob[] {
     const results = (payload as AdzunaResponse)?.results ?? [];
     return results.map((r) => ({
       title: r.title?.trim() ?? 'Untitled',
       employer: r.company?.display_name?.trim() || 'Unknown employer',
-      locationRaw: r.location?.display_name ?? '',
+      locationRaw: withRegionHint(r.location?.display_name ?? '', regionHint),
       url: r.redirect_url ?? '',
       postedAt: r.created ?? null,
       salaryMin: typeof r.salary_min === 'number' ? r.salary_min : null,
@@ -50,6 +50,15 @@ export const adzunaAdapter = {
     }));
   },
 };
+
+/** Adzuna often returns "Calgary, Canada" without the province; the search context (where=) is the honest hint. */
+function withRegionHint(location: string, hint: string): string {
+  if (!location || !hint) return location;
+  const hasProvince =
+    /,\s*(Alberta|Ontario|Quebec|British Columbia|Manitoba|Saskatchewan|Nova Scotia|New Brunswick|Newfoundland|Prince Edward|Yukon|Nunavut|Northwest)/i.test(location) ||
+    /\([A-Z]{2}\)/.test(location);
+  return hasProvince ? location : `${location}, ${hint}`;
+}
 
 interface AdzunaResponse {
   results?: Array<{
