@@ -1,6 +1,6 @@
 # S1: Normalization & dedupe — контракты вакансий, адаптеры, персистентность
 
-Статус: **draft** (ждёт G1 approve PO) · Версия: 1.0 · Milestone: **M1**
+Статус: done (G6 approved 2026-09-16) · Версия: 1.0 · Milestone: **M1**
 Источник: DESIGN.md §3.1 (Ingestion), §6.1; зависит от S0 (done).
 
 ## Проблема и цель

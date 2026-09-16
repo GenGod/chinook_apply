@@ -1,2 +1,2 @@
-// Worker placeholder — populated by S1+ (BullMQ ingest/generation/dispatch).
-export const WORKER_MARKER = 's0-scaffold';
+export { runIngest, type IngestSummary } from './ingest.js';
+export { createDb, ensureSchema, upsertJobs, countJobs, SCHEMA_SQL, type Database, type JobRow, type IngestRunRow } from './db.js';

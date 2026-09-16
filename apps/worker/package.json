@@ -6,6 +6,21 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "ingest": "tsx --env-file-if-exists=../../.env src/ingest.ts",
+    "ingest:fixtures": "tsx --env-file-if-exists=../../.env src/ingest.ts --fixtures",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@chinook/adapters": "workspace:*",
+    "@chinook/contracts": "workspace:*",
+    "@chinook/core": "workspace:*",
+    "kysely": "^0.29.5",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1",
+    "tsx": "^4.23.13",
+    "vitest": "^5.0.0"
   }
 }

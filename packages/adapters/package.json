@@ -3,9 +3,21 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "exports": {
+    ".": { "types": "./src/index.ts", "default": "./src/index.ts" },
+    "./jobbank.js": { "types": "./src/jobbank.ts", "default": "./src/jobbank.ts" },
+    "./adzuna.js": { "types": "./src/adzuna.ts", "default": "./src/adzuna.ts" }
+  },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@chinook/contracts": "workspace:*",
+    "fast-xml-parser": "^5.11.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "vitest": "^5.0.0"
   }
 }
