@@ -37,9 +37,18 @@ export interface IngestRunRow {
   error: string | null;
 }
 
+export interface ApplicationTable {
+  id: Generated<number>;
+  job_id: string;
+  status: string;
+  channel: string;
+  created_at: Generated<Date>;
+}
+
 export interface Database {
   job: JobRow;
   ingest_run: IngestRunRow;
+  application: ApplicationTable;
 }
 
 export const SCHEMA_SQL = `

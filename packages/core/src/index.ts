@@ -19,4 +19,11 @@ export {
   type JobRow,
   type IngestRunRow,
 } from './db.js';
+export {
+  listJobs,
+  markAppliedManually,
+  type JobFilters,
+  type JobListItem,
+  type ApplicationRow,
+} from './repository.js';
 export const CORE_MARKER = 's1';
