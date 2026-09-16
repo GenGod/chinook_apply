@@ -60,6 +60,11 @@ test('empty state is reachable via strict filter', async ({ page }) => {
 
 test('jobs screen visual snapshot (masked layout gate)', async ({ page }) => {
   await page.goto('/');
+  // Scrollbars render differently per OS (classic on linux CI, overlay/none on
+  // windows) — hide them for the pixel gate; scrolling itself is not under test.
+  await page.addStyleTag({
+    content: '* { scrollbar-width: none !important } *::-webkit-scrollbar { width: 0 !important; display: none !important }',
+  });
   // Text-heavy data table is covered by DOM assertions above; the pixel gate
   // protects layout chrome (header, filter bar, table frame) — text-bearing
   // elements are masked to stay deterministic across OS font rasterization.
