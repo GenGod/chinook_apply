@@ -1,0 +1,24 @@
+# secrets / PII — never commit (Constitution art. 3)
+.env
+.env.*
+!.env.example
+data/
+
+# deps & build
+node_modules/
+dist/
+.next/
+out/
+coverage/
+.turbo/
+
+# test & browser artifacts (snapshots ARE committed via LFS — see .gitattributes)
+test-results/
+playwright-report/
+blob-report/
+.vercel
+
+# misc
+*.log
+.DS_Store
+Thumbs.db

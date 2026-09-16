@@ -1,0 +1,6 @@
+# UI snapshots (S0 spec: git-lfs to keep repo light)
+tests/**/__snapshots__/**/*.png filter=lfs diff=lfs merge=lfs -text
+
+# safety: never diff binaries
+*.docx binary
+*.pdf binary
