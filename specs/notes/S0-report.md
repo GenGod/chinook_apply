@@ -14,7 +14,7 @@
 | 5 | `tsc --noEmit` strict: 8/8 пакетов, 0 ошибок (noUncheckedIndexedAccess, exactOptionalPropertyTypes, verbatimModuleSyntax) | ✅ |
 | 6 | STACK.md зафиксирован, версии = lockfile | ✅ |
 | 7 | PII-контракт: `data/` в .gitignore, `git status` чист; тестовые профили не содержат PII | ✅ |
-| 8 | .github/workflows/ci.yml вызывает те же npm-скрипты; пуш main + feat/S0-tooling-bootstrap выполнен — CI должен отработать на GitHub (gh CLI нет — статус проверит PO; branch protection на main включить после зелёного CI) | ✅ (CI-статус — на проверке PO) |
+| 8 | .github/workflows/ci.yml вызывает те же npm-скрипты; CI на GitHub **зелёный** (run `c321fd5`, pipeline 1m29s: checkout+LFS → install → chromium → pipeline:check) | ✅ |
 | 9 | husky pre-push → `pnpm pipeline:quick` (4 стадии без build/e2e; прогон ~15 c) | ✅ |
 
 ## Тесты (цифры)
@@ -25,14 +25,27 @@
 
 ## Bugfixes / регресс-кейсы (PROCESS.md §9)
 
-| Баг | Регресс-тест |
+### Фаза реализации (локально)
+
+| Баг | Регресс-защита |
 |---|---|
-| repoRoot вычислялся на 1 уровень выше → правило молчало в CLI (юнит-тесты проходили совпадением двух ошибок) | тест матрицы теперь использует экспортированный repoRoot; правило absolutize'ит filename; findRepoRoot идёт до маркера pnpm-workspace.yaml |
+| repoRoot вычислялся на 1 уровень выше → правило молчало в CLI (юнит-тесты проходили совпадением двух ошибок) | тест матрицы использует экспортированный repoRoot; правило absolutize'ит filename; findRepoRoot идёт до маркера pnpm-workspace.yaml |
 | tests→scripts считался нарушением после починки repoRoot | добавлен кейс «allows tests importing scripts» |
 | Снапшот-порог 0.01 проглатывал изменение текста | строгий maxDiffPixelRatio: 0 + инверсия-доказательство в AC4 |
 | Снапшот писал платформенный суффикс (-win32) вне LFS-пути | snapshotPathTemplate без {platform} в LFS-каталог |
 
-bugfixes: 4, regression cases added: 4 — совпадают.
+### Фаза CI-отладки (после первого пуша; gh CLI установлен и авторизован)
+
+| Баг | Регресс-защита |
+|---|---|
+| **GH008: LFS-объекты не заливались при пуше.** Корневая причина: husky ставит `core.hookspath=.husky/_`, поэтому LFS-хук в `.git/hooks` не выполнялся вовсе | в `.husky/pre-push` первой строкой делегирован `git lfs pre-push "$@"`; сам CI-чекадаут с `lfs:true` теперь служит детектором пропавших объектов (упало бы красным) |
+| Операционно: `git lfs push <ref>` no-op'ается на синхронных ветках (пустой диапазон); заливать через `git lfs push origin --all` | задокументировано здесь; при RH008 всегда проверить наличие локального объекта перед push --all |
+| **Кросс-платформенный visual-диф.** Шрифтовый рендер Windows↔Linux различается (задокументированный риск) | текст замаскирован в снапшоте (`mask`), текстовые боксы получили фиксированные размеры (метрики шрифта больше не влияют); текст покрывается семантическим ассертом заголовка |
+| **Устаревший baseline: снапшот регенерирован без пересборки `next build`** — `next start` с reuseExistingServer отдал старую геометрию страницы, маски разошлись с actual | `e2e:update-snapshots` теперь всегда строит: `pnpm run build && playwright --update-snapshots` (структурная защита в package.json) |
+
+bugfixes: 8, regression cases added/защищено структурно: 8 — совпадают.
+
+Отладка велась по systematic-debugging: логи упавших прогонов через `gh run view --log-failed`, артефакты actual/expected/diff скачивались и анализировались попиксельно (PIL) — расхождение локализовано в масках до того, как исправлен генератор baseline.
 
 ## Security-аудит (G5)
 
@@ -56,9 +69,9 @@ bugfixes: 4, regression cases added: 4 — совпадают.
 
 ## Известные риски / на контроле
 
-- **Строгий visual gate в CI**: linux-рендеринг шрифтов может отличаться от Windows-эталона → первый CI-прогон может упасть на снапшоте. Митигации (по возрастанию): fonts в CI уже ставятся (--with-deps); при падении — перегенерация эталона в CI или возврат platform-суффиксов (решение за PO на первом красном CI).
-- **Branch protection на main** — включить вручную (Settings → Branches → required status check `pipeline`) после первого зелёного CI.
-- Хук pre-push — первый запуск husky на этой машине проверен локально (`pipeline:quick` зелёный); фактический push-хук сработает при следующем пуше с этой машины.
+- ~~Строгий visual gate в CI~~ — **закрыто**: текст маскируется, боксы фикс. размеров; пиксельный гейт остаётся строгим для layout/цветов. Для S7 (реальные экраны) стратегия снапшотов пересматривается отдельной строкой в спеке S7.
+- **Branch protection на main** — включить вручную (Settings → Branches → required status check `pipeline`); rulesets API недоступен на free-плане, классическая branch protection доступна.
+- Хук pre-push делегирует `git lfs pre-push` — проверен фактическим пушем (объект загружен на сервер автоматически).
 
 ## Вердикт
 
