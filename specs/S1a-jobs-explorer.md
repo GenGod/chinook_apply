@@ -1,6 +1,6 @@
 # S1a: Jobs Explorer — список вакансий с откликом по прямой ссылке
 
-Статус: done (CI success, ожидает G6) · Версия: 1.0 · Milestone: **M1**
+Статус: done (G6 approved 2026-09-16) · Версия: 1.0 · Milestone: **M1**
 Источник: BACKLOG.md **B-001** (accepted, PO 2026-09-16) · зависит от S1 (done).
 
 ## Проблема и цель
