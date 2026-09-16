@@ -5,8 +5,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Job, JobSourceId, RawJob } from '@chinook/contracts';
 import { normalizeJob, dedupe } from '@chinook/core';
-import { jobbankAdapter } from '@chinook/adapters/jobbank.js';
-import { adzunaAdapter } from '@chinook/adapters/adzuna.js';
+import { jobbankAdapter } from '@chinook/adapters/jobbank';
+import { adzunaAdapter } from '@chinook/adapters/adzuna';
 import { createDbFromEnv, ensureSchema, upsertJobs, countJobs } from '@chinook/core';
 
 export interface IngestSummary {

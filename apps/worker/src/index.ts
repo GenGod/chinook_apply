@@ -1,1 +1,1 @@
-export { runIngest, type IngestSummary, loadRootEnv } from './ingest.js';
+export { runIngest, type IngestSummary, loadRootEnv } from './ingest';

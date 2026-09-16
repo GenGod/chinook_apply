@@ -1,5 +1,5 @@
 import type { Job } from '@chinook/contracts';
-import { normalizeEmployer, normalizeTitle } from './normalize.js';
+import { normalizeEmployer, normalizeTitle } from './normalize';
 
 export interface FuzzyPair {
   kept: Job;

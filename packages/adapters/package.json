@@ -4,9 +4,26 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": { "types": "./src/index.ts", "default": "./src/index.ts" },
-    "./jobbank.js": { "types": "./src/jobbank.ts", "default": "./src/jobbank.ts" },
-    "./adzuna.js": { "types": "./src/adzuna.ts", "default": "./src/adzuna.ts" }
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./jobbank": {
+      "types": "./src/jobbank.ts",
+      "default": "./src/jobbank.ts"
+    },
+    "./jobbank.js": {
+      "types": "./src/jobbank.ts",
+      "default": "./src/jobbank.ts"
+    },
+    "./adzuna": {
+      "types": "./src/adzuna.ts",
+      "default": "./src/adzuna.ts"
+    },
+    "./adzuna.js": {
+      "types": "./src/adzuna.ts",
+      "default": "./src/adzuna.ts"
+    }
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

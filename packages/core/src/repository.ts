@@ -1,6 +1,6 @@
 import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
-import type { Database } from './db.js';
+import type { Database } from './db';
 import type { Job, JobSourceId } from '@chinook/contracts';
 
 export interface JobFilters {

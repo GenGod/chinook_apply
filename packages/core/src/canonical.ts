@@ -1,5 +1,5 @@
 import { createHash as nodeCreateHash } from 'node:crypto';
-import { normalizeEmployer, normalizeTitle, parseLocation } from './normalize.js';
+import { normalizeEmployer, normalizeTitle, parseLocation } from './normalize';
 import type { Job, JobSourceId, RawJob } from '@chinook/contracts';
 import { RawJobSchema, JobSchema } from '@chinook/contracts';
 

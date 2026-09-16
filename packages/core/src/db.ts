@@ -1,4 +1,5 @@
 import { Kysely, PostgresDialect, sql, type Generated } from 'kysely';
+export type { Kysely } from 'kysely';
 import { Pool } from 'pg';
 import type { Job } from '@chinook/contracts';
 
