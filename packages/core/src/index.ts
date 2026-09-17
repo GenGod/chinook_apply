@@ -38,4 +38,5 @@ export {
 } from './rules';
 export { loadProfileSearch, DEFAULT_PROFILE_SEARCH } from './profile';
 export { planSources, nextDue, type SourceSchedule } from './schedule';
+export { getMetrics, DEFAULT_INTERVALS, type MetricsSummary, type SourceHealth, type HistoryRow } from './metrics';
 export const CORE_MARKER = 's1';
