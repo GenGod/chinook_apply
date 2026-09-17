@@ -14,6 +14,20 @@ test('metrics page renders funnel consistent with API (S13 AC2/AC3)', async ({ p
   expect(api.history.length).toBeGreaterThan(0);
 });
 
+test('funnel bar widths follow the funnel proportions (S13 AC5, DOM-level)', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Metrics →' }).click();
+  await page.waitForURL(/\/metrics/);
+  const barWidth = async (testId: string) =>
+    (await page.getByTestId(testId).locator('div').nth(2).locator('div').boundingBox())?.width ?? 0;
+  const total = await barWidth('card-total');
+  const relevant = await barWidth('card-relevant');
+  const excluded = await barWidth('card-excluded');
+  expect(total).toBeGreaterThan(0);
+  expect(relevant).toBeGreaterThan(excluded); // fixtures: relevant dominates
+  expect(relevant).toBeLessThan(total);
+});
+
 test('navigation Jobs ↔ Metrics works (S13 AC4)', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Metrics →' }).click();
@@ -22,24 +36,20 @@ test('navigation Jobs ↔ Metrics works (S13 AC4)', async ({ page }) => {
   await page.waitForURL(/\/$/);
 });
 
-test('metrics visual snapshot (bars visible, text masked; S13 AC5)', async ({ page }) => {
+test('metrics visual snapshot (frame gate; S13 AC5)', async ({ page }) => {
   await page.goto('/metrics');
   await page.addStyleTag({
     content: '* { scrollbar-width: none !important } *::-webkit-scrollbar { width: 0 !important; display: none !important }',
   });
-  const cards = page.locator('[data-testid^="card-"]');
-  // mask label (1st child) and value (2nd child) of each card; the bar track
-  // (3rd child) stays visible — widths are deterministic from fixture counts.
+  // Whole text/bars-bearing blocks are masked (S1a discipline: fixed-box frame
+  // gate); bar correctness is asserted on the DOM level above.
   await expect(page).toHaveScreenshot('s13-metrics.png', {
     mask: [
-      page.getByRole('heading', { level: 1 }),
-      page.locator('main h1 + span'),
-      cards.locator('> div:nth-child(1)'),
-      cards.locator('> div:nth-child(2)'),
-      page.locator('table').first().locator('tbody'),
-      page.locator('table').first().locator('thead'),
-      page.getByTestId('history-table').locator('tbody'),
-      page.getByTestId('history-table').locator('thead'),
+      page.locator('main > div').first(), // heading row
+      page.locator('div[class*="cards"]').first(), // funnel cards block
+      page.locator('div[class*="sectionTitle"]'), // section captions (text)
+      page.locator('table').first(),
+      page.getByTestId('history-table'),
     ],
     maskColor: '#1a2f4a',
   });
