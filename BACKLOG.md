@@ -114,7 +114,7 @@ G0-проверку на соответствие конституции и DESI
 - **Приоритет:** later
 - **Автор:** процесс S12 (R6)
 
-Dockerfile (node:26-alpine + pnpm + tsx) и compose-сервис , чтобы сбор шёл сам при
+Dockerfile (node:26-alpine + pnpm + tsx) и compose-сервис scheduler, чтобы сбор шёл сам при
 поднятом Docker Desktop, без живого терминала. Требует docker-build шага в CI. Не смешивать
 с логикой планирования (S12 закрыт без контейнера по решению PO).
 
