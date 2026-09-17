@@ -48,7 +48,7 @@ describe('nextDue (post-run cooldown, S12 AC1 jitter bounds)', () => {
 
   it('property: always inside bounds and monotonic base', () => {
     fc.assert(
-      fc.property(fc.integer({ min: 1, max: 1440 }), fc.double({ min: 0, max: 1 }), (mins, r) => {
+      fc.property(fc.integer({ min: 1, max: 1440 }), fc.double({ min: 0, max: 1, noNaN: true }), (mins, r) => {
         const s: SourceSchedule = { source: 'jobbank', intervalMin: mins, jitterRatio: 0.2 };
         const base = new Date('2026-09-17T00:00:00Z');
         const due = nextDue(base, s, () => r);
