@@ -1,6 +1,6 @@
 # S12: Scheduled ingest — автоматический сбор по расписанию
 
-Статус: **draft** (ждёт G1 approve PO) · Версия: 1.0 · Milestone: **M1-close** (post AI-park)
+Статус: accepted (G1 2026-09-17: 30м/2ч, ±20%, локальный процесс) · Версия: 1.0 · Milestone: **M1-close** (post AI-park)
 Реестр: добавляется в DESIGN §6.1 · зависит от S2 (done). Замещает отложенный «BullMQ в S5»
 для текущей фазы (см. S1 R3).
 
