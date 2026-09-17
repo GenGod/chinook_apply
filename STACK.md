@@ -55,7 +55,17 @@
 | fast-check | 4.10.0 | property-тесты ядра (dev) |
 | tsx | 4.23.13 | CLI-раннер worker (dev) |
 
+## Планировщик (S12)
+
+| Позиция | Значение | Примечание |
+|---|---|---|
+| Тик планировщика | 60 c | расчёт «кому пора» раз в минуту |
+| jobbank | 30 мин ± 20% | env SCHED_JOBBANK_MIN |
+| adzuna | 2 ч ± 20% | env SCHED_ADZUNA_MIN (квота free-тарифа) |
+| Блокировка | pg advisory lock | hashtext(chinook:ingest), сессия на критическую секцию |
+
 ## Changelog
+- 1.4 (2026-09-17) — S12 (PO-approved со спекой): новых зависимостей нет; зафиксированы расписания и механика lock-а; ключевой девайс: kysely-билдер без .execute() не исполняется — ловится только живой проверкой записей (регресс-тест в integration).
 - 1.3 (2026-09-16) — S1a (PO-approved со спекой): новых зависимостей нет (zod уже в стеке);
   db-слой перенесён из apps/worker в packages/core; moduleResolution проекта переведён
   на bundler (требование Turbopack); zod добавлен в apps/web для валидации роутов.

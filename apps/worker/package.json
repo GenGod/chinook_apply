@@ -9,7 +9,10 @@
     "typecheck": "tsc --noEmit",
     "ingest": "tsx --env-file-if-exists=../../.env src/ingest.ts",
     "ingest:fixtures": "tsx --env-file-if-exists=../../.env src/ingest.ts --fixtures",
-    "test": "vitest run"
+    "test": "vitest run",
+    "schedule": "tsx src/scheduler.ts",
+    "schedule:status": "tsx src/scheduler.ts --status",
+    "schedule:once": "tsx src/scheduler.ts --once"
   },
   "dependencies": {
     "@chinook/adapters": "workspace:*",
@@ -17,6 +20,7 @@
     "@chinook/core": "workspace:*"
   },
   "devDependencies": {
+    "kysely": "^0.29.5",
     "tsx": "^4.23.13",
     "vitest": "^5.0.0"
   }

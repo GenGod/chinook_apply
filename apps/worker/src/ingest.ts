@@ -72,8 +72,8 @@ async function fetchLive(query: string): Promise<RawFeed[]> {
   return feeds;
 }
 
-export async function runIngest(opts: { fixtures?: boolean; query?: string; close?: boolean; profile?: ProfileSearch; fresh?: boolean }): Promise<IngestSummary> {
-  const { fixtures = false, query = 'software developer', close = true, profile, fresh = false } = opts;
+export async function runIngest(opts: { fixtures?: boolean; query?: string; close?: boolean; profile?: ProfileSearch; fresh?: boolean; sources?: JobSourceId[] }): Promise<IngestSummary> {
+  const { fixtures = false, query = 'software developer', close = true, profile, fresh = false, sources } = opts;
   const db = createDbFromEnv();
   await ensureSchema(db);
   if (fresh) {
@@ -82,7 +82,7 @@ export async function runIngest(opts: { fixtures?: boolean; query?: string; clos
     await db.deleteFrom('job');
   }
 
-  const feeds = fixtures ? await loadFixtures() : await fetchLive(query);
+  const feeds = (fixtures ? await loadFixtures() : await fetchLive(query)).filter((f: RawFeed) => !sources || sources.includes(f.source));
   const sourceSummaries: IngestSummary['sources'] = [];
   const allJobs: Job[] = [];
   let totalFetched = 0;
@@ -117,7 +117,7 @@ export async function runIngest(opts: { fixtures?: boolean; query?: string; clos
       inserted,
       updated,
       error: s.error,
-    });
+    }).execute();
   }
 
   if (close) await db.destroy();
