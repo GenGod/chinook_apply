@@ -37,4 +37,5 @@ export {
   type ProfileSearch,
 } from './rules';
 export { loadProfileSearch, DEFAULT_PROFILE_SEARCH } from './profile';
+export { planSources, nextDue, type SourceSchedule } from './schedule';
 export const CORE_MARKER = 's1';
