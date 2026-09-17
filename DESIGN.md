@@ -188,6 +188,7 @@ Dev-процесс (спеки, планы, ревью — архитектор 
 | S8 Email dispatch | SMTP + вложения + лимиты | интеграционный тест на тестовый ящик |
 | S9 Form dispatch (Playwright) | заполнение форм | тест против локальной mock-формы |
 | S10 Metrics | все виды из раздела 5 | дашборд показывает реальные числа на staging-данных |
+| S12 Scheduled ingest (post AI-park) | long-running планировщик: source-расписания + jitter, pg advisory lock, graceful shutdown, schedule:status/once | unit план-логики; integration: lock-конкуренция, shutdown; живой once-прогон |
 | S11 Multi-resume superprofile (из BACKLOG B-002) | ingest N резюме → факты с provenance → слияние в суперпрофиль (approve PO), резюме-треки, ранжирование вакансий по трекам, расширение NOC | факт прослеживается до исходного документа (юнит-тесты provenance); дифф профиля одобряется PO; golden-set скоринга расширен под треки |
 
 ### 6.2 Контракты раньше кода
