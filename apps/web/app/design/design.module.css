@@ -1,0 +1,185 @@
+.page {
+  min-height: 100vh;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  padding: 24px 32px;
+}
+
+.heading {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.title {
+  display: inline-block;
+  width: 150px;
+  height: 56px;
+  line-height: 56px;
+  margin: 0;
+  font-size: var(--text-h1);
+}
+
+.subtitle {
+  display: inline-block;
+  width: 320px;
+  height: 56px;
+  line-height: 56px;
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+.section {
+  height: 32px;
+  line-height: 32px;
+  margin: 24px 0 12px;
+  font-size: var(--text-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.swatch {
+  width: 160px;
+  height: 84px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.swatchColor {
+  height: 48px;
+}
+
+.swatchLabel {
+  height: 32px;
+  line-height: 32px;
+  padding: 0 10px;
+  background: var(--bg-raised);
+  color: var(--text-secondary);
+  font-size: var(--text-aux);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.typeRow {
+  height: 48px;
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+}
+
+.typeSpec {
+  width: 260px;
+  color: var(--text-muted);
+  font-size: var(--text-aux);
+}
+
+.btn {
+  height: 36px;
+  padding: 0 18px;
+  border-radius: 6px;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: var(--text-body);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btnGhost {
+  height: 36px;
+  padding: 0 18px;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--status-success);
+  font-size: var(--text-body);
+  cursor: pointer;
+}
+
+.badge {
+  display: inline-block;
+  height: 22px;
+  line-height: 22px;
+  padding: 0 10px;
+  border-radius: 11px;
+  font-size: var(--text-aux);
+  border: 1px solid transparent;
+}
+
+.fieldDemo {
+  width: 180px;
+  height: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fieldDemo label {
+  height: 16px;
+  line-height: 16px;
+  font-size: var(--text-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.fieldDemo select {
+  height: 36px;
+  width: 180px;
+  box-sizing: border-box;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: var(--text-body);
+}
+
+.barDemo {
+  width: 320px;
+  height: 12px;
+  border-radius: 6px;
+  background: var(--bg-inset);
+  overflow: hidden;
+}
+
+.barDemoFill {
+  height: 12px;
+  border-radius: 6px;
+  background: var(--accent);
+}
+
+.cardDemo {
+  width: 200px;
+  height: 112px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-raised);
+  padding: 12px 16px;
+  box-sizing: border-box;
+}
+
+.cardLabel {
+  height: 16px;
+  line-height: 16px;
+  font-size: var(--text-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.cardValue {
+  height: 40px;
+  line-height: 40px;
+  font-size: 32px;
+  font-weight: 600;
+}

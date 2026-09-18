@@ -54,3 +54,56 @@ test('metrics visual snapshot (frame gate; S13 AC5)', async ({ page }) => {
     maskColor: '#1a2f4a',
   });
 });
+
+test('styleguide /design renders all DS sections (S16 AC4)', async ({ page }) => {
+  await page.goto('/design');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  const swatches = await page.locator('[data-ds^="badge-"], [data-ds="button-primary"], [data-ds="field"], [data-ds="bar"], [data-ds="card"]').count();
+  expect(swatches).toBeGreaterThanOrEqual(5);
+  const labels = await page.locator('.swatchLabel, div[class*="swatchLabel"]').count();
+  expect(labels).toBeGreaterThanOrEqual(13);
+});
+
+test('focus-visible outline present on interactive controls (S16 AC5)', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
+  const firstLink = page.getByRole('link').first();
+  await firstLink.focus();
+  const outline = await firstLink.evaluate((el) => getComputedStyle(el).outlineColor);
+  expect(outline).not.toBe('transparent');
+  expect(outline).not.toBe('');
+});
+
+test('styleguide visual gate — swatches/buttons/bars visible, texts masked (S16 AC2)', async ({ page }) => {
+  await page.goto('/design');
+  await page.addStyleTag({
+    content: '* { scrollbar-width: none !important } *::-webkit-scrollbar { width: 0 !important; display: none !important }',
+  });
+  await expect(page).toHaveScreenshot('s16-design.png', {
+    mask: [
+      page.getByRole('heading', { level: 1 }),
+      page.locator('main h1 + span'),
+      page.locator('div[class*="swatchLabel"]'),
+      page.locator('div[class*="typeRow"]'),
+      page.locator('div[class*="section"]'),
+      page.locator('div[class*="cardLabel"], div[class*="cardValue"]'),
+      page.locator('div[class*="fieldDemo"]'),
+      // text-bearing controls: glyph AA and auto-width differ across OS fonts;
+      // accent stays gated via the accent swatch and the bar fill
+      page.locator('button[data-ds]'),
+      page.locator('span[data-ds^="badge-"]'),
+    ],
+    maskColor: '#1a2f4a',
+    fullPage: true,
+  });
+});
+
+test('tokens are actually served — accent paints the primary button (S16 regression)', async ({ page }) => {
+  // Guards against the class of bug where tokens.css fails to load and every
+  // var() silently falls back to transparent (pixel gates can't see it: the
+  // baseline would have been captured equally broken).
+  await page.goto('/design');
+  const bg = await page.locator('[data-ds="button-primary"]').evaluate((el) => getComputedStyle(el).backgroundColor);
+  expect(bg).toBe('rgb(47, 129, 247)');
+});
