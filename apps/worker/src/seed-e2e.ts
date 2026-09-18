@@ -3,7 +3,9 @@
 import process from 'node:process';
 import { Client } from 'pg';
 
-const E2E_URL = process.env.E2E_DATABASE_URL ?? 'postgres://chinook:chinook_dev@localhost:5433/chinook_e2e';
+// derive from the environment (CI service is 5432, local compose is 5433)
+const BASE_URL = process.env.DATABASE_URL ?? 'postgres://chinook:chinook_dev@localhost:5433/chinook';
+const E2E_URL = process.env.E2E_DATABASE_URL ?? BASE_URL.replace(//[^/]+$/, '/chinook_e2e');
 
 const admin = new Client({ connectionString: E2E_URL.replace(/\/[^/]+$/, '/postgres') });
 await admin.connect();
