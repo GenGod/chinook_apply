@@ -194,6 +194,7 @@ Dev-процесс (спеки, планы, ревью — архитектор 
 | S15 Scheduler container (B-005, не-AI трек) | Dockerfile worker + compose-сервис scheduler (restart-политика, внутренняя сеть); CI docker-build гейт | локальный чек-лист: тики/ingest_run/graceful/секреты-аудит; CI build зелёный |
 | S16 Chinook DS v1 (дизайн-трек) | токены/типографика/компоненты, рестайл Jobs+Metrics, /design стайлгайд, контраст-гейт AA | греп-гейт хардкода; unit-контраст; e2e фокус+visual+инверсия |
 | S17 DS v1.1 «Group of Seven» (дизайн-трек) | палитра Харриса v1.1 (accent #f4a261), полоса-горизонт в шапке, self-hosted Crimson Pro + Plus Jakarta Sans, sentence case, демонтаж теллов | контраст-гейт v1.1; e2e без-CDN; визуал ×3 + инверсия |
+| S18 Board DnD (B-006) | нативный HTML5 DnD с transition-семантикой, кнопки как a11y-фолбэк | e2e dragTo ×3 + регресс S7 |
 | S11 Multi-resume superprofile (из BACKLOG B-002) | ingest N резюме → факты с provenance → слияние в суперпрофиль (approve PO), резюме-треки, ранжирование вакансий по трекам, расширение NOC | факт прослеживается до исходного документа (юнит-тесты provenance); дифф профиля одобряется PO; golden-set скоринга расширен под треки |
 
 ### 6.2 Контракты раньше кода
