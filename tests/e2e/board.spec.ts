@@ -6,9 +6,7 @@ test('board visual snapshot (masked cards, columns visible; S7 AC6)', async ({ p
   });
   await expect(page).toHaveScreenshot('s7-board.png', {
     mask: [
-      page.getByRole('heading', { level: 1 }),
-      page.locator('main .heading span, main .heading a'),
-      page.getByTestId('active-count'),
+      page.locator('main > div').first(), // whole header row: wordmark, subtitle, count, nav (hashed-class trap avoided)
       page.locator('section[data-column] header'), // titles + counts (text AA)
       page.locator('.horizon'), // gradient interpolation differs across GPU/platform
       page.locator('[data-card-id]'),
