@@ -49,8 +49,8 @@ test('PATCH applied-manually API returns application JSON (S1a AC2)', async ({ r
   const response = await request.patch(`/api/jobs/${jobs.jobs[0].id}/applied-manually`);
   expect(response.status()).toBe(200);
   const body = await response.json();
-  expect(body.status).toBe('applied_manual');
-  expect(body.channel).toBe('external_link');
+  expect(body.status).toBe('applied');
+  expect(body.channel).toBe('manual');
 });
 
 test('empty state is reachable via strict filter', async ({ page }) => {

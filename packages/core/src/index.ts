@@ -37,6 +37,11 @@ export {
   type ProfileSearch,
 } from './rules';
 export { loadProfileSearch, DEFAULT_PROFILE_SEARCH } from './profile';
+export {
+  BOARD_STATUSES, TRANSITIONS, canTransition, requiredChannel,
+  getBoard, setApplicationStatus, TransitionError,
+  type BoardStatus, type StoredStatus, type BoardCard, type BoardColumn, type BoardData,
+} from './board';
 export { planSources, nextDue, type SourceSchedule } from './schedule';
 export { getMetrics, DEFAULT_INTERVALS, type MetricsSummary, type SourceHealth, type HistoryRow } from './metrics';
 export const CORE_MARKER = 's1';

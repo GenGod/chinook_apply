@@ -26,6 +26,9 @@ export default async function MetricsPage() {
         <a className={styles.navLink} href="/">
           Jobs
         </a>
+        <a className={styles.navLink} href="/board">
+          Board
+        </a>
       </div>
 
       <div className="horizon" style={{ marginTop: 4, marginBottom: 20 }} />
