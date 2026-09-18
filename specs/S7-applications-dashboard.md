@@ -1,6 +1,6 @@
 # S7: Applications Dashboard — канбан-доска откликов
 
-Статус: **draft** (ждёт G1 approve PO) · Версия: 1.0 · Milestone: **M3** (адаптирован к без-AI треку)
+Статус: accepted (G1 2026-09-18: Applied разделён на manual/auto — 6 колонок) · Версия: 1.0 · Milestone: **M3** (адаптирован к без-AI треку)
 Реестр: DESIGN §6.1 (S7 переопределён: approve-флои AI-генерации недоступны до возврата
 S3+; вместо этого — рабочий цикл откликов PO). Реализует B-003 (kanban, PO 2026-09-16).
 Дизайн — через скиллы: superdesign (направления на канвасе) + frontend-design (дисциплина).
@@ -21,7 +21,7 @@ S3+; вместо этого — рабочий цикл откликов PO). �
 ## Решение (альтернативы из brainstorm, выбор + отказ)
 
 ### R1. Форма: канбан-доска (реализация B-003)
-- **(a) 5 колонок: New / Applying / Applied / Interview / Rejected** — ✅:
+- **(a) 6 колонок: New / Applying / Applied · manual / Applied · auto / Interview / Rejected** (G1-ответ №2: авто и ручной раздельно) — ✅:
   PO сам просил канбан (B-003, ответ на G1 S1a); доска = естественная
   визуализация воронки этапов; метрики дашборда потом читаются из тех же статусов.
 - (b) Список-таблица с фильтром статуса — уже есть на Jobs (rule-фильтр);
@@ -31,10 +31,10 @@ S3+; вместо этого — рабочий цикл откликов PO). �
 ### R2. Статусная модель: расширение `application.status`
 - `new` — НЕ строка в БД: вью (relevant jobs без application) — не мусорим
   таблицу пустышками, строка создаётся при первом действии.
-- Строки БД: `applying`, `applied` (мануальный отклик — объединяет прежний
-  `applied_manual` в общий статус; channel хранит способ), `interview`, `rejected`.
-- Миграция v5: `application.status` расширен enum-значениями; существующие
-  `applied_manual` → `applied` (миграция данных одной UPDATE-командой).
+- Строки БД: `applying`, `applied` **+ channel: `manual` | `auto`** (G1: разделение;
+  авто-канал — задел под email-диспетчер S8/AI-эпоху), `interview`, `rejected`.
+- Миграция v5: расширение enum + channel-колонка; существующие
+  `applied_manual` → `applied` c channel `manual` (одна UPDATE-команда).
 - UNIQUE(job_id, status, channel) сохраняется; одна вакансия — одна активная
   карточка (rejected потом можно реактивировать — новая строка? Нет: UPDATE
   статуса, история этапов — будущее S10+, пока последний статус).
@@ -68,7 +68,7 @@ S3+; вместо этого — рабочий цикл откликов PO). �
 
 ```ts
 // packages/core
-BOARD_STATUSES = ['new','applying','applied','interview','rejected'] as const;
+BOARD_STATUSES = ['new','applying','applied_manual','applied_auto','interview','rejected'] as const; // колонки; в БД status='applied' + channel
 getBoard(db): Promise<{ columns: Record<BoardStatus, BoardCard[]>; counts }>
 setApplicationStatus(db, jobId, status): Promise<ApplicationRow>  // idempotent upsert
 // API
@@ -89,8 +89,8 @@ PATCH /api/jobs/:id/status { status } → application row
 3. Доска рендерит 5 колонок; кнопки переходов двигают карточку между колонками
    без reload (optimistic) и переживают reload (persist). E2E.
 4. `/job/[id]` показывает полные детали + те же действия статусов. E2E.
-5. Миграция applied_manual→applied: существующие ручные отклики попадают в
-   колонку Applied (integration).
+5. Миграция applied_manual→(applied, manual): существующие ручные отклики
+   попадают в колонку Applied · manual; авто-колонка пуста до S8 (integration).
 6. Дизайн выбран на superdesign-канвасе (направления A/B) и реализован на DS
    v1.1; visual-gate на /board и /job/[id] (маски по дисциплине) + инверсия.
 7. Все гейты зелёные; CI success.
