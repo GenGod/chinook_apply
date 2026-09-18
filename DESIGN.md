@@ -192,6 +192,7 @@ Dev-процесс (спеки, планы, ревью — архитектор 
 | S13 Metrics v1 (не-AI трек) | страница /metrics + /api/metrics: воронка, здоровье источников, история; getMetrics в core | integration counts; e2e DOM↔API; visual + инверсия |
 | S14 Rule badges (B-004, не-AI трек) | колонка-бейдж relevant/review/excluded + селектор Rule в фильтрах Jobs | e2e: бейджи, фильтры, комбо; visual baseline + инверсия |
 | S15 Scheduler container (B-005, не-AI трек) | Dockerfile worker + compose-сервис scheduler (restart-политика, внутренняя сеть); CI docker-build гейт | локальный чек-лист: тики/ingest_run/graceful/секреты-аудит; CI build зелёный |
+| S16 Chinook DS v1 (дизайн-трек) | токены/типографика/компоненты, рестайл Jobs+Metrics, /design стайлгайд, контраст-гейт AA | греп-гейт хардкода; unit-контраст; e2e фокус+visual+инверсия |
 | S11 Multi-resume superprofile (из BACKLOG B-002) | ingest N резюме → факты с provenance → слияние в суперпрофиль (approve PO), резюме-треки, ранжирование вакансий по трекам, расширение NOC | факт прослеживается до исходного документа (юнит-тесты provenance); дифф профиля одобряется PO; golden-set скоринга расширен под треки |
 
 ### 6.2 Контракты раньше кода
