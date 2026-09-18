@@ -1,0 +1,20 @@
+# never bake into the image
+.env
+.env.*
+data/
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+.turbo/
+**/.turbo/
+dist/
+**/dist/
+coverage/
+tests/test-results/
+tests/playwright-report/
+tests/e2e/__snapshots__/
+.git/
+.gitattributes
+.github/
+*.log

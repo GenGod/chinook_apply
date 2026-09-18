@@ -12,16 +12,19 @@
     "test": "vitest run",
     "schedule": "tsx src/scheduler.ts",
     "schedule:status": "tsx src/scheduler.ts --status",
-    "schedule:once": "tsx src/scheduler.ts --once"
+    "schedule:once": "tsx src/scheduler.ts --once",
+    "seed:e2e": "tsx src/seed-e2e.ts"
   },
   "dependencies": {
     "@chinook/adapters": "workspace:*",
     "@chinook/contracts": "workspace:*",
-    "@chinook/core": "workspace:*"
+    "@chinook/core": "workspace:*",
+    "pg": "^8.23.0",
+    "tsx": "^4.23.13"
   },
   "devDependencies": {
+    "@types/pg": "^8.23.1",
     "kysely": "^0.29.5",
-    "tsx": "^4.23.13",
     "vitest": "^5.0.0"
   }
 }

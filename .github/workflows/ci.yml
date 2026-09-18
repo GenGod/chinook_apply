@@ -57,6 +57,9 @@ jobs:
           DATABASE_URL: postgres://chinook:chinook_dev@localhost:5432/chinook
         run: pnpm --filter @chinook/tests exec vitest run --config vitest.integration.config.ts
 
+      - name: Docker build gate (scheduler image, S15)
+        run: docker build -f apps/worker/Dockerfile -t chinook-scheduler:${{ github.sha }} .
+
       - name: Upload test artifacts (diffs)
         if: always()
         uses: actions/upload-artifact@v7

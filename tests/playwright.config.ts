@@ -24,6 +24,10 @@ export default defineConfig({
   outputDir: './test-results',
   webServer: {
     command: 'pnpm --filter @chinook/web exec next start --port 3999',
+    env: {
+      // isolated e2e DB — the live scheduler keeps ingesting into chinook
+      DATABASE_URL: process.env.E2E_DATABASE_URL ?? 'postgres://chinook:chinook_dev@localhost:5433/chinook_e2e',
+    },
     url: 'http://localhost:3999',
     timeout: 180_000,
     reuseExistingServer: false, // dedicated port + no reuse: a stale dev server must never serve the gate
