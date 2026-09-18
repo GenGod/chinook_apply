@@ -1,6 +1,6 @@
 # S17: Chinook DS v1.1 — направление «Group of Seven»
 
-Статус: **draft** (ждёт G1 approve PO) · Версия: 1.0 · Milestone: **дизайн-трек**
+Статус: done (G6 approved 2026-09-18) · Версия: 1.0 · Milestone: **дизайн-трек**
 Источник: superdesign-процесс (PO выбрал направление D, draft e9d3aae8, 2026-09-18);
 дизайн-дисциплина — skill `frontend-design` (чекс-лист теллов), реализация поверх S16.
 

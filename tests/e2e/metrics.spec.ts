@@ -16,7 +16,7 @@ test('metrics page renders funnel consistent with API (S13 AC2/AC3)', async ({ p
 
 test('funnel bar widths follow the funnel proportions (S13 AC5, DOM-level)', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('link', { name: 'Metrics →' }).click();
+  await page.getByRole('link', { name: 'Metrics' }).click();
   await page.waitForURL(/\/metrics/);
   const barWidth = async (testId: string) =>
     (await page.getByTestId(testId).locator('div').nth(2).locator('div').boundingBox())?.width ?? 0;
@@ -30,9 +30,9 @@ test('funnel bar widths follow the funnel proportions (S13 AC5, DOM-level)', asy
 
 test('navigation Jobs ↔ Metrics works (S13 AC4)', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('link', { name: 'Metrics →' }).click();
+  await page.getByRole('link', { name: 'Metrics' }).click();
   await page.waitForURL(/\/metrics/);
-  await page.getByRole('link', { name: '← Jobs' }).click();
+  await page.getByRole('link', { name: 'Jobs' }).click();
   await page.waitForURL(/\/$/);
 });
 
@@ -105,5 +105,16 @@ test('tokens are actually served — accent paints the primary button (S16 regre
   // baseline would have been captured equally broken).
   await page.goto('/design');
   const bg = await page.locator('[data-ds="button-primary"]').evaluate((el) => getComputedStyle(el).backgroundColor);
-  expect(bg).toBe('rgb(47, 129, 247)');
+  expect(bg).toBe('rgb(244, 162, 97)');
+});
+
+test('no external font CDN requests — fonts are self-hosted (S17 AC1)', async ({ page }) => {
+  const external: string[] = [];
+  page.on('request', (req) => {
+    const u = req.url();
+    if (u.includes('fonts.googleapis.com') || u.includes('fonts.gstatic.com')) external.push(u);
+  });
+  await page.goto('/design');
+  await page.waitForLoadState('networkidle');
+  expect(external).toEqual([]);
 });

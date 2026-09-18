@@ -45,7 +45,6 @@
   margin: 24px 0 12px;
   font-size: 12px;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
   color: var(--text-muted);
 }
 
@@ -70,7 +69,6 @@
   line-height: 16px;
   font-size: 11px;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--text-muted);
 }
 
@@ -128,7 +126,6 @@
   color: var(--text-secondary);
   font-size: 11px;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
