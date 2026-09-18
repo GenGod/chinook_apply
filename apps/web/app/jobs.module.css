@@ -161,3 +161,31 @@
   color: #7d93b2;
   font-size: 15px;
 }
+
+.ruleBadge {
+  display: inline-block;
+  height: 22px;
+  line-height: 22px;
+  padding: 0 10px;
+  border-radius: 11px;
+  font-size: 12px;
+  border: 1px solid transparent;
+}
+
+.ruleBadge[data-rule='relevant'] {
+  background: #12331f;
+  color: #3fb950;
+  border-color: #1d5c2e;
+}
+
+.ruleBadge[data-rule='review'] {
+  background: #332a12;
+  color: #d29922;
+  border-color: #5c4d1d;
+}
+
+.ruleBadge[data-rule='excluded'] {
+  background: #1a2433;
+  color: #7a8ba3;
+  border-color: #2a3a52;
+}
