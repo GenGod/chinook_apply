@@ -57,6 +57,9 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
         <span className={styles.muted} style={{ display: 'inline-block', width: '320px', height: '56px', lineHeight: '56px', fontSize: '15px' }}>
           Jobs — Alberta (Express Entry)
         </span>
+        <a href="/metrics" style={{ display: 'inline-block', height: '56px', lineHeight: '56px', fontSize: '14px', color: '#8fc1ff', textDecoration: 'none' }}>
+          Metrics →
+        </a>
       </div>
 
       <form className={styles.bar} method="get" data-testid="filters">
