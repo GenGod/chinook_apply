@@ -89,6 +89,10 @@ test('styleguide visual gate — swatches/buttons/bars visible, texts masked (S1
       page.locator('div[class*="section"]'),
       page.locator('div[class*="cardLabel"], div[class*="cardValue"]'),
       page.locator('div[class*="fieldDemo"]'),
+      // text-bearing controls: glyph AA and auto-width differ across OS fonts;
+      // accent stays gated via the accent swatch and the bar fill
+      page.locator('button[data-ds]'),
+      page.locator('span[data-ds^="badge-"]'),
     ],
     maskColor: '#1a2f4a',
     fullPage: true,
