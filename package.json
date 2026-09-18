@@ -11,7 +11,7 @@
   "scripts": {
     "pipeline:check": "node scripts/pipeline.mjs",
     "pipeline:quick": "node scripts/pipeline.mjs --quick",
-    "lint": "eslint .",
+    "lint": "eslint . && node scripts/check-colors.mjs",
     "arch-lint": "eslint . --config eslint.arch.config.js",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",

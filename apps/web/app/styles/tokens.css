@@ -1,0 +1,58 @@
+/* Chinook DS v1 tokens — the single source of color/typography truth (S16).
+   Screen CSS must reference var(--…) only; scripts/check-colors.mjs enforces it. */
+:root {
+  /* surfaces */
+  --bg-base: #0d1b2a;
+  --bg-raised: #12233a;
+  --bg-inset: #0f1c2e;
+
+  /* borders */
+  --border-subtle: #1f3a5a;
+  --border-strong: #2a4a6e;
+
+  /* text */
+  --text-primary: #e6edf5;
+  --text-secondary: #9fb4cf;
+  --text-muted: #7b8fae;
+
+  /* accent / actions */
+  --accent: #2f81f7;
+  --accent-hover: #4493ff;
+  --accent-text: #ffffff;
+
+  /* status */
+  --status-success: #3fb950;
+  --status-success-bg: #12331f;
+  --status-success-border: #1d5c2e;
+  --status-warning: #d29922;
+  --status-warning-bg: #332a12;
+  --status-warning-border: #5c4d1d;
+  --status-danger: #f85149;
+  --status-neutral: #7a8ba3;
+  --status-neutral-bg: #1a2433;
+  --status-neutral-border: #2a3a52;
+
+  /* misc */
+  --badge-source-bg: #1d3a5f;
+  --badge-source-text: #8fc1ff;
+  --row-hover: #112236;
+  --table-line: #16293f;
+  --mask-test: #1a2f4a;
+
+  /* type scale */
+  --font-sans: system-ui, sans-serif;
+  --text-h1: 28px;
+  --text-section: 20px;
+  --text-emphasis: 16px;
+  --text-body: 14px;
+  --text-aux: 12px;
+  --text-label: 11px;
+
+  /* focus (a11y) */
+  --focus-outline: 2px solid var(--accent);
+}
+
+:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 2px;
+}

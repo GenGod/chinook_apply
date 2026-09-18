@@ -1,3 +1,5 @@
+import './styles/tokens.css';
+
 export const metadata = {
   title: 'Chinook',
   description: 'Alberta job search automation (Express Entry)',
@@ -6,7 +8,7 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, fontFamily: 'system-ui, sans-serif' }}>{children}</body>
+      <body style={{ margin: 0, fontFamily: 'var(--font-sans)' }}>{children}</body>
     </html>
   );
 }
