@@ -21,46 +21,48 @@ export default async function MetricsPage() {
   return (
     <main className={styles.page}>
       <div className={styles.heading}>
-        <h1 className={styles.title}>Chinook</h1>
+        <h1 className={styles.title} style={{ fontFamily: 'var(--font-display)' }}>Chinook</h1>
         <span className={styles.subtitle}>Metrics — flow health</span>
         <a className={styles.navLink} href="/">
-          ← Jobs
+          Jobs
         </a>
       </div>
+
+      <div className="horizon" style={{ marginTop: 4, marginBottom: 20 }} />
 
       <div className={styles.sectionTitle}>Funnel</div>
       <div className={styles.cards}>
         <div className={styles.card} data-testid="card-total">
           <div className={styles.cardLabel}>Total jobs</div>
-          <div className={styles.cardValue}>{f.total}</div>
+          <div className={styles.cardValue} style={{ fontFamily: 'var(--font-display)' }}>{f.total}</div>
           <div className={styles.barTrack}>
             <div className={styles.barFill} style={{ width: '100%' }} />
           </div>
         </div>
         <div className={styles.card} data-testid="card-relevant">
           <div className={styles.cardLabel}>Relevant</div>
-          <div className={styles.cardValue}>{f.relevant}</div>
+          <div className={styles.cardValue} style={{ fontFamily: 'var(--font-display)' }}>{f.relevant}</div>
           <div className={styles.barTrack}>
             <div className={styles.barFill} style={{ width: `${pct(f.relevant, f.total)}%` }} />
           </div>
         </div>
         <div className={styles.card} data-testid="card-review">
           <div className={styles.cardLabel}>Review</div>
-          <div className={styles.cardValue}>{f.review}</div>
+          <div className={styles.cardValue} style={{ fontFamily: 'var(--font-display)' }}>{f.review}</div>
           <div className={styles.barTrack}>
             <div className={`${styles.barFill} ${styles.barFillReview}`} style={{ width: `${pct(f.review, f.total)}%` }} />
           </div>
         </div>
         <div className={styles.card} data-testid="card-excluded">
           <div className={styles.cardLabel}>Excluded</div>
-          <div className={styles.cardValue}>{f.excluded}</div>
+          <div className={styles.cardValue} style={{ fontFamily: 'var(--font-display)' }}>{f.excluded}</div>
           <div className={styles.barTrack}>
             <div className={`${styles.barFill} ${styles.barFillExcluded}`} style={{ width: `${pct(f.excluded, f.total)}%` }} />
           </div>
         </div>
         <div className={styles.card} data-testid="card-applied">
           <div className={styles.cardLabel}>Applied manually</div>
-          <div className={styles.cardValue}>{f.appliedManual}</div>
+          <div className={styles.cardValue} style={{ fontFamily: 'var(--font-display)' }}>{f.appliedManual}</div>
           <div className={styles.barTrack}>
             <div className={`${styles.barFill} ${styles.barFillApplied}`} style={{ width: `${pct(f.appliedManual, f.total)}%` }} />
           </div>

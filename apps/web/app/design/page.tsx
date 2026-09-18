@@ -24,6 +24,7 @@ const SWATCHES: Array<{ token: string; css: string }> = [
 ];
 
 const TYPE: Array<{ spec: string; style: React.CSSProperties; sample: string }> = [
+  { spec: 'display · Crimson Pro 600', style: { fontSize: 'var(--text-h1)', fontFamily: 'var(--font-display)' }, sample: 'Chinook' },
   { spec: 'h1 · 28/600', style: { fontSize: 'var(--text-h1)', fontWeight: 600 }, sample: 'Chinook' },
   { spec: 'section · 20/600', style: { fontSize: 'var(--text-section)', fontWeight: 600 }, sample: 'Funnel' },
   { spec: 'emphasis · 16/600', style: { fontSize: 'var(--text-emphasis)', fontWeight: 600 }, sample: 'Applied manually' },
@@ -36,7 +37,7 @@ export default function DesignPage() {
   return (
     <main className={styles.page}>
       <div className={styles.heading}>
-        <h1 className={styles.title}>Chinook</h1>
+        <h1 className={styles.title} style={{ fontFamily: 'var(--font-display)' }}>Chinook</h1>
         <span className={styles.subtitle}>Design System v1</span>
       </div>
 
@@ -49,6 +50,8 @@ export default function DesignPage() {
           </div>
         ))}
       </div>
+
+      <div className="horizon" data-ds="horizon" style={{ width: 320, marginBottom: 16 }} />
 
       <div className={styles.section}>Typography</div>
       {TYPE.map((t) => (

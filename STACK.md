@@ -74,7 +74,15 @@
 | CMD | node --import tsx src/scheduler.ts | без pnpm в сигнальной цепочке |
 | БД | chinook (прод) / chinook_e2e / chinook_test | изоляция тестов от живого планировщика |
 
+## Типографика (S17)
+
+| Позиция | Значение |
+|---|---|
+| Дисплей | Crimson Pro 600 (self-hosted, OFL) |
+| Интерфейс | Plus Jakarta Sans variable 100–900 (self-hosted, OFL) |
+
 ## Changelog
+- 1.8 (2026-09-18) — S17 (PO-approved): DS v1.1 «Group of Seven» — палитра Харриса, self-hosted шрифтовая пара, horizon-полоса; AA-подъёмы success/warning/neutral/accent-text.
 - 1.7 (2026-09-18) — S16 (PO-approved со спекой): Chinook DS v1 — токены на CSS-переменных, греп-гейт хардкода, контраст-гейт AA; ноль зависимостей.
 - 1.6 (2026-09-18) — S15 (PO-approved со спекой): docker-стек планировщика зафиксирован; tsx→dependencies; изоляция e2e/integration баз.
 - 1.5 (2026-09-17) — S13 (PO-approved со спекой): новых зависимостей нет; зафиксирован CSS-бар подход к графикам (chart-либы — кандидат на S10-full по необходимости).

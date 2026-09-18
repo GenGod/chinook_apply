@@ -57,12 +57,12 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
   return (
     <main style={{ minHeight: '100vh', background: 'var(--bg-base)', color: 'var(--text-primary)', padding: '24px 32px' }}>
       <div className={styles.heading}>
-        <h1 style={{ margin: 0, display: 'inline-block', width: '150px', height: '56px', lineHeight: '56px', fontSize: '28px' }}>Chinook</h1>
+        <h1 style={{ margin: 0, display: 'inline-block', width: '150px', height: '56px', lineHeight: '56px', fontSize: '28px', fontFamily: 'var(--font-display)' }}>Chinook</h1>
         <span className={styles.muted} style={{ display: 'inline-block', width: '320px', height: '56px', lineHeight: '56px', fontSize: '15px' }}>
           Jobs — Alberta (Express Entry)
         </span>
         <a href="/metrics" style={{ display: 'inline-block', height: '56px', lineHeight: '56px', fontSize: '14px', color: 'var(--badge-source-text)', textDecoration: 'none' }}>
-          Metrics →
+          Metrics
         </a>
       </div>
 
@@ -110,7 +110,9 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
         </button>
       </form>
 
-      <div style={{ height: 16 }} />
+      <div className="horizon" style={{ marginTop: 4, marginBottom: 16 }} />
+
+      <div style={{ height: 0 }} />
 
       {jobs.length === 0 ? (
         <div className={`${styles.tableWrap} ${styles.empty}`} data-testid="empty">

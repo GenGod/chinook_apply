@@ -1,52 +1,70 @@
-/* Chinook DS v1 tokens — the single source of color/typography truth (S16).
-   Screen CSS must reference var(--…) only; scripts/check-colors.mjs enforces it. */
+/* Chinook DS v1.1 — «Group of Seven» (Harris palette), selected on superdesign.
+   Single source of color/typography truth; scripts/check-colors.mjs enforces it. */
+
+@font-face {
+  font-family: 'Crimson Pro';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./fonts/CrimsonPro-600.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 100 900; /* variable */
+  font-display: swap;
+  src: url('./fonts/PlusJakartaSans-var.woff2') format('woff2');
+}
+
 :root {
-  /* surfaces */
-  --bg-base: #0d1b2a;
-  --bg-raised: #12233a;
-  --bg-inset: #0f1c2e;
+  /* surfaces — glacial Harris blues */
+  --bg-base: #0a192f;
+  --bg-raised: #112240;
+  --bg-inset: #081226;
 
   /* borders */
-  --border-subtle: #1f3a5a;
-  --border-strong: #2a4a6e;
+  --border-subtle: #233554;
+  --border-strong: #30476e;
 
-  /* text */
-  --text-primary: #e6edf5;
-  --text-secondary: #9fb4cf;
-  --text-muted: #7b8fae;
+  /* text — snow / ice */
+  --text-primary: #f8f9fa;
+  --text-secondary: #ccd6f6;
+  --text-muted: #8892b0;
 
-  /* accent / actions */
-  --accent: #2f81f7;
-  --accent-hover: #4493ff;
-  --accent-text: #ffffff;
+  /* accent — Harris twilight rose-gold */
+  --accent: #f4a261;
+  --accent-hover: #e76f51;
+  --accent-text: #081226; /* ink on amber: white fails AA on #f4a261 */
 
   /* status */
-  --status-success: #3fb950;
-  --status-success-bg: #12331f;
-  --status-success-border: #1d5c2e;
-  --status-warning: #d29922;
+  --status-success: #46c556;
+  --status-success-bg: #1b4332;
+  --status-success-border: #2d6a4f;
+  --status-warning: #d9a441; /* ochre lifted to AA over its bg (draft #b07d05 kept as border tone) */
   --status-warning-bg: #332a12;
   --status-warning-border: #5c4d1d;
   --status-danger: #f85149;
-  --status-neutral: #7a8ba3;
+  --status-neutral: #8a93b8; /* lightened from draft #4a4e69 for AA text pairs */
   --status-neutral-bg: #1a2433;
   --status-neutral-border: #2a3a52;
 
   /* misc */
-  --badge-source-bg: #1d3a5f;
-  --badge-source-text: #8fc1ff;
-  --row-hover: #112236;
+  --badge-source-bg: #1d2d50;
+  --badge-source-text: #ccd6f6;
+  --row-hover: #112240;
   --table-line: #16293f;
   --mask-test: #1a2f4a;
 
-  /* type scale */
-  --font-sans: system-ui, sans-serif;
+  /* type */
+  --font-display: 'Crimson Pro', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
   --text-h1: 28px;
   --text-section: 20px;
   --text-emphasis: 16px;
   --text-body: 14px;
   --text-aux: 12px;
-  --text-label: 11px;
+  --text-label: 12px;
 
   /* focus (a11y) */
   --focus-outline: 2px solid var(--accent);
@@ -55,4 +73,11 @@
 :focus-visible {
   outline: var(--focus-outline);
   outline-offset: 2px;
+}
+
+/* The one bold element: Harris twilight horizon strip under page headers. */
+.horizon {
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent-hover) 0%, var(--accent) 45%, var(--text-secondary) 100%);
 }
