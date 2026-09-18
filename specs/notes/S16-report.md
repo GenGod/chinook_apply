@@ -12,7 +12,7 @@
 | 3 | Контраст-гейт: 12 пар токенов ≥ требуемого (AA 4.5 / large 3.0), unit, парс tokens.css | ✅ |
 | 4 | /design: Palette (14 свотчей с именами), Type (6 ступеней), Components (кнопки/бейджи/поле/бар/карточка) | ✅ e2e |
 | 5 | :focus-visible на интерактивах (outline accent 2px) — e2e: computed outline на первом линке | ✅ |
-| 6 | Все прежние гейты зелёные (pipeline:check 0; e2e 19/19; integration 19/19); CI — этим пушем | ✅ |
+| 6 | Все прежние гейты зелёные (pipeline:check 0; e2e 19/19; integration 19/19); **CI success** | ✅ |
 
 ## Тесты (цифры)
 
