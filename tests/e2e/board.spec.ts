@@ -64,3 +64,32 @@ test('job details page shows info and status controls (S7 AC4)', async ({ page }
   await expect(page.getByRole('button', { name: 'Start applying' })).toBeVisible();
 });
 
+
+test('drag new → applying persists (S18 AC1)', async ({ page }) => {
+  const card = page.locator('[data-column="new"] [data-card-id]').first();
+  const cardId = await card.getAttribute('data-card-id');
+  await card.dragTo(page.locator('[data-column="applying"]'));
+  await expect(page.locator(`[data-column="applying"] [data-card-id="${cardId}"]`)).toBeVisible();
+  await page.reload();
+  await expect(page.locator(`[data-column="applying"] [data-card-id="${cardId}"]`)).toBeVisible();
+  // cleanup: back to new (delete row) so later tests stay deterministic
+  await page.locator(`[data-column="applying"] [data-card-id="${cardId}"]`).getByRole('button', { name: 'Back' }).click();
+  await expect(page.locator(`[data-column="new"] [data-card-id="${cardId}"]`)).toBeVisible();
+});
+
+test('drag applying → applied manual sets channel (S18 AC2)', async ({ page }) => {
+  const card = page.locator('[data-column="new"] [data-card-id]').first();
+  const cardId = await card.getAttribute('data-card-id');
+  await card.dragTo(page.locator('[data-column="applying"]'));
+  await expect(page.locator(`[data-column="applying"] [data-card-id="${cardId}"]`)).toBeVisible();
+  await page.locator(`[data-column="applying"] [data-card-id="${cardId}"]`).dragTo(page.locator('[data-column="applied_manual"]'));
+  await expect(page.locator(`[data-column="applied_manual"] [data-card-id="${cardId}"]`)).toBeVisible();
+});
+
+test('illegal drag new → interview is rejected with visible error (S18 AC3)', async ({ page }) => {
+  const card = page.locator('[data-column="new"] [data-card-id]').first();
+  const cardId = await card.getAttribute('data-card-id');
+  await card.dragTo(page.locator('[data-column="interview"]'));
+  await expect(page.getByTestId('dnd-error')).toBeVisible();
+  await expect(page.locator(`[data-column="new"] [data-card-id="${cardId}"]`)).toBeVisible();
+});

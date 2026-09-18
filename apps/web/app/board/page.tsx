@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getBoard, type BoardColumn } from '@chinook/core';
 import { getDb } from '@/lib/db';
 import { StatusControls } from './status-controls';
+import { BoardDnd, DraggableCard } from './board-dnd';
 import styles from './board.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -50,7 +51,7 @@ export default async function BoardPage() {
       </div>
       <div className="horizon" style={{ marginTop: 4, marginBottom: 4 }} />
 
-      <div className={styles.board} data-testid="board">
+      <BoardDnd>
         {board.columns.map((col: BoardColumn) => (
           <section
             key={col.status}
@@ -68,8 +69,8 @@ export default async function BoardPage() {
               <div className={styles.emptyColumn}>Empty</div>
             ) : (
               col.cards.map((card) => (
-                <article key={card.id} className={styles.card} data-card-id={card.id}>
-                  <a className={styles.cardTitle} href={`/job/${card.id}`}>
+                <DraggableCard key={card.id} jobId={card.id}>
+                  <a className={styles.cardTitle} draggable={false} href={`/job/${card.id}`}>
                     {card.title}
                   </a>
                   <div className={styles.cardMeta}>
@@ -86,12 +87,12 @@ export default async function BoardPage() {
                     ) : null}
                   </div>
                   <StatusControls jobId={card.id} from={col.status} />
-                </article>
+                </DraggableCard>
               ))
             )}
           </section>
         ))}
-      </div>
+      </BoardDnd>
     </main>
   );
 }
