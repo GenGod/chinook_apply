@@ -8,8 +8,10 @@ test('board visual snapshot (masked cards, columns visible; S7 AC6)', async ({ p
     mask: [
       page.getByRole('heading', { level: 1 }),
       page.locator('main .heading span, main .heading a'),
+      page.getByTestId('active-count'),
+      page.locator('section[data-column] header'), // titles + counts (text AA)
       page.locator('[data-card-id]'),
-      page.locator('.columnCount'),
+      page.locator('div[class*="emptyColumn"]'),
     ],
     maskColor: '#1a2f4a',
   });
