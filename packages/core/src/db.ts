@@ -101,6 +101,10 @@ CREATE TABLE IF NOT EXISTS application (
   UNIQUE (job_id, status, channel)
 );
 CREATE INDEX IF NOT EXISTS application_job_idx ON application (job_id);
+ALTER TABLE application ADD COLUMN IF NOT EXISTS channel TEXT;
+UPDATE application SET status = 'applied', channel = 'manual' WHERE status = 'applied_manual';
+UPDATE application SET channel = 'none' WHERE channel IS NULL;
+ALTER TABLE application ALTER COLUMN channel SET NOT NULL;
 ALTER TABLE job ADD COLUMN IF NOT EXISTS rule_status TEXT;
 ALTER TABLE job ADD COLUMN IF NOT EXISTS rule_reasons JSONB;
 ALTER TABLE job ADD COLUMN IF NOT EXISTS rule_scored_at TIMESTAMPTZ;

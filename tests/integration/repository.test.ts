@@ -72,7 +72,8 @@ describe('job repository (S1a)', () => {
 
     const a = await markAppliedManually(db, target!.id);
     const b = await markAppliedManually(db, target!.id);
-    expect(a.status).toBe('applied_manual');
+    expect(a.status).toBe('applied');
+    expect(a.channel).toBe('manual');
     expect(b.id).toBe(a.id); // idempotent — same row, no duplicate
 
     const after = await listJobs(db, { limit: 50 });

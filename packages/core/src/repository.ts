@@ -82,8 +82,8 @@ export async function listJobs(db: Kysely<Database>, filters: JobFilters): Promi
     .leftJoin('application', (join) =>
       join
         .onRef('application.job_id', '=', 'job.id')
-        .on('application.status', '=', 'applied_manual')
-        .on('application.channel', '=', 'external_link'),
+        .on('application.status', '=', 'applied')
+        .on('application.channel', '=', 'manual'),
     )
     .select([
       'job.id as id',
@@ -131,11 +131,11 @@ export async function listJobs(db: Kysely<Database>, filters: JobFilters): Promi
   return rows.map((row) => toJob(row as ListRow));
 }
 
-/** Idempotently records a manual application via the external link. */
+/** Idempotently records a manual application (S7 model: status applied + channel manual). */
 export async function markAppliedManually(db: Kysely<Database>, jobId: string): Promise<ApplicationRow> {
   const inserted = await db
     .insertInto('application')
-    .values({ job_id: jobId, status: 'applied_manual', channel: 'external_link' })
+    .values({ job_id: jobId, status: 'applied', channel: 'manual' })
     .onConflict((oc) => oc.columns(['job_id', 'status', 'channel']).doNothing())
     .returningAll()
     .executeTakeFirst();
@@ -152,8 +152,8 @@ export async function markAppliedManually(db: Kysely<Database>, jobId: string): 
   const existing = await db
     .selectFrom('application')
     .where('job_id', '=', jobId)
-    .where('status', '=', 'applied_manual')
-    .where('channel', '=', 'external_link')
+    .where('status', '=', 'applied')
+    .where('channel', '=', 'manual')
     .selectAll()
     .executeTakeFirstOrThrow();
   return {

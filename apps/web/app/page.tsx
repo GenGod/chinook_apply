@@ -64,6 +64,9 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
         <a href="/metrics" style={{ display: 'inline-block', height: '56px', lineHeight: '56px', fontSize: '14px', color: 'var(--badge-source-text)', textDecoration: 'none' }}>
           Metrics
         </a>
+        <a href="/board" style={{ display: 'inline-block', height: '56px', lineHeight: '56px', fontSize: '14px', color: 'var(--badge-source-text)', textDecoration: 'none' }}>
+          Board
+        </a>
       </div>
 
       <form className={styles.bar} method="get" data-testid="filters">

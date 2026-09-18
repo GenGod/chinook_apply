@@ -1,0 +1,241 @@
+.page {
+  min-height: 100vh;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  padding: 24px 32px;
+  font-family: var(--font-sans);
+}
+
+.heading {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.title {
+  display: inline-block;
+  width: 150px;
+  height: 56px;
+  line-height: 56px;
+  margin: 0;
+  font-size: var(--text-h1);
+  font-family: var(--font-display);
+}
+
+.subtitle {
+  display: inline-block;
+  width: 260px;
+  height: 56px;
+  line-height: 56px;
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+.activeCount {
+  display: inline-block;
+  height: 56px;
+  line-height: 56px;
+  font-size: 30px;
+  font-family: var(--font-display);
+  color: var(--accent);
+}
+
+.nav {
+  display: flex;
+  gap: 16px;
+  height: 56px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.navLink {
+  color: var(--badge-source-text);
+  font-size: var(--text-body);
+  text-decoration: none;
+  line-height: 56px;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: 300px 180px 180px 140px 180px 140px;
+  gap: 12px;
+  margin-top: 20px;
+  align-items: start;
+}
+
+.column {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-inset);
+  padding: 10px;
+  min-height: 480px;
+}
+
+.columnHeader {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 8px;
+}
+
+.columnTitle {
+  font-size: var(--text-aux);
+  color: var(--text-secondary);
+}
+
+.columnCount {
+  font-size: var(--text-aux);
+  color: var(--text-muted);
+}
+
+.columnAuto {
+  opacity: 0.65; /* reserved channel: quieter until automation exists */
+}
+
+.card {
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--bg-raised);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.cardTitle {
+  display: block;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: var(--text-body);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardMeta {
+  font-size: var(--text-aux);
+  color: var(--text-muted);
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardBadges {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.badge {
+  display: inline-block;
+  height: 20px;
+  line-height: 20px;
+  padding: 0 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  border: 1px solid transparent;
+}
+
+.badgeSource {
+  background: var(--badge-source-bg);
+  color: var(--badge-source-text);
+}
+
+.badgeRule[data-rule='relevant'] {
+  background: var(--status-success-bg);
+  color: var(--status-success);
+  border-color: var(--status-success-border);
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.act {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.actPrimary {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.act:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.actPrimary:hover {
+  background: var(--accent-hover);
+  color: var(--accent-text);
+}
+
+.emptyColumn {
+  color: var(--text-muted);
+  font-size: var(--text-aux);
+  text-align: center;
+  padding: 16px 0;
+}
+
+.actionsWrap {
+  margin-top: 8px;
+}
+
+.actionsRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.act {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.actPrimary {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.act:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.actPrimary:hover {
+  background: var(--accent-hover);
+  color: var(--accent-text);
+}
+
+.act:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.moveError {
+  color: var(--status-danger);
+  font-size: 11px;
+  margin-top: 4px;
+}

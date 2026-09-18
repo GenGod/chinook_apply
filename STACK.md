@@ -82,6 +82,7 @@
 | Интерфейс | Plus Jakarta Sans variable 100–900 (self-hosted, OFL) |
 
 ## Changelog
+- 1.9 (2026-09-18) — S7 (PO-approved со спекой): без новых зависимостей (kanban CSS-grid с px-колонками); styled-jsx исключён (Turbopack); kysely-гейт добавлен в lint.
 - 1.8 (2026-09-18) — S17 (PO-approved): DS v1.1 «Group of Seven» — палитра Харриса, self-hosted шрифтовая пара, horizon-полоса; AA-подъёмы success/warning/neutral/accent-text.
 - 1.7 (2026-09-18) — S16 (PO-approved со спекой): Chinook DS v1 — токены на CSS-переменных, греп-гейт хардкода, контраст-гейт AA; ноль зависимостей.
 - 1.6 (2026-09-18) — S15 (PO-approved со спекой): docker-стек планировщика зафиксирован; tsx→dependencies; изоляция e2e/integration баз.

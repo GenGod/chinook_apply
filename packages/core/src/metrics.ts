@@ -52,7 +52,7 @@ export async function getMetrics(
   ).rows[0] as { total: number; relevant: number; review: number; excluded: number };
 
   const appliedManual = (
-    (await sql`select count(*)::int as c from application where status = 'applied_manual'`.execute(db))
+    (await sql`select count(*)::int as c from application where status = 'applied' and channel = 'manual'`.execute(db))
       .rows[0] as { c: number }
   ).c;
 

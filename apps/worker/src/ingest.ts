@@ -78,9 +78,9 @@ export async function runIngest(opts: { fixtures?: boolean; query?: string; clos
   await ensureSchema(db);
   if (fresh) {
     // deterministic e2e/integration seeding: local dev DBs accumulate live runs
-    await db.deleteFrom('application');
-    await db.deleteFrom('job');
-    await db.deleteFrom('ingest_run');
+    await db.deleteFrom('application').execute();
+    await db.deleteFrom('job').execute();
+    await db.deleteFrom('ingest_run').execute();
   }
 
   const feeds = (fixtures ? await loadFixtures() : await fetchLive(query)).filter((f: RawFeed) => !sources || sources.includes(f.source));
