@@ -17,6 +17,7 @@ interface SearchParams {
   days?: string;
   salaryMin?: string;
   sort?: string;
+  rule?: string;
 }
 
 const SOURCE_OPTIONS: Array<{ value: string; label: string }> = [
@@ -32,6 +33,9 @@ function parseFilters(sp: SearchParams): JobFilters {
   const salary = Number(sp.salaryMin);
   if (Number.isFinite(salary) && salary > 0) filters.salaryMin = salary;
   if (sp.sort === 'salary') filters.sort = 'salary';
+  if (sp.rule === 'relevant' || sp.rule === 'review' || sp.rule === 'excluded') {
+    filters.rule = sp.rule;
+  }
   return filters;
 }
 
@@ -92,6 +96,15 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
             <option value="salary">Salary</option>
           </select>
         </div>
+        <div className={styles.field}>
+          <label htmlFor="rule">Rule</label>
+          <select id="rule" name="rule" defaultValue={sp.rule ?? ''}>
+            <option value="">All</option>
+            <option value="relevant">Relevant</option>
+            <option value="review">Review</option>
+            <option value="excluded">Excluded</option>
+          </select>
+        </div>
         <button className={styles.submit} type="submit">
           Apply filters
         </button>
@@ -107,13 +120,14 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
         <div className={styles.tableWrap}>
           <table className={styles.table} data-testid="jobs-table">
             <colgroup>
-              <col style={{ width: 320 }} />
+              <col style={{ width: 300 }} />
               <col style={{ width: 190 }} />
               <col style={{ width: 150 }} />
               <col style={{ width: 90 }} />
+              <col style={{ width: 90 }} />
               <col style={{ width: 130 }} />
               <col style={{ width: 100 }} />
-              <col style={{ width: 140 }} />
+              <col style={{ width: 130 }} />
             </colgroup>
             <thead>
               <tr>
@@ -121,6 +135,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
                 <th>Employer</th>
                 <th>Location</th>
                 <th>Source</th>
+                <th>Rule</th>
                 <th>Salary</th>
                 <th>Posted</th>
                 <th>Actions</th>
@@ -140,6 +155,15 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
                   </td>
                   <td>
                     <span className={styles.source}>{job.source}</span>
+                  </td>
+                  <td>
+                    {job.ruleStatus ? (
+                      <span className={styles.ruleBadge} data-rule={job.ruleStatus}>
+                        {job.ruleStatus}
+                      </span>
+                    ) : (
+                      <span className={styles.muted}>—</span>
+                    )}
                   </td>
                   <td>{salaryLabel(job)}</td>
                   <td className={styles.muted}>{postedLabel(job)}</td>

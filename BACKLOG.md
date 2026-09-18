@@ -122,7 +122,7 @@ Dockerfile (node:26-alpine + pnpm + tsx) и compose-сервис scheduler, чт
 
 ## B-004 · Rule-статусы в Jobs Explorer (бейджи + UI-фильтр)
 
-- **Статус:** accepted → запланировано как **S14** (не-AI трек)
+- **Статус:** done (S14 merged, G6 2026-09-18)
 - **Приоритет:** now
 - **Автор:** PO (2026-09-18 «делаем 004»)
 

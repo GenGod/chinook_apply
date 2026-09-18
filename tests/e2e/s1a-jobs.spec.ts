@@ -70,11 +70,10 @@ test('jobs screen visual snapshot (masked layout gate)', async ({ page }) => {
   // elements are masked to stay deterministic across OS font rasterization.
   await expect(page).toHaveScreenshot('s1a-jobs.png', {
     mask: [
-      page.locator('label'),
-      page.locator('#source'),
-      page.locator('#days'),
-      page.locator('#salaryMin'),
-      page.locator('#sort'),
+      // whole field boxes (div) and labels: native select glyph AA can bleed
+      // past the control box on some platforms — the fixed field box absorbs it
+      page.getByTestId('filters').locator('div'),
+      page.getByTestId('filters').locator('label'),
       page.getByRole('button', { name: 'Apply filters' }),
       page.getByTestId('jobs-table').locator('tbody'),
       page.getByTestId('jobs-table').locator('thead'),
@@ -90,4 +89,39 @@ test('rule filter narrows the list (S2 AC4)', async ({ request }) => {
   expect(relevant.jobs.every((j: { ruleStatus: string }) => j.ruleStatus === 'relevant')).toBe(true);
   expect(relevant.jobs.length).toBeLessThanOrEqual(all.jobs.length);
   expect(relevant.jobs.length).toBeGreaterThan(0);
+});
+
+test('rule badges present and valid (S14 AC1)', async ({ page }) => {
+  await page.goto('/');
+  const badges = page.locator('[data-rule]');
+  await expect(badges.first()).toBeVisible();
+  const statuses = await badges.evaluateAll((els) => els.map((e) => e.getAttribute('data-rule')));
+  expect(statuses.length).toBeGreaterThan(10);
+  expect(statuses.every((s) => s === 'relevant' || s === 'review' || s === 'excluded')).toBe(true);
+});
+
+test('rule filter narrows and colors consistently (S14 AC2)', async ({ page }) => {
+  await page.goto('/');
+  const all = await page.getByTestId('jobs-table').locator('tbody tr').count();
+  await page.locator('#rule').selectOption('review');
+  await page.getByRole('button', { name: 'Apply filters' }).click();
+  await page.waitForURL(/rule=review/);
+  const filtered = await page.getByTestId('jobs-table').locator('tbody tr').count();
+  expect(filtered).toBeGreaterThan(0);
+  expect(filtered).toBeLessThan(all);
+  const badges = await page.locator('[data-rule]').evaluateAll((els) =>
+    els.map((e) => e.getAttribute('data-rule')),
+  );
+  expect(badges.every((s) => s === 'review')).toBe(true);
+});
+
+test('combined source+rule filter works (S14 AC3)', async ({ page }) => {
+  await page.goto('/?source=adzuna&rule=relevant');
+  const sources = await page.getByTestId('jobs-table').locator('tbody .source').allTextContents();
+  expect(sources.every((s) => s === 'adzuna')).toBe(true);
+  const badges = await page.locator('[data-rule]').evaluateAll((els) =>
+    els.map((e) => e.getAttribute('data-rule')),
+  );
+  expect(badges.length).toBeGreaterThan(0);
+  expect(badges.every((s) => s === 'relevant')).toBe(true);
 });
