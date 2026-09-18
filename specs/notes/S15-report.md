@@ -11,7 +11,7 @@
 | 2 | Контейнерный тик пишет в общую БД: лог `[03:21] run: jobbank → ok: fetched=9 unique=6 buckets={excluded:6}`; хостовой `schedule:status` видит те же last-run | ✅ |
 | 3 | `docker compose stop` → лог `signal SIGTERM: finishing…`, **ExitCode=0** (после фикса сигнальной цепочки — см. bugfix), `start` снова Up | ✅ |
 | 4 | Аудит образа: `env \| grep -cE 'ADZUNA\|DATABASE_URL'` → **0**; `/app/data` — отсутствует; `/app/.env` — отсутствует | ✅ |
-| 5 | CI: docker build гейт добавлен (первый прогон — этот пуш) | ✅ (в этом CI) |
+| 5 | CI: docker build гейт — первый прогон зелёный (run 3b9975c) | ✅ |
 | 6 | Все гейты зелёные (typecheck/test/pipeline; integration 19/19; e2e 15/15); arch-lint чист | ✅ |
 
 ## Живые артефакты
@@ -30,7 +30,9 @@
 | **Живой контейнерный планировщик гонял локальные e2e** (тик вставлял jobbank-строки между seed и ассертами → bar-widths тест падал) | e2e изолирован в `chinook_e2e` (seed-скрипт + playwright webServer env), integration — в `chinook_test` (vitest setupFiles); прод-БД `chinook` теперь доступна только рантайму |
 | seed-скрипт в scripts/ не резолвил deps (pg, ts-импорт) | перенесён в apps/worker (tsx + pg рядом), скрипты перекошены на worker |
 
-bugfixes: 4, защит: 4 — совпадают.
+| e2e-URL жёстко на 5433 → ECONNREFUSED в CI (service на 5432) | URL chinook_e2e/производные вычисляются из DATABASE_URL окружения (CI/локальность агностик) |
+
+bugfixes: 5, защит: 5 — совпадают. Урок процесса: правки кода через node -e со строками-регексами дважды портят эскейпы — только Edit-инструментом.
 
 ## Security-аудит (G5)
 
