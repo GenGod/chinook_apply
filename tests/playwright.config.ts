@@ -28,7 +28,7 @@ export default defineConfig({
       // isolated e2e DB — the live scheduler keeps ingesting into chinook
       DATABASE_URL:
         process.env.E2E_DATABASE_URL ??
-        (process.env.DATABASE_URL ?? 'postgres://chinook:chinook_dev@localhost:5433/chinook').replace(//[^/]+$/, '/chinook_e2e'),
+        (process.env.DATABASE_URL ?? 'postgres://chinook:chinook_dev@localhost:5433/chinook').replace(/\/[^/]+$/, '/chinook_e2e'),
     },
     url: 'http://localhost:3999',
     timeout: 180_000,
