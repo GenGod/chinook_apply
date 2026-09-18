@@ -184,7 +184,7 @@ Dev-процесс (спеки, планы, ревью — архитектор 
 | S4 Match scoring | JSON-вывод, пороги | golden-set из 30 вакансий с разметкой score (твоей) — точность меряем |
 | S5 Resume tailoring | промпт + fact-check валидаторы | unit-тесты валидаторов + golden master resume |
 | S6 Rendering | JSON→DOCX/PDF | snapshot-тесты артефактов |
-| S7 Dashboard UI | Inbox, детали, approve-флоу | Playwright E2E + визуальные снапшоты |
+| S7 Applications Dashboard (переопределён 2026-09-18, без-AI + B-003) | канбан-доска откликов: New/Applying/Applied/Interview/Rejected, /job/[id] детали, superdesign-дизайн | unit переходы; integration board/миграция; e2e перемещения+visual |
 | S8 Email dispatch | SMTP + вложения + лимиты | интеграционный тест на тестовый ящик |
 | S9 Form dispatch (Playwright) | заполнение форм | тест против локальной mock-формы |
 | S10 Metrics | все виды из раздела 5 | дашборд показывает реальные числа на staging-данных |
