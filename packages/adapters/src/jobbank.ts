@@ -1,5 +1,6 @@
 import { XMLParser } from 'fast-xml-parser';
 import type { RawJob } from '@chinook/contracts';
+import { assertSafeExternalUrl, EGRESS_JOBBANK_HOSTS } from './egress';
 
 export const JOBBANK_FEED_URL = 'https://www.jobbank.gc.ca/jobsearch/feed/jobSearchRSSfeed';
 
@@ -10,7 +11,10 @@ export const jobbankAdapter = {
   id: 'jobbank' as const,
 
   feedUrl(query: string): string {
-    return `${JOBBANK_FEED_URL}?searchstring=${encodeURIComponent(query)}`;
+    return assertSafeExternalUrl(
+      `${JOBBANK_FEED_URL}?searchstring=${encodeURIComponent(query)}`,
+      EGRESS_JOBBANK_HOSTS,
+    ).toString();
   },
 
   async fetch(query = 'software developer'): Promise<string> {

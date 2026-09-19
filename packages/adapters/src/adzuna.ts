@@ -1,4 +1,5 @@
 import type { RawJob } from '@chinook/contracts';
+import { assertSafeExternalUrl, EGRESS_ADZUNA_HOSTS } from './egress';
 
 export const ADZUNA_BASE = 'https://api.adzuna.com/v1/api/jobs/ca/search';
 
@@ -20,7 +21,7 @@ export const adzunaAdapter = {
     url.searchParams.set('where', params.where ?? 'Alberta');
     url.searchParams.set('results_per_page', String(params.resultsPerPage ?? 50));
     url.searchParams.set('content-type', 'application/json');
-    return url.toString();
+    return assertSafeExternalUrl(url.toString(), EGRESS_ADZUNA_HOSTS).toString();
   },
 
   async fetch(credentials: { appId: string; appKey: string }, what = 'software developer'): Promise<unknown> {
