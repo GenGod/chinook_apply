@@ -2,6 +2,7 @@ import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
 import type { Database } from './db.js';
 import type { ApplicationRow } from './repository.js';
+import type { ProvinceCode } from './normalize.js';
 
 /** Board columns in canonical order (DB stores applied + channel, board splits it). */
 export const BOARD_STATUSES = [
@@ -92,26 +93,80 @@ function toCard(r: Row): BoardCard {
   };
 }
 
-/** Six-column board: New = relevant jobs without an application row (capped). */
-export async function getBoard(db: Kysely<Database>): Promise<BoardData> {
-  const newRows = (
-    await sql<Row>`select j.id, j.title, j.employer, j.city, j.province, j.remote, j.url,
-        j.source, j.rule_status, j.salary_min, j.salary_max, j.posted_at,
-        count(*) over ()::int as total
-      from job j
-      where j.rule_status = 'relevant'
-        and not exists (select 1 from application a where a.job_id = j.id)
-      order by j.posted_at desc nulls last
-      limit ${NEW_COLUMN_LIMIT}`.execute(db)
-  ).rows as Array<Row & { total: number }>;
+export interface BoardFilters {
+  province?: ProvinceCode;
+  remoteOnly?: boolean;
+}
 
-  const appRows = (
-    await sql<Row & { status: string; channel: string }>`select j.id, j.title, j.employer,
-        j.city, j.province, j.remote, j.url, j.source, j.rule_status,
-        j.salary_min, j.salary_max, j.posted_at, a.status, a.channel
-      from application a join job j on j.id = a.job_id
-      order by a.created_at desc`.execute(db)
-  ).rows;
+/** Six-column board: New = relevant jobs without an application row (capped). */
+export async function getBoard(db: Kysely<Database>, filters: BoardFilters = {}): Promise<BoardData> {
+  const { province, remoteOnly } = filters;
+
+  let newQuery = db
+    .selectFrom('job')
+    .where('job.rule_status', '=', 'relevant')
+    .where((eb) =>
+      eb.not(
+        eb.exists(
+          eb
+            .selectFrom('application')
+            .select('application.job_id')
+            .whereRef('application.job_id', '=', 'job.id'),
+        ),
+      ),
+    )
+    .select([
+      'job.id as id',
+      'job.title as title',
+      'job.employer as employer',
+      'job.city as city',
+      'job.province as province',
+      'job.remote as remote',
+      'job.url as url',
+      'job.source as source',
+      'job.rule_status as rule_status',
+      'job.salary_min as salary_min',
+      'job.salary_max as salary_max',
+      'job.posted_at as posted_at',
+      sql<number>`count(*) over ()::int`.as('total'),
+    ]);
+  if (province) {
+    newQuery = newQuery.where('job.province', '=', province);
+  }
+  if (remoteOnly) {
+    newQuery = newQuery.where('job.remote', '=', true);
+  }
+  const newRows = (await newQuery
+    .orderBy(sql`job.posted_at desc nulls last`)
+    .limit(NEW_COLUMN_LIMIT)
+    .execute()) as Array<Row & { total: number }>;
+
+  let appQuery = db
+    .selectFrom('application')
+    .innerJoin('job', (join) => join.onRef('job.id', '=', 'application.job_id'))
+    .select([
+      'job.id as id',
+      'job.title as title',
+      'job.employer as employer',
+      'job.city as city',
+      'job.province as province',
+      'job.remote as remote',
+      'job.url as url',
+      'job.source as source',
+      'job.rule_status as rule_status',
+      'job.salary_min as salary_min',
+      'job.salary_max as salary_max',
+      'job.posted_at as posted_at',
+      'application.status as status',
+      'application.channel as channel',
+    ]);
+  if (province) {
+    appQuery = appQuery.where('job.province', '=', province);
+  }
+  if (remoteOnly) {
+    appQuery = appQuery.where('job.remote', '=', true);
+  }
+  const appRows = await appQuery.orderBy('application.created_at', 'desc').execute();
 
   const byColumn: Record<BoardStatus, BoardCard[]> = {
     new: newRows.map(toCard),

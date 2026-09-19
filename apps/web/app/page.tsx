@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { listJobs, type JobFilters, type JobListItem } from '@chinook/core';
 import type { JobSourceId } from '@chinook/contracts';
 import { getDb } from '@/lib/db';
+import { PROVINCE_SELECT_OPTIONS, parseProvinceParam } from '@/lib/province';
 import { AppliedToggle } from './applied-toggle';
 import styles from './jobs.module.css';
 
@@ -18,6 +19,7 @@ interface SearchParams {
   salaryMin?: string;
   sort?: string;
   rule?: string;
+  province?: string;
 }
 
 const SOURCE_OPTIONS: Array<{ value: string; label: string }> = [
@@ -36,6 +38,7 @@ function parseFilters(sp: SearchParams): JobFilters {
   if (sp.rule === 'relevant' || sp.rule === 'review' || sp.rule === 'excluded') {
     filters.rule = sp.rule;
   }
+  Object.assign(filters, parseProvinceParam(sp.province));
   return filters;
 }
 
@@ -74,6 +77,16 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
           <label htmlFor="source">Source</label>
           <select id="source" name="source" defaultValue={sp.source ?? ''}>
             {SOURCE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className={styles.field}>
+          <label htmlFor="province">Province</label>
+          <select id="province" name="province" defaultValue={sp.province ?? ''}>
+            {PROVINCE_SELECT_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>

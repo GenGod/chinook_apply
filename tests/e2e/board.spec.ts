@@ -11,6 +11,9 @@ test('board visual snapshot (masked cards, columns visible; S7 AC6)', async ({ p
       page.locator('.horizon'), // gradient interpolation differs across GPU/platform
       page.locator('[data-card-id]'),
       page.locator('div[class*="emptyColumn"]'),
+      page.getByTestId('board-filters').locator('div'), // S19 filter bar fields (select glyph AA)
+      page.getByTestId('board-filters').locator('label'),
+      page.getByTestId('board-filters').locator('button'),
     ],
     maskColor: '#1a2f4a',
   });
@@ -18,6 +21,30 @@ test('board visual snapshot (masked cards, columns visible; S7 AC6)', async ({ p
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/board');
+});
+
+test('board province filter narrows New column; status flow unaffected (S19 AC4)', async ({ page }) => {
+  await page.locator('#province').selectOption('ON');
+  await page.getByRole('button', { name: 'Apply filters' }).click();
+  await page.waitForURL(/province=ON/);
+  const cards = page.locator('[data-column="new"] [data-card-id]');
+  await expect(cards.first()).toBeVisible();
+  expect(await cards.count()).toBe(1); // only the S19 synthetic ON job (fixtures are AB-only relevant)
+  expect(await cards.first().textContent()).toContain('S19 e2e Ontario developer');
+
+  // the filtered view still supports the status flow (filter hides, does not break DnD/buttons)
+  await cards.first().getByRole('button', { name: 'Start applying' }).click();
+  await expect(page.locator('[data-column="applying"] [data-card-id]')).toBeVisible();
+  // cleanup — back to new so later tests stay deterministic
+  await page.locator('[data-column="applying"] [data-card-id]').first().getByRole('button', { name: 'Back' }).click();
+  await expect(page.locator('[data-column="new"] [data-card-id]')).toBeVisible();
+});
+
+test('board REMOTE filter shows only the remote card (S19 AC2/AC4)', async ({ page }) => {
+  await page.goto('/board?province=REMOTE');
+  const cards = page.locator('[data-column="new"] [data-card-id]');
+  expect(await cards.count()).toBe(1);
+  expect(await cards.first().textContent()).toContain('S19 e2e remote developer');
 });
 
 test('board renders six columns with New filled (S7 AC3)', async ({ page }) => {

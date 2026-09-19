@@ -12,6 +12,12 @@ export const PROVINCES: Record<string, string> = {
   'northwest territories': 'NT', nunavut: 'NU', yukon: 'YT',
 };
 
+/** S19: the province universe for filters/whitelists; sync-tested against PROVINCES. */
+export const PROVINCE_CODES = [
+  'AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT',
+] as const;
+export type ProvinceCode = (typeof PROVINCE_CODES)[number];
+
 /** Lowercase, diacritics-folded, punctuation-free, single-spaced. */
 export function normalizeTitle(input: string): string {
   return input

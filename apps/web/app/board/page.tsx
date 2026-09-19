@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getBoard, type BoardColumn } from '@chinook/core';
 import { getDb } from '@/lib/db';
+import { PROVINCE_SELECT_OPTIONS, parseProvinceParam } from '@/lib/province';
 import { StatusControls } from './status-controls';
 import { BoardDnd, DraggableCard } from './board-dnd';
 import styles from './board.module.css';
@@ -28,8 +29,13 @@ function salaryLabel(min: number | null, max: number | null): string {
   return `${fmt((min ?? max)!)}${(min ?? max)! % 1000 === 0 ? '' : ''}/yr`;
 }
 
-export default async function BoardPage() {
-  const board = await getBoard(getDb());
+export default async function BoardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ province?: string }>;
+}) {
+  const sp = await searchParams;
+  const board = await getBoard(getDb(), parseProvinceParam(sp.province));
   const active =
     board.columns.find((c) => c.status === 'applying')!.total +
     board.columns.find((c) => c.status === 'applied_manual')!.total +
@@ -50,6 +56,22 @@ export default async function BoardPage() {
         </nav>
       </div>
       <div className="horizon" style={{ marginTop: 4, marginBottom: 4 }} />
+
+      <form className={styles.bar} method="get" action="/board" data-testid="board-filters">
+        <div className={styles.field}>
+          <label htmlFor="province">Province</label>
+          <select id="province" name="province" defaultValue={sp.province ?? ''}>
+            {PROVINCE_SELECT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button className={styles.submit} type="submit">
+          Apply filters
+        </button>
+      </form>
 
       <BoardDnd>
         {board.columns.map((col: BoardColumn) => (

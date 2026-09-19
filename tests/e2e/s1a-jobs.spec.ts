@@ -125,3 +125,61 @@ test('combined source+rule filter works (S14 AC3)', async ({ page }) => {
   expect(badges.length).toBeGreaterThan(0);
   expect(badges.every((s) => s === 'relevant')).toBe(true);
 });
+
+test('API province filter narrows strictly; invalid is ignored (S19 AC5)', async ({ request }) => {
+  const on = await (await request.get('/api/jobs?province=ON&limit=100')).json();
+  expect(on.jobs.length).toBeGreaterThan(0);
+  expect(on.jobs.every((j: { location: { province: string } }) => j.location.province === 'ON')).toBe(true);
+  // strict: remote jobs (province '') are not in the ON slice
+  expect(on.jobs.some((j: { location: { remote: boolean } }) => j.location.remote)).toBe(false);
+
+  const remote = await (await request.get('/api/jobs?province=REMOTE&limit=100')).json();
+  expect(remote.jobs.length).toBeGreaterThan(0);
+  expect(remote.jobs.every((j: { location: { remote: boolean } }) => j.location.remote)).toBe(true);
+
+  const bogus = await (await request.get('/api/jobs?province=XX&limit=100')).json();
+  const all = await (await request.get('/api/jobs?limit=100')).json();
+  expect(bogus.jobs.length).toBe(all.jobs.length); // invalid → ignored, no 4xx
+});
+
+test('API board filter narrows to province across columns (S19 AC4/AC5)', async ({ request }) => {
+  const on = await (await request.get('/api/board?province=ON')).json();
+  // earlier board.spec tests may move the synthetic card between columns —
+  // the filter must hold in EVERY column (it applies to both board queries)
+  const cards = on.columns.flatMap((c: { cards: Array<{ location: string }> }) => c.cards);
+  expect(cards.length).toBeGreaterThan(0);
+  expect(cards.every((c: { location: string }) => c.location.endsWith(', ON'))).toBe(true);
+});
+
+test('filter by province narrows the list to that province (S19 AC1)', async ({ page }) => {
+  await page.goto('/');
+  const all = await page.getByTestId('jobs-table').locator('tbody tr').count();
+  await page.locator('#province').selectOption('ON');
+  await page.getByRole('button', { name: 'Apply filters' }).click();
+  await page.waitForURL(/province=ON/);
+  const rows = page.getByTestId('jobs-table').locator('tbody tr');
+  const filtered = await rows.count();
+  expect(filtered).toBeGreaterThan(0);
+  expect(filtered).toBeLessThan(all);
+  // Location is column 3; strict filter → every cell is "city, ON" (no Remote cells)
+  const cells = await rows.locator('td:nth-child(3)').allTextContents();
+  expect(cells.every((c) => c.includes('ON'))).toBe(true);
+  expect(cells.some((c) => c === 'Remote')).toBe(false);
+});
+
+test('REMOTE option shows only remote jobs (S19 AC2)', async ({ page }) => {
+  await page.goto('/?province=REMOTE');
+  const cells = await page.getByTestId('jobs-table').locator('tbody tr td:nth-child(3)').allTextContents();
+  expect(cells.length).toBeGreaterThan(0);
+  expect(cells.every((c) => c === 'Remote')).toBe(true);
+});
+
+test('combined province+source+rule filter works (S19 AC3)', async ({ page }) => {
+  await page.goto('/?province=ON&source=jobbank&rule=relevant');
+  const rows = page.getByTestId('jobs-table').locator('tbody tr');
+  expect(await rows.count()).toBeGreaterThan(0);
+  const cells = await rows.locator('td:nth-child(3)').allTextContents();
+  expect(cells.every((c) => c.includes('ON'))).toBe(true);
+  const sources = await page.getByTestId('jobs-table').locator('tbody .source').allTextContents();
+  expect(sources.every((s) => s === 'jobbank')).toBe(true);
+});

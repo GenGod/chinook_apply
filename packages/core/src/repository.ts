@@ -3,6 +3,7 @@ import type { Kysely } from 'kysely';
 import type { Database } from './db';
 import type { Job, JobSourceId } from '@chinook/contracts';
 import type { RuleStatus } from './rules';
+import type { ProvinceCode } from './normalize';
 
 export interface JobFilters {
   source?: JobSourceId;
@@ -10,6 +11,8 @@ export interface JobFilters {
   salaryMin?: number;
   sort?: 'posted' | 'salary';
   rule?: RuleStatus;
+  province?: ProvinceCode;
+  remoteOnly?: boolean;
   limit?: number;
 }
 
@@ -75,7 +78,7 @@ function toJob(row: ListRow): JobListItem {
 
 /** Filtered, sorted job list with the manual-application flag (LEFT JOIN application). */
 export async function listJobs(db: Kysely<Database>, filters: JobFilters): Promise<JobListItem[]> {
-  const { source, days, salaryMin, sort = 'posted', rule, limit = 50 } = filters;
+  const { source, days, salaryMin, sort = 'posted', rule, province, remoteOnly, limit = 50 } = filters;
 
   let query = db
     .selectFrom('job')
@@ -113,6 +116,12 @@ export async function listJobs(db: Kysely<Database>, filters: JobFilters): Promi
   }
   if (rule) {
     query = query.where('job.rule_status', '=', rule);
+  }
+  if (province) {
+    query = query.where('job.province', '=', province);
+  }
+  if (remoteOnly) {
+    query = query.where('job.remote', '=', true);
   }
   if (days !== undefined) {
     query = query.where('job.posted_at', '>=', new Date(Date.now() - days * 24 * 3600 * 1000));

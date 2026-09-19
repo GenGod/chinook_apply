@@ -2,7 +2,10 @@ export {
   normalizeTitle,
   normalizeEmployer,
   parseLocation,
+  PROVINCES,
+  PROVINCE_CODES,
   type ParsedLocation,
+  type ProvinceCode,
 } from './normalize';
 export { createHash, normalizeJob, type HashComponents } from './canonical';
 export { dedupe, diceSimilarity, FUZZY_THRESHOLD, type DedupeResult, type FuzzyPair } from './dedupe';
@@ -40,7 +43,7 @@ export { loadProfileSearch, DEFAULT_PROFILE_SEARCH } from './profile';
 export {
   BOARD_STATUSES, TRANSITIONS, canTransition, requiredChannel,
   getBoard, setApplicationStatus, TransitionError,
-  type BoardStatus, type StoredStatus, type BoardCard, type BoardColumn, type BoardData,
+  type BoardStatus, type StoredStatus, type BoardCard, type BoardColumn, type BoardData, type BoardFilters,
 } from './board';
 export { planSources, nextDue, type SourceSchedule } from './schedule';
 export { getMetrics, DEFAULT_INTERVALS, type MetricsSummary, type SourceHealth, type HistoryRow } from './metrics';
