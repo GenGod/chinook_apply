@@ -163,7 +163,7 @@ test('filter by province narrows the list to that province (S19 AC1)', async ({ 
   expect(filtered).toBeLessThan(all);
   // Location is column 3; strict filter → every cell is "city, ON" (no Remote cells)
   const cells = await rows.locator('td:nth-child(3)').allTextContents();
-  expect(cells.every((c) => c.includes('ON'))).toBe(true);
+  expect(cells.every((c) => c.endsWith(', ON'))).toBe(true);
   expect(cells.some((c) => c === 'Remote')).toBe(false);
 });
 

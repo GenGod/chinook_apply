@@ -15,8 +15,8 @@ export function assertSafeExternalUrl(raw: string, allowedHosts: readonly string
   if (url.protocol !== 'https:') {
     throw new Error(`egress blocked: non-https protocol ${url.protocol}`);
   }
-  if (!allowedHosts.includes(url.hostname)) {
-    throw new Error(`egress blocked: host ${url.hostname} not in egress allowlist`);
+  if (!allowedHosts.includes(url.host)) {
+    throw new Error(`egress blocked: host ${url.host} not in egress allowlist`);
   }
   return url;
 }

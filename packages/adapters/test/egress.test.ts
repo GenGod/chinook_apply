@@ -23,6 +23,12 @@ describe('assertSafeExternalUrl (egress guard)', () => {
     );
   });
 
+  it('rejects a non-default port even on an allowlisted host', () => {
+    expect(() =>
+      assertSafeExternalUrl('https://www.jobbank.gc.ca:8443/feed', ['www.jobbank.gc.ca']),
+    ).toThrow(/egress blocked/);
+  });
+
   it('rejects strings that are not URLs at all', () => {
     expect(() => assertSafeExternalUrl('not a url', ['www.jobbank.gc.ca'])).toThrow(
       /egress blocked/,
