@@ -13,7 +13,8 @@
     "schedule": "tsx src/scheduler.ts",
     "schedule:status": "tsx src/scheduler.ts --status",
     "schedule:once": "tsx src/scheduler.ts --once",
-    "seed:e2e": "tsx src/seed-e2e.ts"
+    "seed:e2e": "tsx src/seed-e2e.ts",
+    "dev": "next dev"
   },
   "dependencies": {
     "@chinook/adapters": "workspace:*",
