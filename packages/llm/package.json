@@ -7,5 +7,12 @@
   "types": "src/index.ts",
   "scripts": {
     "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "vitest": "^5.0.0"
+  },
+  "dependencies": {
+    "@chinook/core": "workspace:*",
+    "zod": "^4.6.5"
   }
 }
