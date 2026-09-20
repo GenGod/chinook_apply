@@ -13,6 +13,7 @@ export {
   createDb,
   createDbFromEnv,
   resolveDatabaseUrl,
+  assertSafeDatabaseUrl,
   DEV_DATABASE_URL,
   ensureSchema,
   upsertJobs,
@@ -24,6 +25,7 @@ export {
   type ApplicationTable,
   type Kysely,
 } from './db';
+export { seedE2eExtras } from './seed';
 export {
   listJobs,
   markAppliedManually,
