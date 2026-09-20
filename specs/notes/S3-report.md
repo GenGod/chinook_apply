@@ -65,18 +65,23 @@ bugfixes: 3, защит: 3 — совпадают.
 3. Цены-дефолты (env LLM_PRICE_*): main 1.0/1.5, flash 0.2/0.3 $/1M —
    пометка «сверить» (влияет только на отчётность).
 
-## Живой smoke: заблокирован балансом
+## Живой smoke: ✅ закрыт после пополнения баланса (2026-09-21)
 
-Ключ валиден (GET /models → 200, список моделей получен), но POST chat/completions
-на ВСЕ модели (проверено 7) → 429 `{"code":"1111","message":"Insufficient balance
-or no resource package. Please recharge."}`. **PO: пополни счёт Z.ai** — после
-этого `pnpm --filter @chinook/llm run ping` прогоню и закрою AC5 (ожидание:
-live call → токены/стоимость/латентность; cached repeat → cost=0, cache-hit-rate=1.0).
+PO пополнил счёт Z.ai. Прямой probe → HTTP 200. Живой ping через шлюз:
+
+```
+live:   {"data":{"pong":true},"cached":false,"runId":5,"usage":{"promptTokens":32,"completionTokens":58,"costUsd":0.000024,"latencyMs":4805}}
+cached: {"data":{"pong":true},"cached":true,"runId":6,"usage":{"promptTokens":0,"completionTokens":0,"costUsd":0,"latencyMs":0}}
+cache-hit-rate after repeat ping: 1.0
+```
+
+llm_run (из PG): id=5 (live: 32/58 tok, $0.000024, 4797ms, cache_hit=f, ok=t);
+id=6 (cached: все нули, cache_hit=t, ok=t). Два прежних провала (id=3,4: ok=f,
+период нулевого баланса) — ровно та история, которую таблица и обязана хранить.
 
 ## Вердикт
 
 Шлюз готов: все пути (успех/ретрай/breaker/degrade/cache) доказаны контрактными
 тестами; персистентность — против реального PG; arch-границы обновлены с
-тест-матрицей. Единственный незакрытый AC — живой вызов, заблокирован внешним
-фактором (баланс). Готов к **G6 (approve PO)** с пометкой AC5→popolnit; после
-merge — S4 (LLM-скоринг вакансий) первым потребителем шлюза.
+тест-матрицей; живый smoke закрыт (AC5 ✅). **Все 7 AC выполнены.**
+Готов к **G6 (approve PO)**; после merge — S4 (LLM-скоринг вакансий) первым потребителем шлюза.
