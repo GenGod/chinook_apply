@@ -1,6 +1,6 @@
 # S18: Drag & Drop для доски откликов
 
-Статус: **draft** (ждёт G1 approve PO) · Версия: 1.0 · Milestone: **M3.5**
+Статус: done (CI success, ожидает G6) · Версия: 1.0 · Milestone: **M3.5**
 Источник: BACKLOG **B-006** (из S7 R3) · зависит от S7 (done).
 
 ## Проблема и цель

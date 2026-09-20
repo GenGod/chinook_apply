@@ -21,20 +21,32 @@ services:
       context: .
       dockerfile: apps/worker/Dockerfile
     container_name: chinook-scheduler
-    init: true # tini PID1: SIGTERM reaches the node process
+    init: true
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      # service-name network, NOT localhost
       DATABASE_URL: postgres://chinook:chinook_dev@postgres:5432/chinook
-      # secrets come from the host .env at compose time; never baked into the image
       ADZUNA_APP_ID: ${ADZUNA_APP_ID:-}
       ADZUNA_APP_KEY: ${ADZUNA_APP_KEY:-}
-      # optional schedule overrides
       SCHED_JOBBANK_MIN: ${SCHED_JOBBANK_MIN:-30}
       SCHED_ADZUNA_MIN: ${SCHED_ADZUNA_MIN:-120}
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: chinook-web
+    init: true
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://chinook:chinook_dev@postgres:5432/chinook
 
 volumes:
   pgdata:

@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS job (
 );
 CREATE INDEX IF NOT EXISTS job_canonical_hash_idx ON job (canonical_hash);
 CREATE INDEX IF NOT EXISTS job_posted_at_idx ON job (posted_at DESC);
+CREATE INDEX IF NOT EXISTS job_province_idx ON job (province);
 CREATE TABLE IF NOT EXISTS ingest_run (
   id BIGSERIAL PRIMARY KEY,
   started_at TIMESTAMPTZ NOT NULL,

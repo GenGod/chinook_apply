@@ -81,3 +81,8 @@
   border-radius: 4px;
   background: linear-gradient(90deg, var(--accent-hover) 0%, var(--accent) 45%, var(--text-secondary) 100%);
 }
+
+/* DnD drop-target highlight (S18) */
+[data-column].dropTarget {
+  border-color: var(--accent);
+}

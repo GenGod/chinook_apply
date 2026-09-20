@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import process from 'node:process';
+import { Client } from 'pg';
 import { runIngest } from '@chinook/worker';
-import { createDb, ensureSchema, listJobs, markAppliedManually } from '@chinook/core';
+import { createDb, ensureSchema, listJobs, markAppliedManually, upsertJobs } from '@chinook/core';
+import type { Job } from '@chinook/contracts';
 
 /**
  * S1a AC1/AC2: repository filters/sorting against a real Postgres seeded
@@ -86,5 +88,104 @@ describe('job repository (S1a)', () => {
     const limited = await listJobs(db, { limit: 5 });
     expect(limited).toHaveLength(5);
     await db.destroy();
+  });
+});
+
+// S19 synthetic rows: fixtures are Alberta-only and have no remote jobs.
+const SYNTHETIC_ON: Job = {
+  id: '11111111-1111-4111-8111-111111111111',
+  canonicalHash: 's19-it-on-developer',
+  title: 'S19 it Ontario developer',
+  employer: 'Chinook Fixtures Inc.',
+  location: { city: 'toronto', province: 'ON', remote: false },
+  url: 'https://www.jobbank.gc.ca/jobsearch/jobposting/91000001',
+  urls: [],
+  source: 'jobbank',
+  sourceJobId: '91000001',
+  postedAt: '2026-09-18T12:00:00Z',
+  salaryMin: 90000,
+  salaryMax: null,
+  salaryCurrency: 'CAD',
+  nocCode: null,
+  raw: null,
+  ingestedAt: '2026-09-18T12:00:00Z',
+};
+const SYNTHETIC_REMOTE: Job = {
+  id: '22222222-2222-4222-8222-222222222222',
+  canonicalHash: 's19-it-remote-developer',
+  title: 'S19 it remote developer',
+  employer: 'Chinook Fixtures Inc.',
+  location: { city: '', province: '', remote: true },
+  url: 'https://www.jobbank.gc.ca/jobsearch/jobposting/91000002',
+  urls: [],
+  source: 'jobbank',
+  sourceJobId: '91000002',
+  postedAt: '2026-09-18T12:00:00Z',
+  salaryMin: 100000,
+  salaryMax: null,
+  salaryCurrency: 'CAD',
+  nocCode: null,
+  raw: null,
+  ingestedAt: '2026-09-18T12:00:00Z',
+};
+
+async function seedS19Synthetics(): Promise<void> {
+  const db = createDb(databaseUrl);
+  await upsertJobs(db, [SYNTHETIC_ON, SYNTHETIC_REMOTE]);
+  await db
+    .updateTable('job')
+    .set({ rule_status: 'relevant' })
+    .where('canonical_hash', 'in', ['s19-it-on-developer', 's19-it-remote-developer'])
+    .execute();
+  await db.destroy();
+}
+
+describe('job repository province filters (S19)', () => {
+  beforeAll(async () => {
+    await seedS19Synthetics();
+  });
+
+  it('filters strictly by province code (AC1, R4)', async () => {
+    const db = createDb(databaseUrl);
+    const onJobs = await listJobs(db, { province: 'ON' });
+    expect(onJobs.length).toBeGreaterThan(0);
+    expect(onJobs.every((j) => j.location.province === 'ON')).toBe(true);
+    // strict semantics: the synthetic remote job (province '') must be hidden
+    expect(onJobs.some((j) => j.canonicalHash === 's19-it-remote-developer')).toBe(false);
+    await db.destroy();
+  });
+
+  it('remoteOnly returns only remote jobs (AC2)', async () => {
+    const db = createDb(databaseUrl);
+    const remote = await listJobs(db, { remoteOnly: true });
+    expect(remote.length).toBeGreaterThan(0);
+    expect(remote.every((j) => j.location.remote)).toBe(true);
+    expect(remote.some((j) => j.canonicalHash === 's19-it-remote-developer')).toBe(true);
+    await db.destroy();
+  });
+
+  it('combines province with source and rule (AC3)', async () => {
+    const db = createDb(databaseUrl);
+    const combined = await listJobs(db, { province: 'ON', source: 'jobbank', rule: 'relevant' });
+    expect(combined.length).toBeGreaterThan(0);
+    expect(
+      combined.every(
+        (j) => j.location.province === 'ON' && j.source === 'jobbank' && j.ruleStatus === 'relevant',
+      ),
+    ).toBe(true);
+    await db.destroy();
+  });
+
+  it('job_province_idx exists after ensureSchema (R6)', async () => {
+    const db = createDb(databaseUrl);
+    await ensureSchema(db);
+    await db.destroy();
+    const client = new Client({ connectionString: databaseUrl });
+    await client.connect();
+    const res = await client.query(
+      "select indexname from pg_indexes where tablename = 'job' and indexname = 'job_province_idx'",
+    );
+    await client.end();
+    expect(res.rowCount).toBe(1);
   });
 });

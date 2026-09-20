@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { listJobs } from '@chinook/core';
 import type { JobSourceId } from '@chinook/contracts';
 import { getDb } from '@/lib/db';
+import { parseProvinceParam } from '@/lib/province';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +26,8 @@ export async function GET(request: NextRequest) {
   const sortParam = params.get('sort');
   const sort = sortParam === 'salary' ? ('salary' as const) : ('posted' as const);
   const limit = num(params.get('limit')) ?? 50;
+  const { province, remoteOnly } = parseProvinceParam(params.get('province'));
 
-  const jobs = await listJobs(getDb(), { source, days, salaryMin, sort, rule, limit });
+  const jobs = await listJobs(getDb(), { source, days, salaryMin, sort, rule, province, remoteOnly, limit });
   return NextResponse.json({ jobs, total: jobs.length });
 }
