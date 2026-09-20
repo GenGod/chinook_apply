@@ -4,7 +4,7 @@
 // worker seed script; this module only seeds rows.
 import process from 'node:process';
 import type { Job } from '@chinook/contracts';
-import { createDb, ensureSchema, upsertJobs, DEV_DATABASE_URL } from './db.js';
+import { createDb, ensureSchema, upsertJobs, DEV_DATABASE_URL } from './db';
 
 function e2eUrl(): string {
   const base = process.env.DATABASE_URL ?? DEV_DATABASE_URL;
