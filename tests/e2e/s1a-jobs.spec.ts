@@ -7,11 +7,28 @@ test('jobs table renders fixture rows (S1a AC3)', async ({ page }) => {
   expect(await rows.count()).toBeGreaterThan(10);
 });
 
-test('title links open in a new tab with noopener (S1a AC3)', async ({ page }) => {
+test('title opens local preview; external arrow opens provider in a new tab (S20 AC1/AC2)', async ({ page }) => {
   await page.goto('/');
-  const link = page.getByTestId('jobs-table').locator('tbody tr a').first();
-  await expect(link).toHaveAttribute('target', '_blank');
-  await expect(link).toHaveAttribute('rel', /noopener/);
+  const title = page.getByTestId('jobs-table').locator('tbody tr td:first-child a').first();
+  expect(await title.getAttribute('target')).toBeNull(); // internal navigation, no _blank
+  await title.click();
+  await page.waitForURL(/\/job\/[0-9a-f-]{36}/);
+  await page.goBack();
+  const arrow = page.getByTestId('jobs-table').locator('tbody [data-testid="apply-external"]').first();
+  await expect(arrow).toHaveAttribute('target', '_blank');
+  await expect(arrow).toHaveAttribute('rel', /noopener/);
+  expect(await arrow.getAttribute('href')).toMatch(/^https?:\/\//);
+});
+
+test('job preview shows the full untruncated description with paragraphs (S20 AC3)', async ({ page }) => {
+  await page.goto('/?province=ON');
+  // fixture ON jobs are posted later and sort first — target the synthetic by name
+  await page.getByRole('link', { name: 'S19 e2e Ontario developer' }).click();
+  await page.waitForURL(/\/job\/[0-9a-f-]{36}/);
+  const description = page.locator('main article section p').last();
+  const text = (await description.textContent()) ?? '';
+  expect(text.length).toBeGreaterThan(1200); // no truncation (fixtures are ≤500)
+  expect(text).toContain('\n'); // paragraph breaks preserved
 });
 
 test('filter by source narrows the list (S1a AC1/AC4)', async ({ page }) => {

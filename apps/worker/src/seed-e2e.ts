@@ -39,8 +39,11 @@ const s19 = (n: number, hash: string, title: string, city: string, province: str
   raw: null,
   ingestedAt: '2026-09-01T12:00:00Z',
 });
+const longDescription = Array.from({ length: 6 }, (_, i) =>
+  `Paragraph ${i + 1} of the S20 e2e long description: duties include designing job-search dashboards, writing TypeScript &amp; SQL, and reviewing pull requests with care&nbsp;— repeated to exceed the old 1200-char truncation for deterministic preview tests.`,
+).join('<br><br>');
 await upsertJobs(db, [
-  s19(1, 's19-e2e-on-developer', 'S19 e2e Ontario developer', 'toronto', 'ON', false),
+  { ...s19(1, 's19-e2e-on-developer', 'S19 e2e Ontario developer', 'toronto', 'ON', false), raw: { description: longDescription } },
   s19(2, 's19-e2e-remote-developer', 'S19 e2e remote developer', '', '', true),
 ]);
 await db
