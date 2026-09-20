@@ -14,14 +14,17 @@ export const adzunaAdapter = {
     where?: string;
     resultsPerPage?: number;
   }): string {
-    const url = new URL(`${ADZUNA_BASE}/${params.page ?? 1}`);
-    url.searchParams.set('app_id', params.appId);
-    url.searchParams.set('app_key', params.appKey);
-    url.searchParams.set('what', params.what ?? 'software developer');
-    url.searchParams.set('where', params.where ?? 'Alberta');
-    url.searchParams.set('results_per_page', String(params.resultsPerPage ?? 50));
-    url.searchParams.set('content-type', 'application/json');
-    return assertSafeExternalUrl(url.toString(), EGRESS_ADZUNA_HOSTS).toString();
+    // jobbank-shaped construction (template + encodeURIComponent) so the
+    // egress-guarded string stays the only thing handed to fetch
+    const raw =
+      `${ADZUNA_BASE}/${params.page ?? 1}` +
+      `?app_id=${encodeURIComponent(params.appId)}` +
+      `&app_key=${encodeURIComponent(params.appKey)}` +
+      `&what=${encodeURIComponent(params.what ?? 'software developer')}` +
+      `&where=${encodeURIComponent(params.where ?? 'Alberta')}` +
+      `&results_per_page=${params.resultsPerPage ?? 50}` +
+      `&content-type=application%2Fjson`;
+    return assertSafeExternalUrl(raw, EGRESS_ADZUNA_HOSTS).toString();
   },
 
   async fetch(credentials: { appId: string; appKey: string }, what = 'software developer'): Promise<unknown> {

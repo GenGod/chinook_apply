@@ -115,7 +115,23 @@ CREATE INDEX IF NOT EXISTS job_rule_status_idx ON job (rule_status);
 /** Local docker-compose default (port 5433 — host 5432 is taken by a native service). */
 export const DEV_DATABASE_URL = 'postgres://chinook:chinook_dev@localhost:5433/chinook';
 
+/** Allowed pg hosts: local compose/dev only — arbitrary connection strings from env are rejected. */
+const ALLOWED_DB_HOSTS = new Set(['localhost', '127.0.0.1', '::1', 'postgres']);
+
+export function assertSafeDatabaseUrl(connectionString: string): void {
+  let host: string;
+  try {
+    host = new URL(connectionString).hostname;
+  } catch {
+    throw new Error('DATABASE_URL is not a valid URL');
+  }
+  if (!ALLOWED_DB_HOSTS.has(host)) {
+    throw new Error(`DATABASE_URL host "${host}" is not allowed (local/compose hosts only)`);
+  }
+}
+
 export function createDb(connectionString: string): Kysely<Database> {
+  assertSafeDatabaseUrl(connectionString);
   return new Kysely<Database>({
     dialect: new PostgresDialect({ pool: new Pool({ connectionString }) }),
   });

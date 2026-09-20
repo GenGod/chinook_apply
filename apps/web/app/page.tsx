@@ -163,8 +163,18 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
               {jobs.map((job) => (
                 <tr key={job.id} data-job-id={job.id}>
                   <td>
-                    <a className={styles.titleLink} href={job.url} target="_blank" rel="noopener noreferrer">
+                    <a className={styles.titleLink} href={`/job/${job.id}`}>
                       {job.title}
+                    </a>{' '}
+                    <a
+                      data-testid="apply-external"
+                      className={styles.muted}
+                      href={job.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Apply externally"
+                    >
+                      ↗
                     </a>
                   </td>
                   <td>{job.employer}</td>

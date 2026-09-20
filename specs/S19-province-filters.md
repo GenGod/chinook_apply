@@ -1,6 +1,6 @@
 # S19: Фильтр по провинциям Канады — Jobs Explorer и Board
 
-Статус: implemented (все гейты зелёные 2026-09-19; merge-гейт PO) · Версия: 1.1 · Milestone: **M1.5** (не-AI трек)
+Статус: done (G6 approved + merged 2026-09-20) · Версия: 1.1 · Milestone: **M1.5** (не-AI трек)
 Источник: BACKLOG **B-009** (PO 2026-09-19) · зависит от S1 (province/remote в схеме), S1a/S14 (фильтр-бар), S7 (getBoard), S18 (DnD).
 
 ## Проблема и цель

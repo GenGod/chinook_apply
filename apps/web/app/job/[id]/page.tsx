@@ -30,17 +30,29 @@ interface JobDetail {
   board_channel: string | null;
 }
 
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+const HTML_ENTITIES: Record<string, string> = {
+  '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ',
+};
+
+/** Provider HTML → plain text: block breaks become newlines, tags stripped, entities decoded. */
+function htmlToText(html: string): string {
+  return html
+    .replace(/<\s*(?:br|\/p|\/li|\/h[1-6])\s*\/?\s*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&(?:amp|lt|gt|quot|#39|nbsp);/g, (m) => HTML_ENTITIES[m] ?? m)
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n[ \t]+/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 function descriptionFrom(raw: unknown): string | null {
   if (raw == null || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
   const summary = typeof r.summary === 'object' && r.summary !== null ? (r.summary as { '#text'?: string })['#text'] : undefined;
-  if (typeof summary === 'string') return stripHtml(summary).slice(0, 1200) || null;
+  if (typeof summary === 'string') return htmlToText(summary) || null;
   const desc = (r as { description?: unknown }).description;
-  if (typeof desc === 'string') return stripHtml(desc).slice(0, 1200) || null;
+  if (typeof desc === 'string') return htmlToText(desc) || null;
   return null;
 }
 
@@ -104,7 +116,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
         {description ? (
           <section style={{ marginTop: 24 }}>
             <h3 style={{ fontSize: 'var(--text-emphasis)', margin: '0 0 8px' }}>Description</h3>
-            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{description}</p>
+            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-line' }}>{description}</p>
           </section>
         ) : null}
       </article>
