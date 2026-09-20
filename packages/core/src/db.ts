@@ -110,6 +110,29 @@ ALTER TABLE job ADD COLUMN IF NOT EXISTS rule_status TEXT;
 ALTER TABLE job ADD COLUMN IF NOT EXISTS rule_reasons JSONB;
 ALTER TABLE job ADD COLUMN IF NOT EXISTS rule_scored_at TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS job_rule_status_idx ON job (rule_status);
+CREATE TABLE IF NOT EXISTS llm_run (
+  id BIGSERIAL PRIMARY KEY,
+  ts TIMESTAMPTZ NOT NULL DEFAULT now(),
+  stage TEXT NOT NULL,
+  role TEXT NOT NULL,
+  model TEXT NOT NULL,
+  prompt_tokens INT NOT NULL DEFAULT 0,
+  completion_tokens INT NOT NULL DEFAULT 0,
+  cost_usd NUMERIC NOT NULL DEFAULT 0,
+  latency_ms INT NOT NULL DEFAULT 0,
+  cache_hit BOOLEAN NOT NULL DEFAULT false,
+  ok BOOLEAN NOT NULL DEFAULT true,
+  error TEXT,
+  input_hash TEXT
+);
+CREATE INDEX IF NOT EXISTS llm_run_stage_idx ON llm_run (stage);
+CREATE TABLE IF NOT EXISTS llm_cache (
+  key TEXT PRIMARY KEY,
+  response JSONB NOT NULL,
+  usage JSONB NOT NULL,
+  hits INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 `;
 
 /** Local docker-compose default (port 5433 — host 5432 is taken by a native service). */

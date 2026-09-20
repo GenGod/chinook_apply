@@ -22,9 +22,9 @@ describe('arch boundaries — S0 AC3 (gate must catch violations)', () => {
     expect(msgs.length).toBeGreaterThan(0);
   });
 
-  it('forbids llm importing core (llm only sees contracts)', () => {
+  it('forbids llm importing adapters (S3 boundary: llm sees contracts+core only)', () => {
     const msgs = lint(
-      "import { CORE_MARKER } from '@chinook/core';\nexport const x = CORE_MARKER;\n",
+      "import { jobbankAdapter } from '@chinook/adapters';\nexport const x = jobbankAdapter;\n",
       'packages/llm/src/bad.ts',
     );
     expect(msgs.length).toBeGreaterThan(0);
@@ -77,4 +77,10 @@ describe('arch boundaries — S0 AC3 (gate must catch violations)', () => {
       lint("import { planStages } from '../../scripts/pipeline.mjs';\n", 'tests/unit/ok.ts'),
     ).toHaveLength(0);
   });
+});
+
+it('allows llm importing core (gateway persists via core types, S3)', () => {
+  expect(
+    lint("import { createDb } from '@chinook/core';\nexport const x = 1;\n", 'packages/llm/src/ok.ts'),
+  ).toHaveLength(0);
 });
