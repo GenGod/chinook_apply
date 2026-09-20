@@ -29,6 +29,9 @@ test('job preview shows the full untruncated description with paragraphs (S20 AC
   const text = (await description.textContent()) ?? '';
   expect(text.length).toBeGreaterThan(1200); // no truncation (fixtures are ≤500)
   expect(text).toContain('\n'); // paragraph breaks preserved
+  expect(text).toContain('TypeScript & SQL'); // entities decoded
+  expect(text).not.toContain('&amp;'); // no raw entities leak
+  expect(text).not.toContain('<br'); // tags stripped, not rendered
 });
 
 test('filter by source narrows the list (S1a AC1/AC4)', async ({ page }) => {
