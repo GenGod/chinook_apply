@@ -27,8 +27,8 @@ export { repoRoot };
 const ELEMENT_ALLOW = {
   app: ['contracts', 'core', 'adapters'],
   core: ['contracts', 'llm'],
+  llm: ['contracts', 'core'], // S3: gateway persists via core's Kysely/Database types
   adapters: ['contracts'],
-  llm: ['contracts'],
   contracts: [],
   tooling: [],
   tests: ['app', 'contracts', 'core', 'llm', 'adapters', 'scripts'],

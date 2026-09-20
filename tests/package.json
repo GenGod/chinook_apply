@@ -10,12 +10,15 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
+    "kysely": "^0.29.5",
     "vitest": "^5.0.0"
   },
   "dependencies": {
     "@chinook/contracts": "workspace:*",
     "@chinook/core": "workspace:*",
+    "@chinook/llm": "workspace:*",
     "@chinook/worker": "workspace:*",
-    "pg": "^8.23.0"
+    "pg": "^8.23.0",
+    "zod": "^4.6.5"
   }
 }

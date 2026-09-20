@@ -81,7 +81,17 @@
 | Дисплей | Crimson Pro 600 (self-hosted, OFL) |
 | Интерфейс | Plus Jakarta Sans variable 100–900 (self-hosted, OFL) |
 
+## LLM-шлюз (S3)
+
+| Позиция | Значение | Примечание |
+|---|---|---|
+| Endpoint | api.z.ai/api/paas/v4/chat/completions | константа |
+| main | glm-5.3 (env LLM_MODEL_MAIN) | генерация (quality-critical) |
+| flash | glm-5.3-flash (env LLM_MODEL_FLASH) | скоринг/массовое |
+| Цены $/1M | main 1.0/1.5, flash 0.2/0.3 | env LLM_PRICE_*; дефолт — сверить по панели |
+
 ## Changelog
+- 2.1 (2026-09-20) — S3 (PO-approved): LLM-шлюз — retry/backoff, circuit breaker, zod-structured output, PG-кэш, llm_run-учёт; arch llm→core.
 - 2.0 (2026-09-18) — S18 (PO-approved со спекой): без новых зависимостей — нативный HTML5 DnD; подход зафиксирован.
 - 1.9 (2026-09-18) — S7 (PO-approved со спекой): без новых зависимостей (kanban CSS-grid с px-колонками); styled-jsx исключён (Turbopack); kysely-гейт добавлен в lint.
 - 1.8 (2026-09-18) — S17 (PO-approved): DS v1.1 «Group of Seven» — палитра Харриса, self-hosted шрифтовая пара, horizon-полоса; AA-подъёмы success/warning/neutral/accent-text.

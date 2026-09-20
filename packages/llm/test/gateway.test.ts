@@ -34,7 +34,7 @@ function fakeDb() {
       return runs.length;
     },
     async findCache(key: string) {
-      return cache.get(key) ?? null;
+      return (cache.get(key) as { response: unknown; usage: { promptTokens: number; completionTokens: number; costUsd: number } }) ?? null;
     },
     async saveCache(key: string, value: unknown) {
       cache.set(key, value);
@@ -215,6 +215,7 @@ describe('cost calculation (R5)', () => {
     const mainCost = computeCostUsd('main', 1_000_000, 1_000_000);
     const flashCost = computeCostUsd('flash', 1_000_000, 1_000_000);
     expect(mainCost).toBeGreaterThan(flashCost);
-    expect(computeCostUsd('main', 500_000, 0)).toBeCloseTo(mainCost / 2, 5);
+    const inputOnly = computeCostUsd('main', 1_000_000, 0);
+    expect(computeCostUsd('main', 500_000, 0)).toBeCloseTo(inputOnly / 2, 5);
   });
 });
