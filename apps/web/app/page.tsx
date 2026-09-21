@@ -20,6 +20,7 @@ interface SearchParams {
   sort?: string;
   rule?: string;
   province?: string;
+  minScore?: string;
 }
 
 const SOURCE_OPTIONS: Array<{ value: string; label: string }> = [
@@ -35,10 +36,13 @@ function parseFilters(sp: SearchParams): JobFilters {
   const salary = Number(sp.salaryMin);
   if (Number.isFinite(salary) && salary > 0) filters.salaryMin = salary;
   if (sp.sort === 'salary') filters.sort = 'salary';
+  if (sp.sort === 'score') filters.sort = 'score';
   if (sp.rule === 'relevant' || sp.rule === 'review' || sp.rule === 'excluded') {
     filters.rule = sp.rule;
   }
   Object.assign(filters, parseProvinceParam(sp.province));
+  const ms = Number(sp.minScore);
+  if (Number.isFinite(ms) && ms >= 0 && ms <= 100) filters.minScore = ms;
   return filters;
 }
 
@@ -110,6 +114,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
           <select id="sort" name="sort" defaultValue={sp.sort ?? 'posted'}>
             <option value="posted">Newest</option>
             <option value="salary">Salary</option>
+            <option value="score">Score</option>
           </select>
         </div>
         <div className={styles.field}>
@@ -120,6 +125,10 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
             <option value="review">Review</option>
             <option value="excluded">Excluded</option>
           </select>
+        </div>
+        <div className={styles.field}>
+          <label htmlFor="minScore">Score ≥</label>
+          <input id="minScore" name="minScore" type="number" min="0" max="100" step="10" placeholder="any" defaultValue={sp.minScore ?? ''} />
         </div>
         <button className={styles.submit} type="submit">
           Apply filters
@@ -138,14 +147,15 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
         <div className={styles.tableWrap}>
           <table className={styles.table} data-testid="jobs-table">
             <colgroup>
-              <col style={{ width: 300 }} />
-              <col style={{ width: 190 }} />
-              <col style={{ width: 150 }} />
-              <col style={{ width: 90 }} />
-              <col style={{ width: 90 }} />
+              <col style={{ width: 260 }} />
+              <col style={{ width: 170 }} />
               <col style={{ width: 130 }} />
-              <col style={{ width: 100 }} />
-              <col style={{ width: 130 }} />
+              <col style={{ width: 80 }} />
+              <col style={{ width: 80 }} />
+              <col style={{ width: 60 }} />
+              <col style={{ width: 110 }} />
+              <col style={{ width: 90 }} />
+              <col style={{ width: 120 }} />
             </colgroup>
             <thead>
               <tr>
@@ -154,6 +164,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
                 <th>Location</th>
                 <th>Source</th>
                 <th>Rule</th>
+                <th>Score</th>
                 <th>Salary</th>
                 <th>Posted</th>
                 <th>Actions</th>
@@ -188,6 +199,15 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
                     {job.ruleStatus ? (
                       <span className={styles.ruleBadge} data-rule={job.ruleStatus}>
                         {job.ruleStatus}
+                      </span>
+                    ) : (
+                      <span className={styles.muted}>—</span>
+                    )}
+                  </td>
+                  <td data-score={job.matchScore ?? 'null'}>
+                    {job.matchScore !== null ? (
+                      <span data-testid="match-score" style={{ fontWeight: job.matchScore >= 70 ? 600 : 400, color: job.matchScore >= 70 ? 'var(--status-success)' : job.matchScore >= 40 ? 'var(--status-warning)' : 'var(--text-muted)' }}>
+                        {job.matchScore}
                       </span>
                     ) : (
                       <span className={styles.muted}>—</span>
