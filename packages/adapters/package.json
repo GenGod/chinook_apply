@@ -23,6 +23,10 @@
     "./adzuna.js": {
       "types": "./src/adzuna.ts",
       "default": "./src/adzuna.ts"
+    },
+    "./posting-fetcher": {
+      "types": "./src/posting-fetcher.ts",
+      "default": "./src/posting-fetcher.ts"
     }
   },
   "scripts": {

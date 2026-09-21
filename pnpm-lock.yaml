@@ -44,6 +44,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@chinook/adapters':
+        specifier: workspace:*
+        version: link:../../packages/adapters
       '@chinook/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts

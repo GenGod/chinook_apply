@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import type { BoardStatus, Database } from '@chinook/core';
 import type { Kysely } from 'kysely';
 import { getDb } from '@/lib/db';
+import { getEnrichedDescription } from '@/lib/enrich-description';
 import { StatusControls } from '../../board/status-controls';
 import styles from '../../board/board.module.css';
 
@@ -61,7 +62,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const bs = job.app?.status ?? 'new';
   const bc = job.app?.channel ?? null;
   const from = (bs === 'applied' ? `applied_${bc}` : bs) as BoardStatus;
-  const desc = rawDescription(job.raw);
+  const desc = await getEnrichedDescription(getDb(), id);
   const urls = jb(job.urls);
   const allUrls = urls.length > 0 ? urls : [job.url];
   const rr = jb(job.rule_reasons);
