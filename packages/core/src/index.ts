@@ -29,9 +29,12 @@ export { seedE2eExtras } from './seed';
 export {
   listJobs,
   markAppliedManually,
+  listUnscoredJobs,
+  upsertMatch,
   type JobFilters,
   type JobListItem,
   type ApplicationRow,
+  type UnscoredJob,
 } from './repository';
 export {
   applyRules,
