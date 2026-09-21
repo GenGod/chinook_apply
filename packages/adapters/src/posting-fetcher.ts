@@ -42,22 +42,54 @@ export async function fetchPostingDescription(postingUrl: string): Promise<strin
   return null;
 }
 
-/** Minimal HTML to text: strips tags, decodes entities, normalizes whitespace. */
+/** Minimal HTML to text: removes script/style blocks, strips tags, decodes entities. */
 function stripHtml(html: string): string {
+  // remove script and style content entirely (before stripping tags)
+  let cleaned = html;
+  const scriptStart = cleaned.indexOf('<script');
+  while (scriptStart >= 0) {
+    const scriptEnd = cleaned.indexOf('</script>', scriptStart);
+    if (scriptEnd < 0) break;
+    cleaned = cleaned.slice(0, scriptStart) + cleaned.slice(scriptEnd + 9);
+  }
+  const styleStart = cleaned.indexOf('<style');
+  while (styleStart >= 0) {
+    const styleEnd = cleaned.indexOf('</style>', styleStart);
+    if (styleEnd < 0) break;
+    cleaned = cleaned.slice(0, styleStart) + cleaned.slice(styleEnd + 8);
+  }
+
+  // strip remaining tags
   let text = '';
   let inTag = false;
-  for (let i = 0; i < html.length; i++) {
-    const c = html[i];
+  for (let i = 0; i < cleaned.length; i++) {
+    const c = cleaned[i];
     if (c === '<') { inTag = true; text += ' '; continue; }
     if (c === '>') { inTag = false; continue; }
     if (!inTag) text += c;
   }
+
+  // decode entities (first pass)
   const entities: Array<[string, string]> = [
-    ['&amp;', '&'], ['&lt;', '<'], ['&gt;', '>'], ['&quot;', '"'], ['&#39;', "'"], ['&nbsp;', ' '],
+    ['&amp;', '&'], ['&lt;', '<'], ['&gt;', '>'], ['&quot;', '"'], ['&#39;', "'"],
+    ['&nbsp;', ' '], ['&#x27;', "'"], ['&#x2F;', '/'],
   ];
   for (const [ent, ch] of entities) {
     text = text.split(ent).join(ch);
   }
+
+  // second pass: strip any tags revealed by entity decoding (e.g. &lt;p&gt; → <p>)
+  let second = '';
+  inTag = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '<') { inTag = true; second += ' '; continue; }
+    if (c === '>') { inTag = false; continue; }
+    if (!inTag) second += c;
+  }
+  text = second;
+
+  // normalize whitespace
   const lines = text.split('\n').map((l) => l.trim());
   return lines.filter((l) => l !== '').join('\n');
 }
