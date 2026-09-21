@@ -1,129 +1,118 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { sql } from 'kysely';
-import type { BoardStatus } from '@chinook/core';
+import type { BoardStatus, Database } from '@chinook/core';
+import type { Kysely } from 'kysely';
 import { getDb } from '@/lib/db';
 import { StatusControls } from '../../board/status-controls';
 import styles from '../../board/board.module.css';
 
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = { title: 'Chinook — Job details' };
 
-export const metadata: Metadata = {
-  title: 'Chinook — Job details',
-};
-
-interface JobDetail {
-  id: string;
-  title: string;
-  employer: string;
-  city: string;
-  province: string;
-  remote: boolean;
-  url: string;
-  source: string;
-  rule_status: string | null;
-  salary_min: string | number | null;
-  salary_max: string | number | null;
-  posted_at: Date | null;
-  raw: unknown;
-  board_status: string | null;
-  board_channel: string | null;
+function jb(v: unknown): string[] {
+  if (v == null) return [];
+  if (typeof v === 'string') { try { return JSON.parse(v) as string[]; } catch { return []; } }
+  return v as string[];
 }
 
-const HTML_ENTITIES: Record<string, string> = {
-  '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ',
-};
-
-/** Provider HTML → plain text: block breaks become newlines, tags stripped, entities decoded. */
-function htmlToText(html: string): string {
-  let text = html;
-  // block-level tags → newline (simple sequential replaces, no complex regex groups)
-  text = text.replace(/<br[^>]*>/gi, '\n');
-  text = text.replace(/<\/p>/gi, '\n');
-  text = text.replace(/<\/li>/gi, '\n');
-  text = text.replace(/<\/h[1-6]>/gi, '\n');
-  // strip remaining tags
-  text = text.replace(/<[^>]+>/g, ' ');
-  // decode entities
-  text = text.replace(/&(?:amp|lt|gt|quot|#39|nbsp);/g, (m) => HTML_ENTITIES[m] ?? m);
-  // normalize whitespace
-  text = text.replace(/[ \t]+/g, ' ');
-  text = text.replace(/\n[ \t]+/g, '\n');
-  text = text.replace(/\n{3,}/g, '\n\n');
-  return text.trim();
-}
-
-function descriptionFrom(raw: unknown): string | null {
-  if (raw == null || typeof raw !== 'object') return null;
+function rawDescription(raw: unknown): string {
+  if (raw == null || typeof raw !== 'object') return '';
   const r = raw as Record<string, unknown>;
-  const summary = typeof r.summary === 'object' && r.summary !== null ? (r.summary as { '#text'?: string })['#text'] : undefined;
-  if (typeof summary === 'string') return htmlToText(summary) || null;
-  const desc = (r as { description?: unknown }).description;
-  if (typeof desc === 'string') return htmlToText(desc) || null;
-  return null;
+  const s = r.summary;
+  if (s != null && typeof s === 'object') {
+    const t = (s as Record<string, unknown>)['#text'];
+    if (typeof t === 'string') return t;
+  }
+  const d = r.description;
+  if (typeof d === 'string') return d;
+  return '';
+}
+
+function Field(props: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', gap: 12, marginBottom: 6 }}>
+      <span style={{ minWidth: 140, color: 'var(--text-muted)', fontSize: 'var(--text-aux)' }}>{props.label}</span>
+      <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-body)' }}>{props.children}</span>
+    </div>
+  );
+}
+
+async function fetchFullJob(db: Kysely<Database>, jobId: string) {
+  const j = await db.selectFrom('job').where('job.id', '=', jobId)
+    .select(['job.id','job.title','job.employer','job.city','job.province','job.remote',
+      'job.url','job.urls','job.source','job.source_job_id','job.rule_status',
+      'job.rule_reasons','job.salary_min','job.salary_max','job.noc_code',
+      'job.posted_at','job.ingested_at','job.raw'])
+    .executeTakeFirst();
+  if (!j) return null;
+  const a = await db.selectFrom('application').where('application.job_id', '=', jobId)
+    .select(['application.status','application.channel']).executeTakeFirst();
+  const m = await db.selectFrom('job_match').where('job_match.job_id', '=', jobId)
+    .select(['job_match.score','job_match.reasons','job_match.risks','job_match.noc_guess'])
+    .orderBy('job_match.id', 'desc').executeTakeFirst();
+  return { ...j, app: a ?? null, match: m ?? null };
 }
 
 export default async function JobPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const rows = (
-    await sql<JobDetail>`select j.id, j.title, j.employer, j.city, j.province, j.remote, j.url,
-        j.source, j.rule_status, j.salary_min, j.salary_max, j.posted_at, j.raw,
-        a.status as board_status, a.channel as board_channel
-      from job j left join application a on a.job_id = j.id
-      where j.id = ${id} limit 1`.execute(getDb())
-  ).rows;
-  const job = rows[0];
+  const job = await fetchFullJob(getDb(), id);
   if (!job) notFound();
 
-  const from = (
-    job.board_status === 'applied'
-      ? `applied_${job.board_channel}`
-      : (job.board_status ?? 'new')
-  ) as BoardStatus;
-  const description = descriptionFrom(job.raw);
-  const salary =
-    job.salary_min !== null || job.salary_max !== null
-      ? `$${Math.round(Number(job.salary_min ?? job.salary_max) / 1000)}k${
-          job.salary_min !== null && job.salary_max !== null
-            ? `–$${Math.round(Number(job.salary_max) / 1000)}k`
-            : ''
-        }/yr`
-      : '—';
+  const bs = job.app?.status ?? 'new';
+  const bc = job.app?.channel ?? null;
+  const from = (bs === 'applied' ? `applied_${bc}` : bs) as BoardStatus;
+  const desc = rawDescription(job.raw);
+  const urls = jb(job.urls);
+  const allUrls = urls.length > 0 ? urls : [job.url];
+  const rr = jb(job.rule_reasons);
+  const ms = job.match?.score ?? null;
+  const mr = jb(job.match?.reasons);
+  const mrisks = jb(job.match?.risks);
+  const ng = job.match?.noc_guess ?? null;
+  const sMin = job.salary_min !== null ? Number(job.salary_min) : null;
+  const sMax = job.salary_max !== null ? Number(job.salary_max) : null;
+  const scoreColor = ms !== null ? (ms > 90 ? 'var(--accent)' : ms >= 70 ? 'var(--status-success)' : ms >= 40 ? 'var(--status-warning)' : 'var(--text-muted)') : 'inherit';
 
   return (
     <main className={styles.page}>
       <div className={styles.heading}>
         <h1 className={styles.title}>Chinook</h1>
         <span className={styles.subtitle}>Job details</span>
-        <nav className={styles.nav}>
-          <a className={styles.navLink} href="/board">Board</a>
-          <a className={styles.navLink} href="/">Jobs</a>
-        </nav>
+        <nav className={styles.nav}><a className={styles.navLink} href="/board">Board</a><a className={styles.navLink} href="/">Jobs</a></nav>
       </div>
       <div className="horizon" style={{ marginTop: 4, marginBottom: 20 }} />
-
-      <article style={{ maxWidth: 760 }}>
+      <article style={{ maxWidth: 860 }}>
         <h2 style={{ margin: '0 0 8px', fontSize: 'var(--text-section)', fontWeight: 600 }}>{job.title}</h2>
-        <div style={{ color: 'var(--text-secondary)', marginBottom: 12 }}>
-          {job.employer} · {job.remote ? 'Remote' : `${job.city}${job.province ? `, ${job.province}` : ''}`} ·{' '}
-          {job.source} · {job.posted_at ? job.posted_at.toISOString().slice(0, 10) : '—'}
+        <div style={{ color: 'var(--text-secondary)', marginBottom: 16 }}>
+          {job.employer} · {job.remote ? 'Remote' : `${job.city}${job.province ? `, ${job.province}` : ''}`} · {job.source} · {job.posted_at ? job.posted_at.toISOString().slice(0, 10) : '—'}
         </div>
-        <div style={{ color: 'var(--text-secondary)', marginBottom: 12 }}>{salary} · rule: {job.rule_status ?? '—'}</div>
-        <p>
-          <a href={job.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>
-            Open original posting
-          </a>
-        </p>
-        <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '16px 0', paddingTop: 16 }}>
-          <div style={{ fontSize: 'var(--text-aux)', color: 'var(--text-muted)', marginBottom: 8 }}>
-            Status: {from.replace('_', ' · ')}
-          </div>
+        <p><a href={job.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 600 }}>Open original posting ↗</a></p>
+
+        <section style={{ borderTop: '1px solid var(--border-subtle)', margin: '20px 0', paddingTop: 16 }}>
+          <h3 style={{ fontSize: 'var(--text-emphasis)', margin: '0 0 12px' }}>Details</h3>
+          <Field label="Salary">{sMin !== null || sMax !== null ? `$${(sMin ?? sMax ?? 0).toLocaleString()}${sMin !== null && sMax !== null ? ` – $${sMax.toLocaleString()}` : ''} CAD/yr` : '—'}</Field>
+          <Field label="Rule status"><span style={{ color: job.rule_status === 'relevant' ? 'var(--status-success)' : job.rule_status === 'review' ? 'var(--status-warning)' : 'var(--text-muted)' }}>{job.rule_status ?? '—'}</span>{rr.length > 0 ? <span style={{ color: 'var(--text-muted)' }}> ({rr.join(', ')})</span> : null}</Field>
+          <Field label="Match score">{ms !== null ? <span style={{ fontWeight: 600, color: scoreColor }}>{ms}</span> : '—'}</Field>
+          {mr.length > 0 ? <Field label="Why this score">{mr.join('; ')}</Field> : null}
+          {mrisks.length > 0 ? <Field label="Risks">{mrisks.join('; ')}</Field> : null}
+          <Field label="NOC code">{job.noc_code ?? ng ?? '—'}</Field>
+          <Field label="Source ID">{job.source_job_id ?? '—'}</Field>
+          <Field label="Remote">{job.remote ? 'Yes' : 'No'}</Field>
+          <Field label="Location">{job.remote ? 'Remote' : `${job.city}${job.province ? `, ${job.province}` : ''}`}</Field>
+          <Field label="Posted">{job.posted_at ? job.posted_at.toISOString().slice(0, 16).replace('T', ' ') + ' UTC' : '—'}</Field>
+          <Field label="Ingested">{job.ingested_at.toISOString().slice(0, 16).replace('T', ' ') + ' UTC'}</Field>
+          {allUrls.length > 1 ? <Field label="All URLs"><div>{allUrls.map((u: string, i: number) => (<div key={i}><a href={u} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--badge-source-text)' }}>{u.slice(0, 60)}{u.length > 60 ? '…' : ''}</a></div>))}</div></Field> : null}
+        </section>
+
+        <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '20px 0', paddingTop: 16 }}>
+          <div style={{ fontSize: 'var(--text-aux)', color: 'var(--text-muted)', marginBottom: 8 }}>Status: {from.replace('_', ' · ')}</div>
           <StatusControls jobId={job.id} from={from} />
         </div>
-        {description ? (
+
+        {desc ? (
           <section style={{ marginTop: 24 }}>
             <h3 style={{ fontSize: 'var(--text-emphasis)', margin: '0 0 8px' }}>Description</h3>
-            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-line' }}>{description}</p>
+            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap' }}>{desc}</p>
           </section>
         ) : null}
       </article>
