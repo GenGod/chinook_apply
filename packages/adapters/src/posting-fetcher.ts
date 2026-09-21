@@ -23,14 +23,14 @@ export async function fetchPostingDescription(postingUrl: string): Promise<strin
     /<article[^>]*>([^]*?)<\/article>/i,
   ];
   for (const pattern of markers) {
-    const match = pattern.exec(html);
+    const match = html.match(pattern);
     if (match?.[1]) {
       return stripHtml(match[1]).trim() || null;
     }
   }
 
   // Fallback: extract everything between the page title and the footer
-  const bodyMatch = /<body[^>]*>([^]*?)<\/body>/i.exec(html);
+  const bodyMatch = html.match(/<body[^>]*>([^]*?)<\/body>/i);
   if (bodyMatch?.[1]) {
     const text = stripHtml(bodyMatch[1]);
     // Job Bank pages have nav/header/footer text; take the longest paragraph block
