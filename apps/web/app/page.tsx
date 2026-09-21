@@ -206,7 +206,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
                   </td>
                   <td data-score={job.matchScore ?? 'null'}>
                     {job.matchScore !== null ? (
-                      <span data-testid="match-score" style={{ fontWeight: job.matchScore >= 70 ? 600 : 400, color: job.matchScore >= 70 ? 'var(--status-success)' : job.matchScore >= 40 ? 'var(--status-warning)' : 'var(--text-muted)' }}>
+                      <span data-testid="match-score" style={{ fontWeight: job.matchScore >= 70 ? 600 : 400, color: job.matchScore > 90 ? 'var(--accent)' : job.matchScore >= 70 ? 'var(--status-success)' : job.matchScore >= 40 ? 'var(--status-warning)' : 'var(--text-muted)' }}>
                         {job.matchScore}
                       </span>
                     ) : (
