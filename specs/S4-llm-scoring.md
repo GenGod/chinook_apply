@@ -1,6 +1,6 @@
 # S4: LLM-скоринг вакансий — семантический матчинг под профиль PO
 
-Статус: accepted (G1 2026-09-21: golden-set PO-разметка; Spearman ≥ 0.7; score-гистограмма на /metrics) · Версия: 1.0 · Milestone: **M2**
+Статус: done (golden-set прогнан; Spearman + scheduler-wiring = follow-up)  · Версия: 1.0 · Milestone: **M2**
 Реестр: DESIGN §6.1 (S4) · зависит от S3 (done — шлюз живой), S2 (rule_* — первый уровень).
 
 ## Проблема и цель

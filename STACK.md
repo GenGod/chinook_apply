@@ -91,6 +91,7 @@
 | Цены $/1M | main 1.0/1.5, flash 0.2/0.3 | env LLM_PRICE_*; дефолт — сверить по панели |
 
 ## Changelog
+- 2.2 (2026-09-21) — S4 (PO-approved): LLM-скоринг через шлюз — golden-set 50 jobs (/usr/bin/bash.025), score в Jobs Explorer, job_match таблица; arch app→llm.
 - 2.1 (2026-09-20) — S3 (PO-approved): LLM-шлюз — retry/backoff, circuit breaker, zod-structured output, PG-кэш, llm_run-учёт; arch llm→core.
 - 2.0 (2026-09-18) — S18 (PO-approved со спекой): без новых зависимостей — нативный HTML5 DnD; подход зафиксирован.
 - 1.9 (2026-09-18) — S7 (PO-approved со спекой): без новых зависимостей (kanban CSS-grid с px-колонками); styled-jsx исключён (Turbopack); kysely-гейт добавлен в lint.
