@@ -84,6 +84,9 @@ importers:
       '@chinook/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@chinook/llm':
+        specifier: workspace:*
+        version: link:../../packages/llm
       pg:
         specifier: ^8.23.0
         version: 8.23.0
