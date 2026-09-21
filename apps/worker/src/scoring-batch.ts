@@ -2,7 +2,7 @@
 // Scores unscored relevant/review jobs via the gateway, respecting a daily cost cap.
 import process from 'node:process';
 import type { Kysely } from 'kysely';
-import type { Database, RuleStatus, UnscoredJob } from '@chinook/core';
+import type { Database, RuleStatus } from '@chinook/core';
 import { listUnscoredJobs, upsertMatch } from '@chinook/core';
 
 const DEFAULT_DAILY_LIMIT_USD = Number(process.env.LLM_SCORING_DAILY_LIMIT_USD ?? 0.5);
@@ -49,7 +49,7 @@ export async function scoreUnscoredBatch(
 
   for (const job of jobs) {
     if (spent + cost >= dailyLimit) break;
-    const { buildScoringPrompt, MatchScoreSchema, SCORING_PROMPT_VERSION } = await import('@chinook/llm');
+    const { buildScoringPrompt, MatchScoreSchema } = await import('@chinook/llm');
     const scoringJob = {
       title: job.title,
       employer: job.employer,

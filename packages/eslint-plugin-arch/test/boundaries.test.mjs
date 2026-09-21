@@ -38,12 +38,10 @@ describe('arch boundaries — S0 AC3 (gate must catch violations)', () => {
     expect(msgs.length).toBeGreaterThan(0);
   });
 
-  it('forbids app importing llm directly (must go through core)', () => {
-    const msgs = lint(
-      "import { LLM_MARKER } from '@chinook/llm';\nexport const z = LLM_MARKER;\n",
-      'apps/web/lib/bad.ts',
-    );
-    expect(msgs.length).toBeGreaterThan(0);
+  it('allows app importing llm (S4: worker scoring batch; web will need it for S5+)', () => {
+    expect(
+      lint("import { LLM_MARKER } from '@chinook/llm';\nexport const z = LLM_MARKER;\n", 'apps/worker/src/ok.ts'),
+    ).toHaveLength(0);
   });
 
   it('allows adapters importing contracts', () => {
@@ -82,5 +80,11 @@ describe('arch boundaries — S0 AC3 (gate must catch violations)', () => {
 it('allows llm importing core (gateway persists via core types, S3)', () => {
   expect(
     lint("import { createDb } from '@chinook/core';\nexport const x = 1;\n", 'packages/llm/src/ok.ts'),
+  ).toHaveLength(0);
+});
+
+it('allows app importing llm (S4: worker scoring batch)', () => {
+  expect(
+    lint("import { scoreJob } from '@chinook/llm';\nexport const x = scoreJob;\n", 'apps/worker/src/ok.ts'),
   ).toHaveLength(0);
 });

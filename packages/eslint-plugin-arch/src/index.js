@@ -25,7 +25,7 @@ const repoRoot = findRepoRoot(path.dirname(fileURLToPath(import.meta.url)));
 export { repoRoot };
 
 const ELEMENT_ALLOW = {
-  app: ['contracts', 'core', 'adapters'],
+  app: ['contracts', 'core', 'adapters', 'llm'], // S4: worker imports scoring from llm
   core: ['contracts', 'llm'],
   llm: ['contracts', 'core'], // S3: gateway persists via core's Kysely/Database types
   adapters: ['contracts'],
