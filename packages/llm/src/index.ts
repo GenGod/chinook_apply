@@ -11,3 +11,12 @@ export {
   type LlmDb,
 } from './gateway';
 export { createPgLlmDb, type LlmStatsSummary } from './llm-db';
+export {
+  buildScoringPrompt,
+  scoreJob,
+  SCORING_PROMPT_VERSION,
+  MatchScoreSchema,
+  type MatchScore,
+  type ScoringJob,
+} from './scoring';
+export { extractProfileSummary, type ProfileSummary } from './profile-context';
