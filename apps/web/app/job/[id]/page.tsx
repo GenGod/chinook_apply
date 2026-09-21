@@ -36,14 +36,21 @@ const HTML_ENTITIES: Record<string, string> = {
 
 /** Provider HTML → plain text: block breaks become newlines, tags stripped, entities decoded. */
 function htmlToText(html: string): string {
-  return html
-    .replace(/<\s*(?:br|\/p|\/li|\/h[1-6])\s*\/?\s*>/gi, '\n')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&(?:amp|lt|gt|quot|#39|nbsp);/g, (m) => HTML_ENTITIES[m] ?? m)
-    .replace(/[ \t]+/g, ' ')
-    .replace(/\n[ \t]+/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  let text = html;
+  // block-level tags → newline (simple sequential replaces, no complex regex groups)
+  text = text.replace(/<br[^>]*>/gi, '\n');
+  text = text.replace(/<\/p>/gi, '\n');
+  text = text.replace(/<\/li>/gi, '\n');
+  text = text.replace(/<\/h[1-6]>/gi, '\n');
+  // strip remaining tags
+  text = text.replace(/<[^>]+>/g, ' ');
+  // decode entities
+  text = text.replace(/&(?:amp|lt|gt|quot|#39|nbsp);/g, (m) => HTML_ENTITIES[m] ?? m);
+  // normalize whitespace
+  text = text.replace(/[ \t]+/g, ' ');
+  text = text.replace(/\n[ \t]+/g, '\n');
+  text = text.replace(/\n{3,}/g, '\n\n');
+  return text.trim();
 }
 
 function descriptionFrom(raw: unknown): string | null {

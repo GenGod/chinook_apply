@@ -8,7 +8,8 @@ export interface JobFilters {
   source?: JobSourceId;
   days?: number;
   salaryMin?: number;
-  sort?: 'posted' | 'salary' | 'score';
+  sort?: 'posted' | 'salary' | 'score' | 'title' | 'source' | 'rule';
+  sortDir?: 'asc' | 'desc';
   rule?: RuleStatus;
   province?: ProvinceCode;
   remoteOnly?: boolean;
@@ -159,16 +160,24 @@ export async function listJobs(db: Kysely<Database>, filters: JobFilters): Promi
   if (minScore !== undefined) {
     items = items.filter((i) => i.matchScore !== null && i.matchScore >= minScore);
   }
+
+  const dir = filters.sortDir === 'asc' ? 1 : -1; // -1 = descending (default)
   if (sort === 'score') {
-    items.sort((a, b) => (b.matchScore ?? -1) - (a.matchScore ?? -1));
+    items.sort((a, b) => dir * ((a.matchScore ?? -1) - (b.matchScore ?? -1)));
   } else if (sort === 'salary') {
-    items.sort((a, b) => (b.salaryMin ?? -1) - (a.salaryMin ?? -1));
+    items.sort((a, b) => dir * ((a.salaryMin ?? -1) - (b.salaryMin ?? -1)));
+  } else if (sort === 'title') {
+    items.sort((a, b) => dir * a.title.localeCompare(b.title));
+  } else if (sort === 'source') {
+    items.sort((a, b) => dir * a.source.localeCompare(b.source));
+  } else if (sort === 'rule') {
+    items.sort((a, b) => dir * (a.ruleStatus ?? '').localeCompare(b.ruleStatus ?? ''));
   } else {
-    // default: posted_at DESC, canonical_hash ASC tie-break (matches previous SQL behavior)
+    // default: posted_at, canonical_hash ASC tie-break
     items.sort((a, b) => {
       const ta = a.postedAt ?? '';
       const tb = b.postedAt ?? '';
-      if (ta !== tb) return ta > tb ? -1 : 1;
+      if (ta !== tb) return dir === 1 ? (ta > tb ? 1 : -1) : (ta > tb ? -1 : 1);
       return a.canonicalHash < b.canonicalHash ? -1 : 1;
     });
   }

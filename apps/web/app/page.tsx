@@ -18,6 +18,7 @@ interface SearchParams {
   days?: string;
   salaryMin?: string;
   sort?: string;
+  dir?: string;
   rule?: string;
   province?: string;
   minScore?: string;
@@ -37,6 +38,10 @@ function parseFilters(sp: SearchParams): JobFilters {
   if (Number.isFinite(salary) && salary > 0) filters.salaryMin = salary;
   if (sp.sort === 'salary') filters.sort = 'salary';
   if (sp.sort === 'score') filters.sort = 'score';
+  if (sp.sort === 'title') filters.sort = 'title';
+  if (sp.sort === 'source') filters.sort = 'source';
+  if (sp.sort === 'rule') filters.sort = 'rule';
+  if (sp.dir === 'asc') filters.sortDir = 'asc';
   if (sp.rule === 'relevant' || sp.rule === 'review' || sp.rule === 'excluded') {
     filters.rule = sp.rule;
   }
@@ -159,14 +164,14 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
             </colgroup>
             <thead>
               <tr>
-                <th>Title</th>
+                <th><a href={`/?sort=title&dir=${sp.sort === 'title' && sp.dir !== 'asc' ? 'asc' : 'desc'}&${new URLSearchParams(Object.entries(sp).filter(([k]) => k !== 'sort' && k !== 'dir').map(([k, v]) => [k, v ?? '']))}`} style={{ color: sp.sort === 'title' ? 'var(--accent)' : 'inherit', textDecoration: 'none' }}>Title {sp.sort === 'title' ? (sp.dir === 'asc' ? '↑' : '↓') : ''}</a></th>
                 <th>Employer</th>
                 <th>Location</th>
-                <th>Source</th>
-                <th>Rule</th>
-                <th>Score</th>
-                <th>Salary</th>
-                <th>Posted</th>
+                <th><a href={`/?sort=source&dir=${sp.sort === 'source' && sp.dir !== 'asc' ? 'asc' : 'desc'}`} style={{ color: sp.sort === 'source' ? 'var(--accent)' : 'inherit', textDecoration: 'none' }}>Source {sp.sort === 'source' ? (sp.dir === 'asc' ? '↑' : '↓') : ''}</a></th>
+                <th><a href={`/?sort=rule&dir=${sp.sort === 'rule' && sp.dir !== 'asc' ? 'asc' : 'desc'}`} style={{ color: sp.sort === 'rule' ? 'var(--accent)' : 'inherit', textDecoration: 'none' }}>Rule {sp.sort === 'rule' ? (sp.dir === 'asc' ? '↑' : '↓') : ''}</a></th>
+                <th><a href={`/?sort=score&dir=${sp.sort === 'score' && sp.dir !== 'asc' ? 'asc' : 'desc'}`} style={{ color: sp.sort === 'score' ? 'var(--accent)' : 'inherit', textDecoration: 'none' }}>Score {sp.sort === 'score' ? (sp.dir === 'asc' ? '↑' : '↓') : ''}</a></th>
+                <th><a href={`/?sort=salary&dir=${sp.sort === 'salary' && sp.dir !== 'asc' ? 'asc' : 'desc'}`} style={{ color: sp.sort === 'salary' ? 'var(--accent)' : 'inherit', textDecoration: 'none' }}>Salary {sp.sort === 'salary' ? (sp.dir === 'asc' ? '↑' : '↓') : ''}</a></th>
+                <th><a href={`/?sort=posted&dir=${sp.sort === 'posted' && sp.dir !== 'asc' ? 'asc' : 'desc'}`} style={{ color: sp.sort === 'posted' || !sp.sort ? 'var(--accent)' : 'inherit', textDecoration: 'none' }}>Posted {sp.sort === 'posted' || !sp.sort ? (sp.dir === 'asc' ? '↑' : '↓') : ''}</a></th>
                 <th>Actions</th>
               </tr>
             </thead>
