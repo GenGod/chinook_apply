@@ -164,6 +164,14 @@ export async function listJobs(db: Kysely<Database>, filters: JobFilters): Promi
     items.sort((a, b) => (b.matchScore ?? -1) - (a.matchScore ?? -1));
   } else if (sort === 'salary') {
     items.sort((a, b) => (b.salaryMin ?? -1) - (a.salaryMin ?? -1));
+  } else {
+    // default: posted_at DESC, canonical_hash ASC tie-break (matches previous SQL behavior)
+    items.sort((a, b) => {
+      const ta = a.postedAt ?? '';
+      const tb = b.postedAt ?? '';
+      if (ta !== tb) return ta > tb ? -1 : 1;
+      return a.canonicalHash < b.canonicalHash ? -1 : 1;
+    });
   }
 
   return items.slice(0, limit);
