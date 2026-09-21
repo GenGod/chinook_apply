@@ -50,10 +50,49 @@ export interface ApplicationTable {
   created_at: Generated<Date>;
 }
 
+export interface JobMatchRow {
+  id: Generated<number>;
+  job_id: string;
+  llm_run_id: number;
+  score: number;
+  reasons: unknown;
+  risks: unknown;
+  noc_guess: string | null;
+  prompt_version: string;
+  created_at: Generated<Date>;
+}
+
 export interface Database {
   job: JobRow;
   ingest_run: IngestRunRow;
   application: ApplicationTable;
+  job_match: JobMatchRow;
+  llm_run: LlmRunRow;
+  llm_cache: LlmCacheRow;
+}
+
+export interface LlmRunRow {
+  id: Generated<number>;
+  ts: Generated<Date>;
+  stage: string;
+  role: string;
+  model: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  cost_usd: number;
+  latency_ms: number;
+  cache_hit: boolean;
+  ok: boolean;
+  error: string | null;
+  input_hash: string | null;
+}
+
+export interface LlmCacheRow {
+  key: string;
+  response: unknown;
+  usage: unknown;
+  hits: number;
+  created_at: Generated<Date>;
 }
 
 export const SCHEMA_SQL = `
@@ -133,6 +172,19 @@ CREATE TABLE IF NOT EXISTS llm_cache (
   hits INT NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE TABLE IF NOT EXISTS job_match (
+  id BIGSERIAL PRIMARY KEY,
+  job_id UUID NOT NULL REFERENCES job(id) ON DELETE CASCADE,
+  llm_run_id BIGINT NOT NULL,
+  score INT NOT NULL CHECK (score >= 0 AND score <= 100),
+  reasons JSONB NOT NULL,
+  risks JSONB NOT NULL DEFAULT '[]',
+  noc_guess TEXT,
+  prompt_version TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS job_match_job_idx ON job_match (job_id);
+CREATE INDEX IF NOT EXISTS job_match_score_idx ON job_match (score DESC);
 `;
 
 /** Local docker-compose default (port 5433 — host 5432 is taken by a native service). */
