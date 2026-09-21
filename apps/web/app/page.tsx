@@ -41,7 +41,7 @@ function parseFilters(sp: SearchParams): JobFilters {
     filters.rule = sp.rule;
   }
   Object.assign(filters, parseProvinceParam(sp.province));
-  const ms = Number(sp.minScore);
+  const ms = sp.minScore !== '' && sp.minScore !== undefined ? Number(sp.minScore) : NaN;
   if (Number.isFinite(ms) && ms >= 0 && ms <= 100) filters.minScore = ms;
   return filters;
 }
