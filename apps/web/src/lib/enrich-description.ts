@@ -6,12 +6,6 @@ import { fetchPostingDescription } from '@chinook/adapters/posting-fetcher';
 
 const MIN_DESCRIPTION_LENGTH = 600; // below this, try to enrich
 
-interface RawWithMeta {
-  raw?: unknown;
-  source?: string;
-  url?: string;
-}
-
 /** Returns the best available description, enriching from the posting page if needed. */
 export async function getEnrichedDescription(
   db: Kysely<Database>,
