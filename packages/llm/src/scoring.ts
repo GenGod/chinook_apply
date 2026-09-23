@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { Llm, LlmResult } from './gateway.js';
 import type { ProfileSummary } from './profile-context.js';
 
-export const SCORING_PROMPT_VERSION = 'v3';
+export const SCORING_PROMPT_VERSION = 'v4';
 
 export const MatchScoreSchema = z.object({
   score: z.number().min(0).max(100).int(),
@@ -25,13 +25,12 @@ export interface ScoringJob {
 export function buildScoringPrompt(profile: ProfileSummary, job: ScoringJob): { system: string; user: string } {
   const system = `You are an expert technical recruiter evaluating job postings against a candidate profile. Score the match from 0 (completely irrelevant) to 100 (perfect match). Consider: skills overlap, seniority alignment, domain relevance, location fit, and growth potential.
 
-WORK AUTHORIZATION EVALUATION (the candidate requires employer-sponsored work authorization):
-- HARD FAIL (score below 20): Posting explicitly requires "Canadian citizenship", "Permanent Resident status", or "must be a Canadian citizen/PR" with NO mention of sponsorship, LMIA, or work-permit support.
-- POSITIVE BONUS: Posting explicitly states sponsorship/LMIA support is available, mentions "we sponsor", "visa sponsorship offered", "LMIA supported", "relocation assistance with work permit", or mentions provincial nomination programs (PNP/AINP/OINP etc).
-- NEUTRAL (no adjustment): Posting says "eligible to work in Canada" or "must have valid work permit" (this INCLUDES work-permit holders — the candidate could qualify if they get a permit through sponsorship).
-- SLIGHT RISK (note in risks, no score penalty): Posting does not mention work authorization at all — this is common and should NOT reduce the score significantly. Add a brief risk note only.
-
-Do NOT penalize jobs for not mentioning sponsorship — many employers simply don't state it but are open to it. Only hard-fail jobs that explicitly EXCLUDE non-citizens/PRs.
+WORK AUTHORIZATION EVALUATION (the candidate requires employer-sponsored work authorization / LMIA):
+- HARD FAIL (score below 20): Posting explicitly requires "Canadian citizenship only", "must be a Canadian citizen" (without OR work permit alternative), "Permanent Resident status required" (without alternatives), or explicitly states "no sponsorship available".
+- MODERATE PENALTY (reduce by 15-25 points): Posting says "must have a valid work permit" or "must be eligible to work in Canada" WITHOUT mentioning sponsorship/LMIA. The candidate doesn't yet have a work permit — they need the employer to sponsor one. This is a chicken-and-egg problem. Add risk: "Work permit required but no sponsorship mentioned — may not be obtainable without employer support".
+- POSITIVE BONUS (add 5-10 points): Posting explicitly states sponsorship/LMIA support, "we sponsor visas", "work permit support provided", "LMIA offered", mentions relocation with work authorization, or mentions provincial nomination programs (PNP/AINP/OINP etc).
+- NEUTRAL (no adjustment): Posting does not mention work authorization at all. Many employers don't state it. Add brief risk: "Work authorization not addressed".
+- NOTE: "Must be a Canadian citizen OR PR OR have a valid work permit" = moderate penalty (not hard fail) because the work permit path exists but requires sponsorship the posting doesn't offer.
 
 Respond with STRICTLY valid JSON matching this schema:
 {"score": <integer 0-100>, "reasons": [<3-5 concise strings explaining the score>], "risks": [<0-3 strings noting concerns>], "noc_guess": "<best NOC 2021 code guess, e.g. '21231'>" or null}
