@@ -132,6 +132,6 @@ score **74** (было 90 в v2/v3, 85 в v4-без-текста). Risk цити
 
 ## Остатки
 
-- v5 re-score полного golden-set — батч в процессе (16/56 на момент письма; Neo уже 74, кеш идемпотентен)
+- ~~v5 re-score полного golden-set~~ — **завершён**: 55/56 за $0.034 (1 network-fail — SDET, подберёт следующий scheduler-тик через listUnscoredJobs). Распределение v5: max **84** (было 92 в v1); 14 в [70,80), 6 в [80,84]; citizenship-only вакансии — hard fail (**12**); «citizen OR PR OR work permit» — умеренный штраф (Neo 74); все top-8 несут work-auth risk.
 - talent.com — заблокировано (нет публичного API/RSS; partner API требует регистрации PO)
 - Spearman — ждёт PO-разметку
