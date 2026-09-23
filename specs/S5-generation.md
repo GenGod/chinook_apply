@@ -1,6 +1,6 @@
 # S5: Генерация адаптированных документов — tailored resume + cover letter
 
-Статус: draft (G1) · Версия: 1.0 · Milestone: **M3**
+Статус: approved (G1) · G2 pending · Версия: 1.0 · Milestone: **M3**
 Реестр: DESIGN §6.1 (S5) · зависит от S3 (done — шлюз), S4 (done — score для акцентов и приоритезации).
 
 ## Проблема и цель
