@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { Llm, LlmResult } from './gateway.js';
 import type { ProfileSummary } from './profile-context.js';
 
-export const SCORING_PROMPT_VERSION = 'v1';
+export const SCORING_PROMPT_VERSION = 'v2';
 
 export const MatchScoreSchema = z.object({
   score: z.number().min(0).max(100).int(),
@@ -25,6 +25,8 @@ export interface ScoringJob {
 export function buildScoringPrompt(profile: ProfileSummary, job: ScoringJob): { system: string; user: string } {
   const system = `You are an expert technical recruiter evaluating job postings against a candidate profile. Score the match from 0 (completely irrelevant) to 100 (perfect match). Consider: skills overlap, seniority alignment, domain relevance, location fit, and growth potential.
 
+CRITICAL WORK AUTHORIZATION RULE: The candidate requires employer-sponsored work authorization (LMIA/visa sponsorship). If the job posting explicitly requires Canadian citizenship, Permanent Resident status, or a "valid work permit" WITHOUT mentioning sponsorship/LMIA support, you MUST score it BELOW 20 regardless of how well other criteria match. Add "Requires citizenship/PR without sponsorship" to the risks array. Only score higher if the posting explicitly states sponsorship is available or mentions "eligible to work in Canada" (which includes work-permit holders).
+
 Respond with STRICTLY valid JSON matching this schema:
 {"score": <integer 0-100>, "reasons": [<3-5 concise strings explaining the score>], "risks": [<0-3 strings noting concerns>], "noc_guess": "<best NOC 2021 code guess, e.g. '21231'>" or null}
 
@@ -43,6 +45,7 @@ Prompt version: ${SCORING_PROMPT_VERSION}`;
 **Target Roles:** ${profile.targetTitles.join(', ')}
 **Target NOC Codes:** ${profile.nocCodes.join(', ')}
 **Location Preference:** ${profile.location}
+**Work Authorization:** ${profile.workAuthorization}
 
 ## Job Posting
 **Title:** ${job.title}

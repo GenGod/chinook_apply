@@ -53,6 +53,72 @@ async function fetchFullJob(db: Kysely<Database>, jobId: string) {
   return { ...j, app: a ?? null, match: m ?? null };
 }
 
+/** Fetches the full description from a Job Bank posting page and caches it. */
+async function enrichFromPostingPage(
+  db: Kysely<Database>,
+  jobId: string,
+  postingUrl: string,
+  existingRaw: Record<string, unknown>,
+): Promise<string | null> {
+  // Only fetch from the allowlisted Job Bank host
+  const parsed = new URL(postingUrl);
+  if (parsed.hostname !== 'www.jobbank.gc.ca' || parsed.protocol !== 'https:') return null;
+
+  const response = await fetch(parsed, {
+    headers: { 'User-Agent': 'Chinook/0.1 (job-search automation)', Accept: 'text/html' },
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!response.ok) return null;
+  const html = await response.text();
+
+  // Remove script/style blocks entirely
+  let cleaned = html;
+  let sIdx = cleaned.indexOf('<script');
+  while (sIdx >= 0) {
+    const eIdx = cleaned.indexOf('</script>', sIdx);
+    if (eIdx < 0) break;
+    cleaned = cleaned.slice(0, sIdx) + cleaned.slice(eIdx + 9);
+    sIdx = cleaned.indexOf('<script');
+  }
+  sIdx = cleaned.indexOf('<style');
+  while (sIdx >= 0) {
+    const eIdx = cleaned.indexOf('</style>', sIdx);
+    if (eIdx < 0) break;
+    cleaned = cleaned.slice(0, sIdx) + cleaned.slice(eIdx + 8);
+    sIdx = cleaned.indexOf('<style');
+  }
+
+  // Strip HTML tags (character-by-character, no regex)
+  let text = '';
+  let inTag = false;
+  for (let i = 0; i < cleaned.length; i++) {
+    const c = cleaned[i];
+    if (c === '<') { inTag = true; text += ' '; continue; }
+    if (c === '>') { inTag = false; continue; }
+    if (!inTag) text += c;
+  }
+
+  // Decode HTML entities
+  const decodePairs: Array<[string, string]> = [
+    ['&amp;', '&'], ['&lt;', '<'], ['&gt;', '>'], ['&quot;', '"'], ['&#39;', "'"], ['&nbsp;', ' '],
+  ];
+  for (const [ent, ch] of decodePairs) {
+    text = text.split(ent).join(ch);
+  }
+
+  // Clean up whitespace
+  const lines = text.split('\n').map((l) => l.trim()).filter((l) => l !== '');
+  const result = lines.join('\n');
+
+  if (result.length < 200) return null;
+
+  // Cache in database for future views
+  const updatedRaw = { ...existingRaw, fullDescription: result };
+  await db.updateTable('job').set({ raw: updatedRaw }).where('job.id', '=', jobId).execute();
+
+  return result;
+}
+
 export default async function JobPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const job = await fetchFullJob(getDb(), id);
@@ -64,7 +130,19 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const raw = (job.raw ?? {}) as Record<string, unknown>;
   const fullDesc = raw.fullDescription;
   const feedDesc = rawDescription(job.raw);
-  const desc = typeof fullDesc === 'string' && fullDesc.length > 100 ? fullDesc : feedDesc;
+  let desc = typeof fullDesc === 'string' && fullDesc.length > 100 ? fullDesc : feedDesc;
+
+  // Enrichment: if Job Bank job and description is short, fetch the full posting page
+  if ((!desc || desc.length < 600) && job.source === 'jobbank' && job.url) {
+    try {
+      const enriched = await enrichFromPostingPage(getDb(), id, job.url, raw);
+      if (enriched && enriched.length > (desc?.length ?? 0)) {
+        desc = enriched;
+      }
+    } catch {
+      // enrichment failure → show what we have
+    }
+  }
   const urls = jb(job.urls);
   const allUrls = urls.length > 0 ? urls : [job.url];
   const rr = jb(job.rule_reasons);
