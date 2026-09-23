@@ -1,4 +1,29 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page, type Locator } from '@playwright/test';
+
+/**
+ * Deterministic HTML5 drag for the board. Playwright's default dragTo can miss
+ * the native dragstart on the source card (React re-renders at the mousedown
+ * instant); the pointer path then crosses the card BELOW in the same column and
+ * Chromium starts the drag on that wrong card (repro: PATCH went to the residue
+ * card). Moving the first pixels strictly inside the source card pins the
+ * dragstart to it; the drop lands in the target column's top-left pocket, away
+ * from any residue-card buttons.
+ */
+async function dragCard(page: Page, source: Locator, targetColumn: string): Promise<void> {
+  const sb = await source.boundingBox();
+  const column = page.locator(`[data-column="${targetColumn}"]`);
+  const tb = await column.boundingBox();
+  if (!sb || !tb) throw new Error('dragCard: missing bounding box');
+  const sx = sb.x + sb.width / 2;
+  const sy = sb.y + sb.height / 2;
+  await page.mouse.move(sx, sy);
+  await page.mouse.down();
+  // cross the drag threshold INSIDE the source card
+  await page.mouse.move(sx + 8, sy + 8, { steps: 4 });
+  // drop into the column's top area (column header pocket), not its center
+  await page.mouse.move(tb.x + tb.width / 2, tb.y + 24, { steps: 8 });
+  await page.mouse.up();
+}
 
 test('board visual snapshot (masked cards, columns visible; S7 AC6)', async ({ page }) => {
   await page.addStyleTag({
@@ -95,7 +120,7 @@ test('job details page shows info and status controls (S7 AC4)', async ({ page }
 test('drag new → applying persists (S18 AC1)', async ({ page }) => {
   const card = page.locator('[data-column="new"] [data-card-id]').first();
   const cardId = await card.getAttribute('data-card-id');
-  await card.dragTo(page.locator('[data-column="applying"]'));
+  await dragCard(page, card, 'applying');
   await expect(page.locator(`[data-column="applying"] [data-card-id="${cardId}"]`)).toBeVisible();
   await page.reload();
   await expect(page.locator(`[data-column="applying"] [data-card-id="${cardId}"]`)).toBeVisible();
@@ -107,16 +132,23 @@ test('drag new → applying persists (S18 AC1)', async ({ page }) => {
 test('drag applying → applied manual sets channel (S18 AC2)', async ({ page }) => {
   const card = page.locator('[data-column="new"] [data-card-id]').first();
   const cardId = await card.getAttribute('data-card-id');
-  await card.dragTo(page.locator('[data-column="applying"]'));
+  await dragCard(page, card, 'applying');
   await expect(page.locator(`[data-column="applying"] [data-card-id="${cardId}"]`)).toBeVisible();
-  await page.locator(`[data-column="applying"] [data-card-id="${cardId}"]`).dragTo(page.locator('[data-column="applied_manual"]'));
+  await page.waitForLoadState('networkidle'); // let the PATCH's router.refresh() settle
+  await dragCard(page, page.locator(`[data-column="applying"] [data-card-id="${cardId}"]`), 'applied_manual');
   await expect(page.locator(`[data-column="applied_manual"] [data-card-id="${cardId}"]`)).toBeVisible();
+  // cleanup: applied_manual → applying → new, so consecutive runs (no re-seed) stay deterministic
+  await page.locator(`[data-column="applied_manual"] [data-card-id="${cardId}"]`).getByRole('button', { name: 'Back' }).click();
+  await expect(page.locator(`[data-column="applying"] [data-card-id="${cardId}"]`)).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  await page.locator(`[data-column="applying"] [data-card-id="${cardId}"]`).getByRole('button', { name: 'Back' }).click();
+  await expect(page.locator(`[data-column="new"] [data-card-id="${cardId}"]`)).toBeVisible();
 });
 
 test('illegal drag new → interview is rejected with visible error (S18 AC3)', async ({ page }) => {
   const card = page.locator('[data-column="new"] [data-card-id]').first();
   const cardId = await card.getAttribute('data-card-id');
-  await card.dragTo(page.locator('[data-column="interview"]'));
+  await dragCard(page, card, 'interview');
   await expect(page.getByTestId('dnd-error')).toBeVisible();
   await expect(page.locator(`[data-column="new"] [data-card-id="${cardId}"]`)).toBeVisible();
 });
