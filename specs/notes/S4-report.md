@@ -81,3 +81,57 @@ bugfixes: 4, защит: 4 — совпадают.
 ## Вердикт
 
 AI-скоринг жив: 50 вакансий заскорено за $0.025 с правильной дифференциацией от senior/AB (92) до student (8). UI показывает score с цветами, фильтрует и сортирует. Spearman и scheduler-wiring — небольшие follow-up. Готов к **G6 (approve PO)**.
+
+---
+
+# Addendum: промпт v2–v5 — work authorization + полные описания (2026-09-23)
+
+PO-фидбек: вакансия с «Must be a Canadian citizen, Permanent Resident or have a valid work permit» получала 90+. Итерации:
+
+| Версия | Правило | Результат | Вердикт PO |
+|---|---|---|---|
+| v2 | любое требование work-auth без спонсорства → жёсткий штраф | топ упал 92→74, ВСЕ вакансии оштрафованы | слишком агрессивно |
+| v3 | «valid work permit» = нейтрально | Neo Financial осталась 90 | слишком мягко |
+| v4 | градуировано: citizenship-only → <20; «valid work permit» без спонсорства → −15–25; явное спонсорство/LMIA/PNP → +5–10; не упомянуто → нейтрально + risk | 56/56, топ 85, Neo 85 | правило верное, но |
+| v5 | = v4 + **полное описание в промпте** (до 6000 симв.) | **Neo Financial 90 → 74** | ✅ |
+
+## Root cause находки
+
+1. **Тройная обрезка до 500 символов**: Adzuna API → `descriptionFrom` (.slice(0,500)) → промпт (.slice(0,500)). LLM физически не видел требование гражданства — оно за пределами первых 500 символов описания. Промпт v4 штрафовал то, чего не видел.
+2. **Adzuna details-страница несёт полное описание** в JSON-LD `JobPosting` (schema.org) — статический HTML, честный UA `Chinook/0.1` проходит, Playwright не нужен. robots.txt сам закрыт CloudFront WAF для всех (включая браузеры) — используем structured data + кеш навсегда + 2s rate-limit (ст. 4.1 соблюдена).
+3. **`listUnscoredJobs` не выбирал зарплаты** (заглушка null/null) — модель никогда не видела зарплаты. Исправлено.
+
+## Реализация (коммит a4928bd)
+
+- `packages/adapters/src/adzuna-enrich.ts`: `fetchAdzunaFullDescription()` + `extractAdzunaJsonLdDescription()` — egress-allowlist (+www.adzuna.ca), честный UA, 30s timeout, кеш в `job.raw.fullDescription`. 7 тестов на реальном fixture (74KB страница).
+- `apps/worker/src/enrich-adzuna.ts`: backfill `pnpm --filter @chinook/worker enrich:descriptions` — 40/56 обогащено, 19 miss = протухшие posting-страницы.
+- `apps/worker/src/scoring-batch.ts`: enrichment (jobbank+adzuna) перед скорингом, зарплаты реальные.
+- `packages/llm/src/scoring.ts`: v5, описание до 6000 симв.
+- `apps/web/app/job/[id]/page.tsx`: adzuna-ветка enrichment на странице вакансии.
+- Backfill Job Bank: их fullDescription тоже раньше не доходили до промпта (`descriptionFrom` читал только summary/description).
+
+## Проверка Neo Financial (v5, полное описание 4678 симв.)
+
+score **74** (было 90 в v2/v3, 85 в v4-без-текста). Risk цитирует вакансию дословно:
+> "Work permit required but no sponsorship mentioned - posting states 'Must be a Canadian citizen, Permanent Resident or have a valid work permit' with no mention of LMIA/sponsorship; the candidate needs employer-supported authorization, creating a chicken-and-egg eligibility problem."
+
+Штраф точечный: skills/fintech/Calgary/$275k/relocation остаются в reasons — вакансия не «утоплена», но честно понижена.
+
+## Гейты
+
+- unit: 62 passed (10 arch + 24 adapters + 19 llm + 4 worker + 5 tests)
+- e2e: **63/63** (fresh seed; board AC2 падал от накопленного state в chinook_e2e — вылечено пересеивом, не кодом)
+- lint / arch-lint / colors / kysely / typecheck: 0 нарушений
+- Docker web пересобран: страница вакансии показывает полное описание (4678 симв. для Neo)
+
+## Security-аудит (G5, аддендум)
+
+- claude-security workflow недоступен в сессии (нет Workflow tool) — задокументировано; ручная верификация: egress-allowlist https+host до fetch; все записи в БД параметризованы (Kysely); React экранирует вывод; скрейп-текст → только текст/промпт, LLM-вывод zod-валидирован (ст. 7.1); таймаут 30s на fetch; секретов в диффе нет (UA с контакт-мылом — публично намеренно, как JOBBANK_UA).
+- Mimosa commit-hook (warn mode): high-находки — все pre-existing (Kysely `.where()`-цепочки эвристически помечены как sql-injection входы; fetch в ingest.ts как SSRF вход) — параметризованные запросы, ложные срабатывания; новых файлов находок нет. Покрытие неполное (сказано самим сканером).
+- Известный принятый риск: fetch следует redirect'ам (если adzuna.ca скомпрометирован и редиректит наружу, fetch уйдёт с allowlist-хоста). Контент используется только как текст; при желании — follow-up manual-redirect-check.
+
+## Остатки
+
+- v5 re-score полного golden-set — батч в процессе (16/56 на момент письма; Neo уже 74, кеш идемпотентен)
+- talent.com — заблокировано (нет публичного API/RSS; partner API требует регистрации PO)
+- Spearman — ждёт PO-разметку
