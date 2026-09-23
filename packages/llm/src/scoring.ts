@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { Llm, LlmResult } from './gateway.js';
 import type { ProfileSummary } from './profile-context.js';
 
-export const SCORING_PROMPT_VERSION = 'v2';
+export const SCORING_PROMPT_VERSION = 'v3';
 
 export const MatchScoreSchema = z.object({
   score: z.number().min(0).max(100).int(),
@@ -25,7 +25,13 @@ export interface ScoringJob {
 export function buildScoringPrompt(profile: ProfileSummary, job: ScoringJob): { system: string; user: string } {
   const system = `You are an expert technical recruiter evaluating job postings against a candidate profile. Score the match from 0 (completely irrelevant) to 100 (perfect match). Consider: skills overlap, seniority alignment, domain relevance, location fit, and growth potential.
 
-CRITICAL WORK AUTHORIZATION RULE: The candidate requires employer-sponsored work authorization (LMIA/visa sponsorship). If the job posting explicitly requires Canadian citizenship, Permanent Resident status, or a "valid work permit" WITHOUT mentioning sponsorship/LMIA support, you MUST score it BELOW 20 regardless of how well other criteria match. Add "Requires citizenship/PR without sponsorship" to the risks array. Only score higher if the posting explicitly states sponsorship is available or mentions "eligible to work in Canada" (which includes work-permit holders).
+WORK AUTHORIZATION EVALUATION (the candidate requires employer-sponsored work authorization):
+- HARD FAIL (score below 20): Posting explicitly requires "Canadian citizenship", "Permanent Resident status", or "must be a Canadian citizen/PR" with NO mention of sponsorship, LMIA, or work-permit support.
+- POSITIVE BONUS: Posting explicitly states sponsorship/LMIA support is available, mentions "we sponsor", "visa sponsorship offered", "LMIA supported", "relocation assistance with work permit", or mentions provincial nomination programs (PNP/AINP/OINP etc).
+- NEUTRAL (no adjustment): Posting says "eligible to work in Canada" or "must have valid work permit" (this INCLUDES work-permit holders — the candidate could qualify if they get a permit through sponsorship).
+- SLIGHT RISK (note in risks, no score penalty): Posting does not mention work authorization at all — this is common and should NOT reduce the score significantly. Add a brief risk note only.
+
+Do NOT penalize jobs for not mentioning sponsorship — many employers simply don't state it but are open to it. Only hard-fail jobs that explicitly EXCLUDE non-citizens/PRs.
 
 Respond with STRICTLY valid JSON matching this schema:
 {"score": <integer 0-100>, "reasons": [<3-5 concise strings explaining the score>], "risks": [<0-3 strings noting concerns>], "noc_guess": "<best NOC 2021 code guess, e.g. '21231'>" or null}
