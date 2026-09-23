@@ -174,10 +174,8 @@ ensure application row (status='new' если нет) →
 - [ ] Отчёт по токенам на golden-наборе (правило 7 AGENTS.md).
 - [ ] Снапшоты до/после (git-lfs), PII маскирован.
 
-## Открытые вопросы (к PO, вместе с G1)
+## Открытые вопросы — решены PO (G1, 2026-09-23)
 
-1. Тон cover letter: формальный Canadian business vs чуть теплее (startup-friendly)?
-   Промпт v1 — формальный; калибровка по golden-просмотру.
-2. Включать ли в tailored resume блок identity (контакты) из master при просмотре,
-   или показывать только профессиональные секции? (Рендер S6 решит окончательно;
-   для просмотра предлагаю без identity.)
+1. Тон cover letter: **формальный Canadian business** (v1); калибровка по golden.
+2. Просмотр tailored resume: **без identity** — только профессиональные секции
+   (Summary/Skills/Experience/Education); окончательная вёрстка — рендер S6.
