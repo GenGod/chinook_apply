@@ -14,6 +14,7 @@
     "schedule:status": "tsx src/scheduler.ts --status",
     "schedule:once": "tsx src/scheduler.ts --once",
     "seed:e2e": "tsx src/seed-e2e.ts",
+    "enrich:descriptions": "tsx --env-file-if-exists=../../.env src/enrich-adzuna.ts",
     "dev": "next dev"
   },
   "dependencies": {

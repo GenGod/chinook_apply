@@ -3,7 +3,7 @@
  * allowlisted hosts — no other outbound target may be constructed from data.
  */
 export const EGRESS_JOBBANK_HOSTS = ['www.jobbank.gc.ca'] as const;
-export const EGRESS_ADZUNA_HOSTS = ['api.adzuna.com'] as const;
+export const EGRESS_ADZUNA_HOSTS = ['api.adzuna.com', 'www.adzuna.ca'] as const;
 
 export function assertSafeExternalUrl(raw: string, allowedHosts: readonly string[]): URL {
   let url: URL;

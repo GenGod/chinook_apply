@@ -226,6 +226,8 @@ export interface UnscoredJob {
   city: string;
   province: string;
   remote: boolean;
+  source: string;
+  url: string;
   salaryMin: number | null;
   salaryMax: number | null;
   raw: unknown;
@@ -256,16 +258,21 @@ export async function listUnscoredJobs(
       'job.city as city',
       'job.province as province',
       'job.remote as remote',
+      'job.source as source',
+      'job.url as url',
+      'job.salary_min as salaryMin',
+      'job.salary_max as salaryMax',
       'job.raw as raw',
     ])
     .orderBy('job.posted_at', 'desc')
     .limit(opts.limit)
     .execute();
 
+  // pg driver returns numeric as string — normalize to number | null
   return rows.map((r) => ({
     ...r,
-    salaryMin: null,
-    salaryMax: null,
+    salaryMin: r.salaryMin === null ? null : Number(r.salaryMin),
+    salaryMax: r.salaryMax === null ? null : Number(r.salaryMax),
   }));
 }
 

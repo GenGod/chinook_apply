@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import type { BoardStatus, Database } from '@chinook/core';
 import type { Kysely } from 'kysely';
 import { getDb } from '@/lib/db';
+import { fetchAdzunaFullDescription } from '@chinook/adapters';
 import { StatusControls } from '../../board/status-controls';
 import styles from '../../board/board.module.css';
 
@@ -132,10 +133,23 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const feedDesc = rawDescription(job.raw);
   let desc = typeof fullDesc === 'string' && fullDesc.length > 100 ? fullDesc : feedDesc;
 
-  // Enrichment: if Job Bank job and description is short, fetch the full posting page
-  if ((!desc || desc.length < 600) && job.source === 'jobbank' && job.url) {
+  // Enrichment: if description is short, fetch the full posting text
+  if ((!desc || desc.length < 600) && job.url) {
     try {
-      const enriched = await enrichFromPostingPage(getDb(), id, job.url, raw);
+      let enriched: string | null = null;
+      if (job.source === 'jobbank') {
+        enriched = await enrichFromPostingPage(getDb(), id, job.url, raw);
+      } else if (job.source === 'adzuna') {
+        // Adzuna API caps description at 500 chars; the details page has the
+        // full text in a JobPosting JSON-LD block. Cache like jobbank does.
+        enriched = await fetchAdzunaFullDescription(job.url);
+        if (enriched && enriched.length > 200) {
+          await getDb().updateTable('job')
+            .set({ raw: { ...raw, fullDescription: enriched } })
+            .where('job.id', '=', id)
+            .execute();
+        }
+      }
       if (enriched && enriched.length > (desc?.length ?? 0)) {
         desc = enriched;
       }

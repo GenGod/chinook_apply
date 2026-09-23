@@ -7,18 +7,48 @@ import { listUnscoredJobs, upsertMatch } from '@chinook/core';
 
 const DEFAULT_DAILY_LIMIT_USD = Number(process.env.LLM_SCORING_DAILY_LIMIT_USD ?? 0.5);
 
-/** Extracts description text from raw job payload (jobbank XML summary or adzuna JSON). */
+/** Extracts description text from raw job payload. Prefers the enriched full
+ *  description (jobbank posting page / adzuna details JSON-LD); falls back to
+ *  the feed/API snippet capped at 2000 chars. */
 export function descriptionFrom(raw: unknown): string | null {
   if (raw == null || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
+  const full = r.fullDescription;
+  if (typeof full === 'string' && full.trim().length > 100) return full.trim();
   const summary = typeof r.summary === 'object' && r.summary !== null ? (r.summary as { '#text'?: string })['#text'] : undefined;
-  if (typeof summary === 'string') return summary.replace(/<[^>]+>/g, ' ').trim().slice(0, 500) || null;
+  if (typeof summary === 'string') return summary.replace(/<[^>]+>/g, ' ').trim().slice(0, 2000) || null;
   const desc = (r as { description?: unknown }).description;
-  if (typeof desc === 'string') return desc.replace(/<[^>]+>/g, ' ').trim().slice(0, 500) || null;
+  if (typeof desc === 'string') return desc.replace(/<[^>]+>/g, ' ').trim().slice(0, 2000) || null;
   return null;
 }
 
 import type { Llm } from '@chinook/llm';
+import { fetchPostingDescription, fetchAdzunaFullDescription } from '@chinook/adapters';
+
+/** Fetches the full posting description for truncated jobs and caches it in
+ *  job.raw.fullDescription. One fetch per job; failures fall back to the feed
+ *  snippet (scoring proceeds either way). */
+async function enrichDescription(
+  db: Kysely<Database>,
+  job: { id: string; source: string; url: string; raw: unknown },
+): Promise<Record<string, unknown>> {
+  const raw = (job.raw ?? {}) as Record<string, unknown>;
+  if (typeof raw.fullDescription === 'string' && raw.fullDescription.length > 100) return raw;
+  let full: string | null = null;
+  try {
+    if (job.source === 'jobbank') full = await fetchPostingDescription(job.url);
+    else if (job.source === 'adzuna') full = await fetchAdzunaFullDescription(job.url);
+  } catch {
+    return raw; // enrichment is best-effort
+  }
+  if (typeof full !== 'string' || full.length < 200) return raw;
+  const updated = { ...raw, fullDescription: full };
+  await db.updateTable('job')
+    .set({ raw: updated })
+    .where('job.id', '=', job.id)
+    .execute();
+  return updated;
+}
 
 /** Scores unscored jobs; returns count scored and cost incurred. */
 export async function scoreUnscoredBatch(
@@ -49,6 +79,7 @@ export async function scoreUnscoredBatch(
 
   for (const job of jobs) {
     if (spent + cost >= dailyLimit) break;
+    const raw = await enrichDescription(db, job);
     const { buildScoringPrompt, MatchScoreSchema } = await import('@chinook/llm');
     const scoringJob = {
       title: job.title,
@@ -56,7 +87,7 @@ export async function scoreUnscoredBatch(
       location: `${job.city}${job.province ? `, ${job.province}` : ''}${job.remote ? ' (remote)' : ''}`,
       salaryMin: job.salaryMin,
       salaryMax: job.salaryMax,
-      description: descriptionFrom(job.raw) ?? undefined,
+      description: descriptionFrom(raw) ?? undefined,
     };
     const { system, user } = buildScoringPrompt(opts.profileSummary, scoringJob as import('@chinook/llm').ScoringJob);
     const result = await llm.call({

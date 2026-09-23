@@ -146,7 +146,8 @@ test('job detail shows all information sections', async ({ page }) => {
   await link.click();
   await page.waitForURL(/\/job\/[0-9a-f-]{36}/);
 
-  await expect(page.getByText('Job details')).toBeVisible();
+  // exact match: Job Bank descriptions contain the words "Job details" too
+  await expect(page.getByText('Job details', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { level: 2 })).toBeVisible();
   await expect(page.locator('article section').first()).toBeVisible();
   await expect(page.getByRole('link', { name: /Open original posting/i })).toBeVisible();

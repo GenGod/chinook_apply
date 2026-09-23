@@ -40,11 +40,13 @@ describe('buildScoringPrompt (S4 AC1)', () => {
     expect(user).toContain('$110k–$140k');
   });
 
-  it('description excerpt truncated to 500 chars', () => {
-    const long: ScoringJob = { ...job, description: 'x'.repeat(800) };
-    const { user: u } = buildScoringPrompt(profile, long);
-    expect(u).toContain('x'.repeat(500));
-    expect(u).not.toContain('x'.repeat(501));
+  it('description passes through in full up to 6000 chars (no 500-char API truncation)', () => {
+    const full: ScoringJob = { ...job, description: 'x'.repeat(800) };
+    const { user: u } = buildScoringPrompt(profile, full);
+    expect(u).toContain('x'.repeat(800));
+    const huge: ScoringJob = { ...job, description: 'x'.repeat(7000) };
+    const { user: uh } = buildScoringPrompt(profile, huge);
+    expect(uh).not.toContain('x'.repeat(6001));
   });
 
   it('different jobs produce different prompts (cache key separation)', () => {

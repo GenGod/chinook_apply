@@ -43,7 +43,7 @@ export async function fetchPostingDescription(postingUrl: string): Promise<strin
 }
 
 /** Minimal HTML to text: removes script/style blocks, strips tags, decodes entities. */
-function stripHtml(html: string): string {
+export function stripHtml(html: string): string {
   // remove script and style content entirely (before stripping tags)
   let cleaned = html;
   const scriptStart = cleaned.indexOf('<script');

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { Llm, LlmResult } from './gateway.js';
 import type { ProfileSummary } from './profile-context.js';
 
-export const SCORING_PROMPT_VERSION = 'v4';
+export const SCORING_PROMPT_VERSION = 'v5';
 
 export const MatchScoreSchema = z.object({
   score: z.number().min(0).max(100).int(),
@@ -57,7 +57,7 @@ Prompt version: ${SCORING_PROMPT_VERSION}`;
 **Employer:** ${job.employer}
 **Location:** ${job.location}
 **Salary:** ${salary}
-${job.description ? `**Description (excerpt):** ${job.description.slice(0, 500)}` : ''}
+${job.description ? `**Description (full posting text):** ${job.description.slice(0, 6000)}` : ''}
 
 Score this match.`;
 

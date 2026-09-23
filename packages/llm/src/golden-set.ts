@@ -22,10 +22,12 @@ console.log(`golden-set: scoring ${jobs.length} jobs (relevant+review)`);
 function descriptionFrom(raw: unknown): string | undefined {
   if (raw == null || typeof raw !== 'object') return undefined;
   const r = raw as Record<string, unknown>;
+  const full = r.fullDescription;
+  if (typeof full === 'string' && full.trim().length > 100) return full.trim();
   const summary = typeof r.summary === 'object' && r.summary !== null ? (r.summary as { '#text'?: string })['#text'] : undefined;
-  if (typeof summary === 'string') return summary.replace(/<[^>]+>/g, ' ').trim().slice(0, 500) || undefined;
+  if (typeof summary === 'string') return summary.replace(/<[^>]+>/g, ' ').trim().slice(0, 2000) || undefined;
   const desc = (r as { description?: unknown }).description;
-  if (typeof desc === 'string') return desc.replace(/<[^>]+>/g, ' ').trim().slice(0, 500) || undefined;
+  if (typeof desc === 'string') return desc.replace(/<[^>]+>/g, ' ').trim().slice(0, 2000) || undefined;
   return undefined;
 }
 
