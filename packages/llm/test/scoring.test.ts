@@ -10,6 +10,7 @@ const profile: ProfileSummary = {
   targetTitles: ['Senior Developer', 'Lead Developer'],
   nocCodes: ['21231', '21234'],
   location: 'Alberta, Canada (open to relocation)',
+  workAuthorization: 'Employer-supported work authorization required (requires LMIA/sponsorship)',
 };
 
 const job: ScoringJob = {
