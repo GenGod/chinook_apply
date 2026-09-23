@@ -24,7 +24,7 @@ import type { Llm } from '@chinook/llm';
 export async function scoreUnscoredBatch(
   db: Kysely<Database>,
   llm: Llm,
-  opts: { promptVersion: string; profileSummary: { summary: string; skills: string[]; targetTitles: string[]; nocCodes: string[]; location: string }; dailyLimitUsd?: number },
+  opts: { promptVersion: string; profileSummary: { summary: string; skills: string[]; targetTitles: string[]; nocCodes: string[]; location: string; workAuthorization: string }; dailyLimitUsd?: number },
 ): Promise<{ scored: number; skipped: number; costUsd: number }> {
   const dailyLimit = opts.dailyLimitUsd ?? DEFAULT_DAILY_LIMIT_USD;
 
