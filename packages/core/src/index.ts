@@ -55,10 +55,14 @@ export { getMetrics, DEFAULT_INTERVALS, type MetricsSummary, type SourceHealth, 
 export {
   extractEntities,
   validateResumeDiff,
+  assembleResume,
+  validateCoverLetter,
+  UnknownReferenceError,
   type Violation,
   type ViolationKind,
   type ValidationReport,
   type MasterProfileLike,
   type ResumeDiffLike,
+  type TailoredResume,
 } from './generation-validators';
 export const CORE_MARKER = 's1';
