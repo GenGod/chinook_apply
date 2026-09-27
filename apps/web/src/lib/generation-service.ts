@@ -7,7 +7,6 @@
 // G1: identity/PII never enters prompts — the master profile handed to the
 // prompt builders carries professional content only.
 import { readFileSync } from 'node:fs';
-import path from 'node:path';
 import process from 'node:process';
 import type { Kysely } from 'kysely';
 import {
@@ -55,10 +54,12 @@ const DEFAULT_DAILY_LIMIT_USD = 1.0;
 
 // The master profile on disk is gitignored PII (Constitution art. 3) and
 // `data/` is dockerignored — it is never baked into code or images. Dev default
-// resolves relative to the app working directory (apps/web → repo-root/data,
-// same layout as the Docker WORKDIR); a container deployment must volume-mount
-// the profile and point CHINOOK_PROFILE_PATH at it, or pass opts.master.
-const DEFAULT_MASTER_PATH = path.resolve(process.cwd(), '../../data/profile/master_profile.json');
+// and the Docker layout share one convention (WORKDIR apps/web → ../.. is the
+// repo root); Docker mounts data/profile read-only at exactly that path. The
+// path is a static literal with NO dynamic fragments — this loader must never
+// double as an arbitrary file read (its output goes into LLM prompts). Tests
+// and alternative deployments pass opts.master instead.
+const DEFAULT_MASTER_PATH = '../../data/profile/master_profile.json';
 
 function asStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((s): s is string => typeof s === 'string') : [];
@@ -99,14 +100,13 @@ function normalizeMaster(raw: unknown): MasterProfileLike | null {
 }
 
 /**
- * Loads the master profile for prompt building. Precedence: explicit path →
- * CHINOOK_PROFILE_PATH env → repo-root default. Returns null when the file is
- * absent/unusable (e.g. CI) — callers must then supply their own master.
+ * Loads the master profile from the static repo-layout path. Returns null when
+ * the file is absent/unusable (e.g. CI) — callers must then supply their own
+ * master via opts.master.
  */
-export function loadMasterProfile(explicitPath?: string): MasterProfileLike | null {
-  const file = explicitPath ?? process.env.CHINOOK_PROFILE_PATH ?? DEFAULT_MASTER_PATH;
+export function loadMasterProfile(): MasterProfileLike | null {
   try {
-    return normalizeMaster(JSON.parse(readFileSync(file, 'utf8')));
+    return normalizeMaster(JSON.parse(readFileSync(DEFAULT_MASTER_PATH, 'utf8')));
   } catch {
     return null;
   }
@@ -307,7 +307,7 @@ export async function generateDocuments(
   const master = opts?.master ?? loadMasterProfile();
   if (!master) {
     throw new Error(
-      'Master profile unavailable: pass opts.master, set CHINOOK_PROFILE_PATH, or place data/profile/master_profile.json at the repo root',
+      'Master profile unavailable: pass opts.master, or place data/profile/master_profile.json at the repo root (Docker: mount it read-only)',
     );
   }
 
