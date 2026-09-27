@@ -52,4 +52,13 @@ export {
 } from './board';
 export { planSources, nextDue, type SourceSchedule } from './schedule';
 export { getMetrics, DEFAULT_INTERVALS, type MetricsSummary, type SourceHealth, type HistoryRow } from './metrics';
+export {
+  extractEntities,
+  validateResumeDiff,
+  type Violation,
+  type ViolationKind,
+  type ValidationReport,
+  type MasterProfileLike,
+  type ResumeDiffLike,
+} from './generation-validators';
 export const CORE_MARKER = 's1';
