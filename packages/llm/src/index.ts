@@ -19,4 +19,15 @@ export {
   type MatchScore,
   type ScoringJob,
 } from './scoring';
+export {
+  buildResumePrompt,
+  buildCoverPrompt,
+  RESUME_PROMPT_VERSION,
+  COVER_PROMPT_VERSION,
+  ResumeDiffSchema,
+  CoverSchema,
+  type ResumeDiff,
+  type CoverLetter,
+  type GenerationJob,
+} from './generation';
 export { extractProfileSummary, type ProfileSummary } from './profile-context';
