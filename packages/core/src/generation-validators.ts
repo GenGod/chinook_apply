@@ -168,7 +168,7 @@ export function assembleResume(master: MasterProfileLike, diff: ResumeDiffLike):
 
 const WORD_LIMIT = 300;
 const FOUR_DIGIT_YEAR = /^\d{4}$/;
-const SALARY_PATTERN = /salary (expectation|requirement)|compensation (package|expectations?)|negotiat/i;
+const SALARY_PATTERN = /salary (expectation|requirement)|compensation (package|expectations?)|negotiat(e|ion) (salary|compensation|pay)/i;
 const NEGATIVE_PATTERN = /(terrible|awful|horrible) (boss|manager|employer|company)/i;
 // Salutation lines ("Dear Hiring Manager,") are fixed-form politeness, not
 // factual claims — excluded before employer-entity scanning.

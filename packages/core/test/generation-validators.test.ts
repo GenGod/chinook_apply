@@ -158,6 +158,13 @@ describe('validateCoverLetter', () => {
     const r = validateCoverLetter('I left because of a terrible manager at Voki Labs.', master, job);
     expect(r.violations.map(v => v.kind)).toContain('forbidden_pattern');
   });
+  it('does not flag benign "negotiation skills" as forbidden_pattern', () => {
+    const r = validateCoverLetter(
+      'I bring strong negotiation skills and would love to join Voki Labs as a Senior Engineer.',
+      master, job);
+    expect(r.violations.map(v => v.kind)).not.toContain('forbidden_pattern');
+    expect(r.valid).toBe(true);
+  });
   it('accepts a standard Dear salutation without flagging it as an unknown entity', () => {
     const r = validateCoverLetter('Dear Hiring Manager,\n\n' + validLetter, master, job);
     expect(r.valid).toBe(true);
