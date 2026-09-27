@@ -53,6 +53,9 @@ importers:
       '@chinook/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@chinook/llm':
+        specifier: workspace:*
+        version: link:../../packages/llm
       next:
         specifier: ^16.3.5
         version: 16.3.5(@playwright/test@1.63.0)(@types/node@22.20.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
