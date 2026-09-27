@@ -53,6 +53,13 @@ export {
 export { planSources, nextDue, type SourceSchedule } from './schedule';
 export { getMetrics, DEFAULT_INTERVALS, type MetricsSummary, type SourceHealth, type HistoryRow } from './metrics';
 export {
+  saveArtifact,
+  listArtifacts,
+  getArtifactContent,
+  type ArtifactView,
+  type ArtifactContent,
+} from './artifacts';
+export {
   extractEntities,
   validateResumeDiff,
   assembleResume,
