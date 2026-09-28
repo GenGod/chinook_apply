@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@chinook/contracts": "workspace:*",
+    "docx": "^9.8.0",
+    "fflate": "^0.8.3",
     "kysely": "^0.29.5",
     "pg": "^8.23.0",
     "zod": "^4.6.5"
