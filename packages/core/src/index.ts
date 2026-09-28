@@ -83,4 +83,5 @@ export {
   type RenderCoverModel,
 } from './render-model';
 export { encodeResumeDocx, encodeCoverDocx } from './render-docx';
+export { encodeResumePdf, encodeCoverPdf } from './render-pdf';
 export const CORE_MARKER = 's1';
