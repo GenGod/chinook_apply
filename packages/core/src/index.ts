@@ -72,4 +72,14 @@ export {
   type ResumeDiffLike,
   type TailoredResume,
 } from './generation-validators';
+export {
+  buildResumeRenderModel,
+  buildCoverRenderModel,
+  groupSkills,
+  renderIdentityFromMaster,
+  renderIdentityFromContent,
+  type RenderIdentity,
+  type RenderResumeModel,
+  type RenderCoverModel,
+} from './render-model';
 export const CORE_MARKER = 's1';
