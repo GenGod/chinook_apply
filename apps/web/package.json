@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start -H 0.0.0.0",
     "typecheck": "tsc --noEmit",
-    "generate:documents": "tsx --env-file-if-exists=../../.env src/scripts/generate-documents.ts"
+    "generate:documents": "tsx --env-file-if-exists=../../.env src/scripts/generate-documents.ts",
+    "render:documents": "tsx --env-file-if-exists=../../.env src/scripts/render-documents.ts"
   },
   "dependencies": {
     "@chinook/adapters": "workspace:*",

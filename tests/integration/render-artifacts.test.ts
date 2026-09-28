@@ -16,6 +16,7 @@ import type { Kysely } from 'kysely';
 import {
   renderArtifact,
   readRenderFile,
+  resolveRenderIdentity,
   RenderSourceNotFoundError,
   RenderNotRenderableError,
   RenderIdentityUnavailableError,
@@ -194,6 +195,22 @@ describe('render artifact repository (S6 T5)', () => {
 });
 
 describe('render service (S6 T6)', () => {
+  // Regression S6 T9 (golden run): the file loader already returns a parsed
+  // RenderIdentity — it must be used as-is, never re-parsed as raw master JSON
+  // (the double-parse made every master-file fallback 503).
+  it('resolveRenderIdentity prefers content, then raw opts.master, then the file identity', () => {
+    const content = { identity: { fullName: 'From Content' } };
+    const rawMaster = { identity: { full_name: 'From Raw Master' } };
+    const fileIdentity = { fullName: 'From File' };
+    expect(resolveRenderIdentity(content, rawMaster, fileIdentity)).toEqual({ fullName: 'From Content' });
+    expect(resolveRenderIdentity({}, rawMaster, fileIdentity)).toEqual({ fullName: 'From Raw Master' });
+    // THE regression: no opts.master → the parsed file identity is returned directly.
+    expect(resolveRenderIdentity({}, undefined, fileIdentity)).toEqual({ fullName: 'From File' });
+    expect(resolveRenderIdentity({}, undefined, null)).toBeNull();
+    // opts.master explicitly null (tests without the PII file) skips the raw-parse path.
+    expect(resolveRenderIdentity({}, null, fileIdentity)).toEqual({ fullName: 'From File' });
+  });
+
   // Synthetic identity + resume — never the real master profile (PII, art. 3.2).
   const contentIdentity = { fullName: 'Alex Fixture', headline: 'Senior Developer', email: 'alex.fixture@example.com', location: 'Alberta, Canada' };
   const resumeContent = {

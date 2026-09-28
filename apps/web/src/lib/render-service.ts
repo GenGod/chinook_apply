@@ -102,6 +102,22 @@ async function renderOne(
 }
 
 /**
+ * Identity resolution order (S6 R4): the artifact content snapshot first
+ * (self-contained, audit-stable), then opts.master parsed as RAW master JSON
+ * (tests / alternative deployments), then the identity loaded from the master
+ * profile FILE (already a RenderIdentity — never re-parsed; regression S6 T9:
+ * the golden run caught the double-parse that made every render 503).
+ */
+export function resolveRenderIdentity(
+  content: unknown,
+  optsMaster: unknown,
+  fileIdentity: RenderIdentity | null,
+): RenderIdentity | null {
+  const fromOpts = optsMaster !== undefined ? renderIdentityFromMaster(optsMaster) : null;
+  return renderIdentityFromContent(content) ?? fromOpts ?? fileIdentity;
+}
+
+/**
  * Renders one valid generated artifact (resume | cover_letter) into both
  * formats, writing the files and upserting the two render artifact rows.
  * Idempotent: re-rendering the same source updates the same rows and files.
@@ -126,10 +142,8 @@ export async function renderArtifact(
     throw new RenderNotRenderableError(`artifact ${artifactId} content does not match its kind (${source.kind})`);
   }
 
-  // Identity: content snapshot first (self-contained, audit-stable), then the
-  // master profile file for legacy S5 artifacts.
-  const masterRaw = opts?.master ?? loadMasterIdentity();
-  const identity = renderIdentityFromContent(source.content) ?? renderIdentityFromMaster(masterRaw);
+  // Identity: content snapshot → opts.master (raw JSON) → master file loader.
+  const identity = resolveRenderIdentity(source.content, opts?.master, loadMasterIdentity());
   if (!identity) {
     throw new RenderIdentityUnavailableError(
       'no identity available: artifact content has no identity snapshot and the master profile is unavailable',
@@ -137,7 +151,7 @@ export async function renderArtifact(
   }
 
   const masterRecord =
-    masterRaw != null && typeof masterRaw === 'object' ? (masterRaw as Record<string, unknown>) : null;
+    opts?.master != null && typeof opts.master === 'object' ? (opts.master as Record<string, unknown>) : null;
   const masterSkills =
     masterRecord?.skills != null && typeof masterRecord.skills === 'object'
       ? (masterRecord.skills as Record<string, string[]>)
