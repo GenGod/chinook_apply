@@ -30,6 +30,7 @@ services:
       DATABASE_URL: postgres://chinook:chinook_dev@postgres:5432/chinook
       ADZUNA_APP_ID: ${ADZUNA_APP_ID:-}
       ADZUNA_APP_KEY: ${ADZUNA_APP_KEY:-}
+      CRAWLER_CONTACT_EMAIL: ${CRAWLER_CONTACT_EMAIL:-}
       SCHED_JOBBANK_MIN: ${SCHED_JOBBANK_MIN:-30}
       SCHED_ADZUNA_MIN: ${SCHED_ADZUNA_MIN:-120}
 
@@ -52,6 +53,7 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://chinook:chinook_dev@postgres:5432/chinook
+      CRAWLER_CONTACT_EMAIL: ${CRAWLER_CONTACT_EMAIL:-}
 
 volumes:
   pgdata:

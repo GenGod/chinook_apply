@@ -1,11 +1,9 @@
 import { XMLParser } from 'fast-xml-parser';
 import type { RawJob } from '@chinook/contracts';
 import { assertSafeExternalUrl, EGRESS_JOBBANK_HOSTS } from './egress';
+import { crawlerUserAgent } from './user-agent';
 
 export const JOBBANK_FEED_URL = 'https://www.jobbank.gc.ca/jobsearch/feed/jobSearchRSSfeed';
-
-export const JOBBANK_UA =
-  'Chinook/0.1 (personal job-search automation; contact: gengodoriginal@gmail.com)';
 
 export const jobbankAdapter = {
   id: 'jobbank' as const,
@@ -19,7 +17,7 @@ export const jobbankAdapter = {
 
   async fetch(query = 'software developer'): Promise<string> {
     const response = await fetch(this.feedUrl(query), {
-      headers: { 'User-Agent': JOBBANK_UA, Accept: 'application/atom+xml' },
+      headers: { 'User-Agent': crawlerUserAgent(), Accept: 'application/atom+xml' },
       signal: AbortSignal.timeout(30_000),
     });
     if (!response.ok) {

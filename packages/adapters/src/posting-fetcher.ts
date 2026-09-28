@@ -1,14 +1,13 @@
 // Job Bank posting page fetcher — enriches truncated feed summaries with
 // the full description from the actual posting page (S4 enrichment).
 import { assertSafeExternalUrl, EGRESS_JOBBANK_HOSTS } from './egress';
-
-export const JOBBANK_UA = 'Chinook/0.1 (personal job-search automation; contact: gengodoriginal@gmail.com)';
+import { crawlerUserAgent } from './user-agent';
 
 /** Fetches a Job Bank posting page and extracts the full description text. */
 export async function fetchPostingDescription(postingUrl: string): Promise<string | null> {
   const url = assertSafeExternalUrl(postingUrl, EGRESS_JOBBANK_HOSTS);
   const response = await fetch(url, {
-    headers: { 'User-Agent': JOBBANK_UA, Accept: 'text/html' },
+    headers: { 'User-Agent': crawlerUserAgent(), Accept: 'text/html' },
     signal: AbortSignal.timeout(30_000),
   });
   if (!response.ok) return null;

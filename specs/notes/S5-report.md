@@ -103,8 +103,10 @@ DoD-пункты: гейты 0 нарушений ✅; docker-образ web п�
 - **Находка вне диффа S5 (для решения PO):** личный email захардкожен в User-Agent трёх файлов адаптеров
   (`adzuna-enrich.ts:9`, `jobbank.ts:8`, `posting-fetcher.ts:5` — `Chinook/0.1 (personal job-search automation; contact: …)`).
   Внесён осознанно в S1 (`be6bfdb`) как контакт краулера (вежливая практика для jobbank/adzuna), уже публичен на `origin/main`.
-  Рекомендация: заменить на env-переменную (`ADZUNA_CONTACT_EMAIL`) или noreply-адрес отдельным инкрементом;
-  из истории GitHub строку не стереть без переписывания истории.
+  **Выполнено по решению PO (следом за пушем S5):** все три UA переведены на `crawlerUserAgent()`
+  (env `CRAWLER_CONTACT_EMAIL`, fallback — UA без contact-клаузы), TDD red→green (`packages/adapters/test/user-agent.test.ts`),
+  env заведён в compose (scheduler + web) и `.env.example`; реальный email перенесён в gitignored `.env`.
+  Из истории GitHub строку не стереть без переписывания истории.
 - Секреты: ключи только в `.env` (gitignored), `ZAI_API_KEY` в llm_run/артефакты не попадает; compose-маунт профиля read-only.
 
 ## Отложенные мелочи (из ревью задач, не блокируют G6)

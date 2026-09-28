@@ -4,9 +4,8 @@
 // job, cached by the caller in job.raw.fullDescription; 2s politeness delay is
 // the caller's responsibility (batch backfill).
 import { assertSafeExternalUrl, EGRESS_ADZUNA_HOSTS } from './egress';
+import { crawlerUserAgent } from './user-agent';
 import { stripHtml } from './posting-fetcher';
-
-export const ADZUNA_DETAILS_UA = 'Chinook/0.1 (personal job-search automation; contact: gengodoriginal@gmail.com)';
 
 const MIN_DESCRIPTION_LENGTH = 200;
 
@@ -79,7 +78,7 @@ export async function fetchAdzunaFullDescription(
   const url = assertSafeExternalUrl(detailsUrl, EGRESS_ADZUNA_HOSTS);
   const doFetch = opts.fetchImpl ?? ((u: URL, init: RequestInit) => fetch(u, init));
   const response = await doFetch(url, {
-    headers: { 'User-Agent': ADZUNA_DETAILS_UA, Accept: 'text/html' },
+    headers: { 'User-Agent': crawlerUserAgent(), Accept: 'text/html' },
     signal: AbortSignal.timeout(30_000),
   });
   if (!response.ok) return null;
