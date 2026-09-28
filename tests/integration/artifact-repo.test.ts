@@ -136,6 +136,7 @@ describe('artifact repository (S5 T5)', () => {
       status: 'invalid',
       created: expect.any(String),
       violations: ['bullet 3 not in master profile', 'skill "wasm-gc" not in profile'],
+      sourceArtifactId: null, // S6: render rows only
     });
     expect(Number.isNaN(Date.parse(v1.created))).toBe(false);
     expect('content' in v1).toBe(false); // PII leaves the repo only via getArtifactContent
