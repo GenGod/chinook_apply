@@ -56,8 +56,11 @@ export {
   saveArtifact,
   listArtifacts,
   getArtifactContent,
+  saveRenderArtifact,
+  findRenderArtifact,
   type ArtifactView,
   type ArtifactContent,
+  type RenderFormat,
 } from './artifacts';
 export {
   extractEntities,
@@ -72,4 +75,18 @@ export {
   type ResumeDiffLike,
   type TailoredResume,
 } from './generation-validators';
+export {
+  buildResumeRenderModel,
+  buildCoverRenderModel,
+  groupSkills,
+  renderIdentityFromMaster,
+  renderIdentityFromContent,
+  normalizeTailoredResume,
+  normalizeLetter,
+  type RenderIdentity,
+  type RenderResumeModel,
+  type RenderCoverModel,
+} from './render-model';
+export { encodeResumeDocx, encodeCoverDocx } from './render-docx';
+export { encodeResumePdf, encodeCoverPdf } from './render-pdf';
 export const CORE_MARKER = 's1';

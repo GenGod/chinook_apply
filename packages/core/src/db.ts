@@ -70,7 +70,9 @@ export interface ArtifactRow {
   status: string;
   content: unknown;
   validation: unknown;
-  llm_run_id: number;
+  llm_run_id: number | null;
+  source_artifact_id: string | null;
+  content_path: string | null;
   created_at: Generated<Date>;
 }
 
@@ -201,16 +203,25 @@ CREATE INDEX IF NOT EXISTS job_match_score_idx ON job_match (score DESC);
 CREATE TABLE IF NOT EXISTS artifact (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   job_id UUID NOT NULL REFERENCES job(id) ON DELETE CASCADE,
-  kind TEXT NOT NULL CHECK (kind IN ('resume', 'cover_letter')),
+  kind TEXT NOT NULL CHECK (kind IN ('resume', 'cover_letter', 'render_docx', 'render_pdf')),
   version INT NOT NULL CHECK (version >= 1),
   status TEXT NOT NULL CHECK (status IN ('valid', 'invalid')),
   content JSONB NOT NULL,
   validation JSONB NOT NULL DEFAULT '[]',
-  llm_run_id BIGINT NOT NULL,
+  llm_run_id BIGINT,
+  source_artifact_id UUID REFERENCES artifact(id),
+  content_path TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (job_id, kind, version)
 );
 CREATE INDEX IF NOT EXISTS artifact_job_idx ON artifact (job_id);
+-- S6 migration for databases created before render artifacts existed (idempotent).
+ALTER TABLE artifact DROP CONSTRAINT IF EXISTS artifact_kind_check;
+ALTER TABLE artifact ADD CONSTRAINT artifact_kind_check
+  CHECK (kind IN ('resume', 'cover_letter', 'render_docx', 'render_pdf'));
+ALTER TABLE artifact ALTER COLUMN llm_run_id DROP NOT NULL;
+ALTER TABLE artifact ADD COLUMN IF NOT EXISTS source_artifact_id UUID REFERENCES artifact(id);
+ALTER TABLE artifact ADD COLUMN IF NOT EXISTS content_path TEXT;
 `;
 
 /** Local docker-compose default (port 5433 — host 5432 is taken by a native service). */

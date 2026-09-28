@@ -15,9 +15,11 @@ import {
   validateCoverLetter,
   assembleResume,
   UnknownReferenceError,
+  renderIdentityFromMaster,
   type ArtifactView,
   type Database,
   type MasterProfileLike,
+  type RenderIdentity,
   type Violation,
 } from '@chinook/core';
 import {
@@ -112,6 +114,19 @@ export function loadMasterProfile(): MasterProfileLike | null {
   }
 }
 
+/**
+ * Renders-scoped identity from the same static master profile file (S6): the
+ * document header needs name/headline/email/location, which the normalized
+ * MasterProfileLike deliberately drops (identity never enters LLM prompts).
+ */
+export function loadMasterIdentity(): RenderIdentity | null {
+  try {
+    return renderIdentityFromMaster(JSON.parse(readFileSync(DEFAULT_MASTER_PATH, 'utf8')));
+  } catch {
+    return null;
+  }
+}
+
 /** Extracts description text from the raw job payload. Prefers the enriched
  *  fullDescription (jobbank posting page / adzuna details JSON-LD); falls back
  *  to the feed/API snippet capped at 2000 chars. Local copy of the scoring-batch
@@ -180,6 +195,7 @@ async function generateOne(
   genJob: GenerationJob,
   description: string,
   budget: Budget,
+  renderIdentity: RenderIdentity | null,
 ): Promise<ArtifactView | null> {
   const stage = kind === 'resume' ? 'generate_resume' : 'generate_cover';
   let violations: Violation[] = [];
@@ -221,7 +237,9 @@ async function generateOne(
             jobId,
             kind,
             status: 'valid',
-            content: { diff, resume },
+            // S6: identity snapshot makes renders self-contained and
+            // audit-stable (the master file may change later).
+            content: renderIdentity ? { diff, resume, identity: renderIdentity } : { diff, resume },
             validation: { valid: true, violations: [] },
             llmRunId: result.runId,
           });
@@ -268,7 +286,7 @@ async function generateOne(
           jobId,
           kind,
           status: 'valid',
-          content: { letter },
+          content: renderIdentity ? { letter, identity: renderIdentity } : { letter },
           validation: { valid: true, violations: [] },
           llmRunId: result.runId,
         });
@@ -346,13 +364,14 @@ export async function generateDocuments(
 
   let runCost = 0;
   const artifacts: ArtifactView[] = [];
+  const renderIdentity = loadMasterIdentity();
   for (const kind of kinds) {
     const saved = await generateOne(db, llm, master, jobId, kind, genJob, description, {
       canSpend: () => spent + runCost < limit,
       addCost: (usd) => {
         runCost += usd;
       },
-    });
+    }, renderIdentity);
     if (saved) artifacts.push(saved);
   }
   return { artifacts };

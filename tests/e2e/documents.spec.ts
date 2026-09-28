@@ -100,6 +100,41 @@ test('documents section visual snapshot (masked layout gate, preview closed)', a
   });
 });
 
+test('valid artifact exposes DOCX/PDF downloads and render rows appear', async ({ page }) => {
+  await openSeededJob(page);
+
+  await page.getByTestId('artifact-row').filter({ hasText: /^Resume v/ }).click();
+  const docxButton = page.getByTestId('download-docx');
+  const pdfButton = page.getByTestId('download-pdf');
+  await expect(docxButton).toBeEnabled();
+  await expect(pdfButton).toBeEnabled();
+
+  // DOCX download: the render endpoint runs (no LLM), then the file download starts.
+  const docxDownload = page.waitForEvent('download');
+  await docxButton.click();
+  expect((await docxDownload).suggestedFilename()).toMatch(/^resume-v\d+\.docx$/);
+
+  // Both render rows appear in the version list.
+  const rows = page.getByTestId('documents').getByTestId('artifact-row');
+  await expect(rows.filter({ hasText: 'Resume · DOCX' })).toHaveCount(1);
+  await expect(rows.filter({ hasText: 'Resume · PDF' })).toHaveCount(1);
+});
+
+test('render row click downloads the rendered file', async ({ page }) => {
+  await openSeededJob(page);
+
+  // Create the render via the preview buttons first.
+  await page.getByTestId('artifact-row').filter({ hasText: /^Resume v/ }).click();
+  await page.getByTestId('download-pdf').click();
+  const rows = page.getByTestId('documents').getByTestId('artifact-row');
+  const pdfRow = rows.filter({ hasText: 'Resume · PDF' });
+  await expect(pdfRow).toHaveCount(1);
+
+  const pdfDownload = page.waitForEvent('download');
+  await pdfRow.click();
+  expect((await pdfDownload).suggestedFilename()).toMatch(/^resume-v\d+\.pdf$/);
+});
+
 test('generate error path surfaces the API message (402 daily cap)', async ({ page }) => {
   await openSeededJob(page);
   await page.route('**/api/jobs/*/generate', (route) =>

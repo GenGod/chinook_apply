@@ -5,3 +5,6 @@ packages:
 
 allowBuilds:
   esbuild: true
+
+minimumReleaseAgeExclude:
+  - docx@9.8.0

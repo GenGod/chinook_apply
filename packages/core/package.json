@@ -10,11 +10,15 @@
   },
   "dependencies": {
     "@chinook/contracts": "workspace:*",
+    "docx": "^9.8.0",
+    "fflate": "^0.8.3",
     "kysely": "^0.29.5",
+    "pdfkit": "^0.20.2",
     "pg": "^8.23.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@types/pdfkit": "^0.17.6",
     "@types/pg": "^8.23.1",
     "fast-check": "^4.10.0",
     "vitest": "^5.0.0"

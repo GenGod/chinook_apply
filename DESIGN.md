@@ -103,8 +103,10 @@ profile_fact     -- S11: атомарный факт с provenance (source_id, e
 job              -- normalized vacancy; UNIQUE(canonical_hash); source, raw JSONB
 job_match        -- score, reasons, risks, noc_guess, llm_run_id
 application      -- job_id, status, approved_at, submitted_at, channel
-artifact         -- application_id, kind(resume|cover_letter|render_pdf),
-                   -- version, content_path, llm_run_id
+artifact         -- application_id, kind(resume|cover_letter|render_docx|render_pdf),
+                   -- version, content JSONB, content_path (render-файлы S6 в
+                   -- data/artifacts/), source_artifact_id (аудит-цепочка рендера),
+                   -- llm_run_id (null у рендеров)
 llm_run          -- provider, model, prompt_tokens, completion_tokens,
                    -- cost_usd, latency_ms, stage, input_hash (для кэша)
 dispatch_log     -- attempt, channel, outcome, error, screenshot_paths[]
