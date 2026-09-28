@@ -30,6 +30,7 @@ services:
       DATABASE_URL: postgres://chinook:chinook_dev@postgres:5432/chinook
       ADZUNA_APP_ID: ${ADZUNA_APP_ID:-}
       ADZUNA_APP_KEY: ${ADZUNA_APP_KEY:-}
+      CRAWLER_CONTACT_EMAIL: ${CRAWLER_CONTACT_EMAIL:-}
       SCHED_JOBBANK_MIN: ${SCHED_JOBBANK_MIN:-30}
       SCHED_ADZUNA_MIN: ${SCHED_ADZUNA_MIN:-120}
 
@@ -42,11 +43,17 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    volumes:
+      # master_profile.json is gitignored PII — mounted read-only at the static
+      # path the generation service resolves from WORKDIR /app/apps/web
+      # (../../data/profile → /app/data/profile)
+      - ./data/profile:/app/data/profile:ro
     depends_on:
       postgres:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://chinook:chinook_dev@postgres:5432/chinook
+      CRAWLER_CONTACT_EMAIL: ${CRAWLER_CONTACT_EMAIL:-}
 
 volumes:
   pgdata:

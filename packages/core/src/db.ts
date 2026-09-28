@@ -62,6 +62,18 @@ export interface JobMatchRow {
   created_at: Generated<Date>;
 }
 
+export interface ArtifactRow {
+  id: Generated<string>;
+  job_id: string;
+  kind: string;
+  version: number;
+  status: string;
+  content: unknown;
+  validation: unknown;
+  llm_run_id: number;
+  created_at: Generated<Date>;
+}
+
 export interface Database {
   job: JobRow;
   ingest_run: IngestRunRow;
@@ -69,6 +81,7 @@ export interface Database {
   job_match: JobMatchRow;
   llm_run: LlmRunRow;
   llm_cache: LlmCacheRow;
+  artifact: ArtifactRow;
 }
 
 export interface LlmRunRow {
@@ -185,6 +198,19 @@ CREATE TABLE IF NOT EXISTS job_match (
 );
 CREATE INDEX IF NOT EXISTS job_match_job_idx ON job_match (job_id);
 CREATE INDEX IF NOT EXISTS job_match_score_idx ON job_match (score DESC);
+CREATE TABLE IF NOT EXISTS artifact (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  job_id UUID NOT NULL REFERENCES job(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('resume', 'cover_letter')),
+  version INT NOT NULL CHECK (version >= 1),
+  status TEXT NOT NULL CHECK (status IN ('valid', 'invalid')),
+  content JSONB NOT NULL,
+  validation JSONB NOT NULL DEFAULT '[]',
+  llm_run_id BIGINT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (job_id, kind, version)
+);
+CREATE INDEX IF NOT EXISTS artifact_job_idx ON artifact (job_id);
 `;
 
 /** Local docker-compose default (port 5433 — host 5432 is taken by a native service). */

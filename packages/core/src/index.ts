@@ -52,4 +52,24 @@ export {
 } from './board';
 export { planSources, nextDue, type SourceSchedule } from './schedule';
 export { getMetrics, DEFAULT_INTERVALS, type MetricsSummary, type SourceHealth, type HistoryRow } from './metrics';
+export {
+  saveArtifact,
+  listArtifacts,
+  getArtifactContent,
+  type ArtifactView,
+  type ArtifactContent,
+} from './artifacts';
+export {
+  extractEntities,
+  validateResumeDiff,
+  assembleResume,
+  validateCoverLetter,
+  UnknownReferenceError,
+  type Violation,
+  type ViolationKind,
+  type ValidationReport,
+  type MasterProfileLike,
+  type ResumeDiffLike,
+  type TailoredResume,
+} from './generation-validators';
 export const CORE_MARKER = 's1';

@@ -1,0 +1,350 @@
+/* S5 T8 — Documents section (superdesign variant A: versioned accordion).
+   Colors exclusively via tokens.css (check-colors gate). */
+
+.section {
+  border-top: 1px solid var(--border-subtle);
+  margin: 20px 0;
+  padding-top: 16px;
+}
+
+.title {
+  margin: 0 0 4px;
+  font-size: var(--text-section);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  margin: 0 0 12px;
+  font-size: var(--text-aux);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--text-aux);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--bg-raised);
+  border-color: var(--border-strong);
+}
+
+.btnPrimary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: var(--accent-text);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.errorBox {
+  color: var(--status-danger);
+  font-size: var(--text-aux);
+  margin: 0 0 10px;
+}
+
+.list {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 0 0 12px;
+}
+
+.listHeader {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-inset);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.row {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row:hover {
+  background: var(--bg-base);
+}
+
+.rowOpen,
+.rowOpen:hover {
+  background: var(--bg-inset);
+}
+
+.rowLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.dotValid {
+  background: var(--status-success);
+}
+
+.dotInvalid {
+  background: var(--status-danger);
+}
+
+.rowTitle {
+  display: block;
+  color: var(--text-primary);
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.rowFlag {
+  margin-left: 8px;
+  color: var(--status-danger);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.rowMeta {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: var(--text-aux);
+  font-weight: 400;
+}
+
+.empty {
+  padding: 14px 16px;
+  color: var(--text-muted);
+  font-size: var(--text-aux);
+}
+
+/* Invalid-version banner: red-tinted, violations list + Regenerate. */
+.violations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  align-items: flex-start;
+  justify-content: space-between;
+  border: 1px solid var(--status-danger-border);
+  background: var(--status-danger-bg);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 0 0 12px;
+}
+
+.violTitle {
+  color: var(--status-danger);
+  font-size: var(--text-aux);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 8px;
+}
+
+.violList {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-secondary);
+  font-size: var(--text-body);
+  line-height: 1.6;
+}
+
+.regen {
+  flex: none;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: 1px solid var(--status-danger-border);
+  background: var(--status-danger-bg);
+  color: var(--status-danger);
+  font-size: var(--text-aux);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.regen:hover:not(:disabled) {
+  border-color: var(--status-danger);
+}
+
+.regen:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+/* Inline preview (accordion body). */
+.preview {
+  margin-top: 4px;
+}
+
+.previewLabel {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin: 0 0 8px;
+}
+
+.panel {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 20px 24px;
+}
+
+.block {
+  margin: 0 0 20px;
+}
+
+.block:last-child {
+  margin-bottom: 0;
+}
+
+.secTitle {
+  margin: 0 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--accent);
+  font-size: var(--text-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+.p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-body);
+  line-height: 1.7;
+}
+
+.skills {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skillItem {
+  color: var(--text-secondary);
+  font-size: var(--text-body);
+}
+
+.exp {
+  margin: 0 0 16px;
+}
+
+.exp:last-child {
+  margin-bottom: 0;
+}
+
+.expHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.expTitle {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-emphasis);
+  font-weight: 600;
+}
+
+.expDates {
+  color: var(--text-muted);
+  font-size: var(--text-aux);
+  white-space: nowrap;
+}
+
+.expEmployer {
+  margin: 2px 0 8px;
+  color: var(--text-muted);
+  font-size: var(--text-aux);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.expTech {
+  margin: 0 0 6px;
+  color: var(--text-muted);
+  font-size: var(--text-aux);
+}
+
+.bullets {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-secondary);
+  font-size: var(--text-body);
+  line-height: 1.6;
+}
+
+.eduLine {
+  margin: 0 0 4px;
+  color: var(--text-secondary);
+  font-size: var(--text-body);
+}
+
+.loading {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-aux);
+}
