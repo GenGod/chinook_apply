@@ -1,10 +1,11 @@
 'use client';
 
 // S5 T8 — Documents section (superdesign variant A: versioned accordion/inline).
-// Client component: generate buttons (POST /api/jobs/[id]/generate), version
-// list (one preview open at a time, GET /api/artifacts/[id]) and the invalid
-// banner (violations + Regenerate → same kind, next version). Colors only via
-// tokens; resume renders Summary/Skills/Experience/Education — NO identity (G1).
+// S6 T8 — adds the render/download flow: valid artifacts get DOCX/PDF buttons
+// (POST /api/artifacts/[id]/render, then GET /api/artifacts/[id]/file); render
+// rows appear in the version list and download directly. Colors only via
+// tokens; resume renders Summary/Skills/Experience/Education — NO identity in
+// the preview (G1; the rendered files carry the identity header instead).
 import { useState } from 'react';
 import type { ArtifactView } from '@chinook/core';
 import styles from './documents.module.css';
@@ -18,8 +19,19 @@ interface ArtifactDetail {
 }
 
 type GenerateKind = 'resume' | 'cover_letter';
+type RenderFormat = 'docx' | 'pdf';
 
 const KIND_LABEL: Record<string, string> = { resume: 'Resume', cover_letter: 'Cover letter' };
+const FORMAT_LABEL: Record<string, string> = { render_docx: 'DOCX', render_pdf: 'PDF' };
+
+/** List-row label: source rows "Resume v2"; render rows "Resume · DOCX v1". */
+function rowLabel(a: ArtifactView, artifacts: ArtifactView[]): string {
+  const format = FORMAT_LABEL[a.kind];
+  if (!format) return `${KIND_LABEL[a.kind] ?? a.kind} v${a.version}`;
+  const source = artifacts.find((x) => x.id === a.sourceArtifactId);
+  const sourceName = source ? (KIND_LABEL[source.kind] ?? source.kind) : 'Document';
+  return `${sourceName} · ${format} v${a.version}`;
+}
 
 function asString(v: unknown): string {
   return typeof v === 'string' ? v : '';
@@ -132,8 +144,28 @@ export function DocumentsSection({ jobId, initialArtifacts }: { jobId: string; i
 
   const open = artifacts.find((a) => a.id === openId) ?? null;
 
+  function triggerFileDownload(artifactId: string) {
+    const anchor = document.createElement('a');
+    anchor.href = `/api/artifacts/${artifactId}/file`;
+    anchor.rel = 'noopener';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  }
+
+  async function refreshArtifacts() {
+    const list = await fetch(`/api/jobs/${jobId}/artifacts`);
+    const listBody = (await list.json().catch(() => null)) as { artifacts?: ArtifactView[] } | null;
+    if (list.ok && Array.isArray(listBody?.artifacts)) setArtifacts(listBody.artifacts);
+  }
+
   async function toggleRow(a: ArtifactView) {
     setError(null);
+    if (a.kind === 'render_docx' || a.kind === 'render_pdf') {
+      // Render rows are binary downloads — no preview accordion.
+      triggerFileDownload(a.id);
+      return;
+    }
     if (openId === a.id) {
       setOpenId(null);
       setDetail(null);
@@ -155,6 +187,25 @@ export function DocumentsSection({ jobId, initialArtifacts }: { jobId: string; i
     }
   }
 
+  /** S6: renders the artifact into both formats, then starts the download. */
+  async function renderAndDownload(sourceId: string, format: RenderFormat) {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/artifacts/${sourceId}/render`, { method: 'POST' });
+      const body = (await res.json().catch(() => null)) as { artifacts?: ArtifactView[]; error?: string } | null;
+      if (!res.ok) {
+        setError(body?.error ?? `HTTP ${res.status}`);
+        return;
+      }
+      await refreshArtifacts();
+      const created = body?.artifacts?.find((a) => a.kind === `render_${format}`);
+      if (created) triggerFileDownload(created.id);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function generate(kinds: GenerateKind[], closePreview: boolean) {
     setBusy(true);
     setError(null);
@@ -170,9 +221,7 @@ export function DocumentsSection({ jobId, initialArtifacts }: { jobId: string; i
         return;
       }
       // POST returns only the created versions — refetch the full list.
-      const list = await fetch(`/api/jobs/${jobId}/artifacts`);
-      const listBody = (await list.json().catch(() => null)) as { artifacts?: ArtifactView[] } | null;
-      if (list.ok && Array.isArray(listBody?.artifacts)) setArtifacts(listBody.artifacts);
+      await refreshArtifacts();
       if (closePreview) {
         setOpenId(null);
         setDetail(null);
@@ -244,11 +293,12 @@ export function DocumentsSection({ jobId, initialArtifacts }: { jobId: string; i
                 />
                 <span>
                   <span className={styles.rowTitle}>
-                    {KIND_LABEL[a.kind] ?? a.kind} v{a.version}
+                    {rowLabel(a, artifacts)}
                     {a.status !== 'valid' ? <span className={styles.rowFlag}>Validation failed</span> : null}
                   </span>
                   <span className={styles.rowMeta}>
-                    Generated {a.created.slice(0, 10)}
+                    {a.kind.startsWith('render_') ? 'Rendered ' : 'Generated '}
+                    {a.created.slice(0, 10)}
                     {a.violations.length > 0 ? ` · ${a.violations.length} violation${a.violations.length === 1 ? '' : 's'}` : ''}
                   </span>
                 </span>
@@ -294,6 +344,29 @@ export function DocumentsSection({ jobId, initialArtifacts }: { jobId: string; i
               )
             ) : null}
           </div>
+          {open && open.status === 'valid' && (open.kind === 'resume' || open.kind === 'cover_letter') ? (
+            <div className={styles.downloadRow}>
+              <span className={styles.downloadLabel}>Download</span>
+              <button
+                type="button"
+                className={styles.btn}
+                data-testid="download-docx"
+                disabled={busy}
+                onClick={() => renderAndDownload(open.id, 'docx')}
+              >
+                DOCX
+              </button>
+              <button
+                type="button"
+                className={styles.btn}
+                data-testid="download-pdf"
+                disabled={busy}
+                onClick={() => renderAndDownload(open.id, 'pdf')}
+              >
+                PDF
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </section>

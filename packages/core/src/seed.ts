@@ -44,8 +44,17 @@ const longDescription = Array.from({ length: 6 }, (_, i) =>
  * in tests). Shapes mirror the real pipeline: resume content {diff, resume}
  * after code assembly (S5 T3), cover content {letter}.
  */
+/** Synthetic identity for S6 render fixtures — never the real master profile (PII, art. 3.2). */
+const SYNTHETIC_IDENTITY = {
+  fullName: 'Alex Fixture',
+  headline: 'Senior Developer',
+  email: 'alex.fixture@example.com',
+  location: 'Alberta, Canada',
+};
+
 function syntheticResumeContent(): unknown {
   return {
+    identity: SYNTHETIC_IDENTITY, // S6: renders need a header; stored at generation time
     diff: {
       summary:
         'Senior Developer with 10 years of experience delivering a platform serving 40k users across web and batch workloads.',
@@ -78,6 +87,7 @@ function syntheticResumeContent(): unknown {
 
 function syntheticCoverContent(): unknown {
   return {
+    identity: SYNTHETIC_IDENTITY,
     letter: [
       'Dear Hiring Manager,',
       'I am applying for the Senior Developer role at Chinook Fixtures Inc. My background covers TypeScript, PostgreSQL and building a platform serving 40k users.',
