@@ -42,6 +42,11 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    volumes:
+      # master_profile.json is gitignored PII — mounted read-only at the static
+      # path the generation service resolves from WORKDIR /app/apps/web
+      # (../../data/profile → /app/data/profile)
+      - ./data/profile:/app/data/profile:ro
     depends_on:
       postgres:
         condition: service_healthy

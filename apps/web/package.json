@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start -H 0.0.0.0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "generate:documents": "tsx --env-file-if-exists=../../.env src/scripts/generate-documents.ts"
   },
   "dependencies": {
     "@chinook/adapters": "workspace:*",
@@ -21,6 +22,7 @@
   "devDependencies": {
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "kysely": "^0.29.5"
+    "kysely": "^0.29.5",
+    "tsx": "^4.23.13"
   }
 }
