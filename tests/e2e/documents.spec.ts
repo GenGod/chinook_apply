@@ -20,9 +20,10 @@ test('documents section lists seeded versions with status flags and generate but
   await openSeededJob(page);
 
   const rows = page.getByTestId('documents').getByTestId('artifact-row');
-  await expect(rows).toHaveCount(2);
-  const resumeRow = rows.filter({ hasText: 'Resume v1' });
-  const coverRow = rows.filter({ hasText: 'Cover letter v1' });
+  // S21: the DB accumulates render history — assert on the seeded rows'
+  // presence, not a global count (row textContent is spaceless between spans).
+  const resumeRow = rows.filter({ hasText: /^Resume v1(?!\d)/ });
+  const coverRow = rows.filter({ hasText: /^Cover letter v1(?!\d)/ });
   await expect(resumeRow).toHaveCount(1);
   await expect(coverRow).toHaveCount(1);
   // invalid version is flagged in the row itself
@@ -48,7 +49,7 @@ test('valid artifact opens the inline preview with its content', async ({ page }
   await openSeededJob(page);
   await expect(page.getByTestId('artifact-content')).toHaveCount(0);
 
-  await page.getByTestId('artifact-row').filter({ hasText: 'Resume' }).click();
+  await page.getByTestId('artifact-row').filter({ hasText: /^Resume v/ }).click();
   const preview = page.getByTestId('artifact-content');
   await expect(preview).toBeVisible();
   await expect(preview).toContainText('Summary');
@@ -58,7 +59,7 @@ test('valid artifact opens the inline preview with its content', async ({ page }
 test('accordion keeps one preview open and the invalid row exposes its violations', async ({ page }) => {
   await openSeededJob(page);
 
-  await page.getByTestId('artifact-row').filter({ hasText: 'Resume' }).click();
+  await page.getByTestId('artifact-row').filter({ hasText: /^Resume v/ }).click();
   await expect(page.getByTestId('artifact-content')).toBeVisible();
   await expect(page.getByTestId('violations')).toHaveCount(0);
 
@@ -114,25 +115,40 @@ test('valid artifact exposes DOCX/PDF downloads and render rows appear', async (
   await docxButton.click();
   expect((await docxDownload).suggestedFilename()).toMatch(/^resume-v\d+\.docx$/);
 
-  // Both render rows appear in the version list.
+  // Render rows appear in the version list (S21: the list may already hold
+  // history rows from earlier tests/retries — relative assertions only).
   const rows = page.getByTestId('documents').getByTestId('artifact-row');
-  await expect(rows.filter({ hasText: 'Resume · DOCX' })).toHaveCount(1);
-  await expect(rows.filter({ hasText: 'Resume · PDF' })).toHaveCount(1);
+  await expect(rows.filter({ hasText: 'Resume · DOCX' }).first()).toBeVisible();
+  await expect(rows.filter({ hasText: 'Resume · PDF' }).first()).toBeVisible();
 });
 
-test('render row click downloads the rendered file', async ({ page }) => {
+test('render history: repeated renders append downloadable versions (S21)', async ({ page }) => {
   await openSeededJob(page);
 
-  // Create the render via the preview buttons first.
   await page.getByTestId('artifact-row').filter({ hasText: /^Resume v/ }).click();
-  await page.getByTestId('download-pdf').click();
+  const docxButton = page.getByTestId('download-docx');
   const rows = page.getByTestId('documents').getByTestId('artifact-row');
-  const pdfRow = rows.filter({ hasText: 'Resume · PDF' });
-  await expect(pdfRow).toHaveCount(1);
 
-  const pdfDownload = page.waitForEvent('download');
-  await pdfRow.click();
-  expect((await pdfDownload).suggestedFilename()).toMatch(/^resume-v\d+\.pdf$/);
+  // First render (this test's own baseline).
+  let download = page.waitForEvent('download');
+  await docxButton.click();
+  expect((await download).suggestedFilename()).toMatch(/^resume-v\d+\.docx$/);
+  const before = await rows.filter({ hasText: 'Resume · DOCX' }).count();
+  expect(before).toBeGreaterThanOrEqual(1);
+
+  // Second render appends a NEW version row (upsert-free history).
+  download = page.waitForEvent('download');
+  await docxButton.click();
+  expect((await download).suggestedFilename()).toMatch(/^resume-v\d+\.docx$/);
+  await expect(rows.filter({ hasText: 'Resume · DOCX' })).toHaveCount(before + 1);
+
+  // Historical versions stay downloadable: click the OLDEST render row.
+  // (Row textContent is spaceless between spans — digit-lookahead, not \b.)
+  const oldest = rows.filter({ hasText: /Resume · DOCX v1(?!\d)/ }).first();
+  await expect(oldest).toBeVisible();
+  const historyDownload = page.waitForEvent('download');
+  await oldest.click();
+  expect((await historyDownload).suggestedFilename()).toMatch(/^resume-v1\.docx$/);
 });
 
 test('generate error path surfaces the API message (402 daily cap)', async ({ page }) => {

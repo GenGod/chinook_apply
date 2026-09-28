@@ -89,7 +89,7 @@ async function main(): Promise<void> {
   for (const r of rows) {
     console.log(`${r.kind.padEnd(13)} | ${r.label.padEnd(4)} | ${r.status.padEnd(6)} | ${r.files}`);
   }
-  console.log(`\ntotal: ${rendered}/${sources.length} rendered, ${failed} failed, 0 llm calls, $0`);
+  console.log(`\ntotal: ${rendered}/${sources.length} rendered, ${skipped} skipped, ${failed} failed, 0 llm calls, $0`);
   await db.destroy();
 }
 
