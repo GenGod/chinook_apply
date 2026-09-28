@@ -81,6 +81,8 @@ export {
   groupSkills,
   renderIdentityFromMaster,
   renderIdentityFromContent,
+  normalizeTailoredResume,
+  normalizeLetter,
   type RenderIdentity,
   type RenderResumeModel,
   type RenderCoverModel,

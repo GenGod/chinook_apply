@@ -4,6 +4,8 @@ import {
   buildCoverRenderModel,
   renderIdentityFromMaster,
   renderIdentityFromContent,
+  normalizeTailoredResume,
+  normalizeLetter,
   type RenderIdentity,
 } from '../src/render-model.js';
 import type { TailoredResume } from '../src/generation-validators.js';
@@ -232,5 +234,46 @@ describe('renderIdentityFromContent', () => {
     expect(renderIdentityFromContent(null)).toBeNull();
     expect(renderIdentityFromContent({ identity: { email: 'x' } })).toBeNull(); // fullName required
     expect(renderIdentityFromContent({ identity: 'nope' })).toBeNull();
+  });
+});
+
+describe('normalizeTailoredResume / normalizeLetter (untrusted DB content → render input)', () => {
+  it('accepts a well-formed resume content and returns a fresh typed object', () => {
+    const content = {
+      resume: {
+        summary: 's',
+        keywords: ['k'],
+        skills: ['TypeScript'],
+        experience: [{ employer: 'E', title: 'T', start: '2020', end: 'present', technology: ['TS'], bullets: ['b'] }],
+        education: [{ degree: 'D' }],
+      },
+    };
+    const resume = normalizeTailoredResume(content);
+    expect(resume).toEqual({
+      summary: 's',
+      keywords: ['k'],
+      skills: ['TypeScript'],
+      experience: [{ employer: 'E', title: 'T', start: '2020', end: 'present', technology: ['TS'], bullets: ['b'] }],
+      education: [{ degree: 'D' }],
+    });
+    expect(resume).not.toBe((content as { resume: unknown }).resume);
+  });
+
+  it('rejects malformed resumes (wrong shapes, non-string fields)', () => {
+    expect(normalizeTailoredResume({})).toBeNull();
+    expect(normalizeTailoredResume({ resume: null })).toBeNull();
+    expect(normalizeTailoredResume({ resume: { summary: 5, skills: [], experience: [], education: [] } })).toBeNull();
+    expect(normalizeTailoredResume({ resume: { summary: 's', skills: 'no', experience: [], education: [] } })).toBeNull();
+    expect(
+      normalizeTailoredResume({ resume: { summary: 's', skills: [], experience: [{ employer: 'e' }], education: [] } }),
+    ).toBeNull();
+    expect(normalizeTailoredResume(null)).toBeNull();
+  });
+
+  it('accepts well-formed cover content and rejects the rest', () => {
+    expect(normalizeLetter({ letter: 'Dear Hiring Manager,' })).toBe('Dear Hiring Manager,');
+    expect(normalizeLetter({ letter: 42 })).toBeNull();
+    expect(normalizeLetter({})).toBeNull();
+    expect(normalizeLetter(null)).toBeNull();
   });
 });

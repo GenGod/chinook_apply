@@ -21,11 +21,14 @@ export interface ArtifactView {
 
 /** Metadata plus the generated content, for artifact-id-scoped reads only. */
 export interface ArtifactContent {
+  jobId: string;
   kind: string;
   version: number;
   status: string;
   content: unknown;
   violations: string[];
+  /** Render artifacts only: relative path of the rendered file. */
+  contentPath: string | null;
 }
 
 interface ArtifactSelectRow {
@@ -128,16 +131,18 @@ export async function getArtifactContent(
 ): Promise<ArtifactContent | null> {
   const row = await db
     .selectFrom('artifact')
-    .select(['id', 'job_id', 'kind', 'version', 'status', 'content', 'validation', 'created_at'])
+    .select(['id', 'job_id', 'kind', 'version', 'status', 'content', 'validation', 'source_artifact_id', 'content_path', 'created_at'])
     .where('id', '=', artifactId)
     .executeTakeFirst();
   if (!row) return null;
   return {
+    jobId: row.job_id,
     kind: row.kind,
     version: row.version,
     status: row.status,
     content: row.content,
     violations: violationDetails(row.validation),
+    contentPath: row.content_path,
   };
 }
 

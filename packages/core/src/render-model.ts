@@ -168,3 +168,45 @@ export function renderIdentityFromContent(content: unknown): RenderIdentity | nu
   if (typeof identity.location === 'string' && identity.location !== '') out.location = identity.location;
   return out;
 }
+
+// --- Untrusted content normalization (Constitution 7.1) ---
+// Artifact JSONB was produced by an LLM pipeline: treat it as untrusted input
+// and rebuild plain, validated render inputs instead of casting blindly.
+
+/** Rebuilds a TailoredResume from untrusted artifact content; null when malformed. */
+export function normalizeTailoredResume(content: unknown): TailoredResume | null {
+  const root = asRecord(content);
+  const resume = root ? asRecord(root.resume) : null;
+  if (!resume) return null;
+  if (typeof resume.summary !== 'string' || !Array.isArray(resume.skills) || !Array.isArray(resume.experience) || !Array.isArray(resume.education)) {
+    return null;
+  }
+  const experience: TailoredResume['experience'] = [];
+  for (const entry of resume.experience) {
+    const rec = asRecord(entry);
+    if (!rec) return null;
+    if (typeof rec.employer !== 'string' || typeof rec.title !== 'string' || !Array.isArray(rec.bullets)) return null;
+    experience.push({
+      employer: rec.employer,
+      title: rec.title,
+      start: typeof rec.start === 'string' ? rec.start : '',
+      end: typeof rec.end === 'string' ? rec.end : '',
+      technology: asStringArray(rec.technology),
+      bullets: asStringArray(rec.bullets),
+    });
+  }
+  return {
+    summary: resume.summary,
+    keywords: asStringArray(resume.keywords),
+    skills: asStringArray(resume.skills),
+    experience,
+    education: resume.education,
+  };
+}
+
+/** Extracts the cover letter text from untrusted artifact content. */
+export function normalizeLetter(content: unknown): string | null {
+  const root = asRecord(content);
+  const letter = root?.letter;
+  return typeof letter === 'string' ? letter : null;
+}
