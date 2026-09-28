@@ -15,6 +15,8 @@ export interface ArtifactView {
   status: string;
   created: string;
   violations: string[];
+  /** Render artifacts only: the resume/cover artifact this row was rendered from. */
+  sourceArtifactId: string | null;
 }
 
 /** Metadata plus the generated content, for artifact-id-scoped reads only. */
@@ -33,6 +35,7 @@ interface ArtifactSelectRow {
   version: number;
   status: string;
   validation: unknown;
+  source_artifact_id: string | null;
   created_at: Date;
 }
 
@@ -57,6 +60,7 @@ function toView(row: ArtifactSelectRow): ArtifactView {
     status: row.status,
     created: row.created_at.toISOString(),
     violations: violationDetails(row.validation),
+    sourceArtifactId: row.source_artifact_id,
   };
 }
 
@@ -110,7 +114,7 @@ export async function saveArtifact(
 export async function listArtifacts(db: Kysely<Database>, jobId: string): Promise<ArtifactView[]> {
   const rows = await db
     .selectFrom('artifact')
-    .select(['id', 'job_id', 'kind', 'version', 'status', 'validation', 'created_at'])
+    .select(['id', 'job_id', 'kind', 'version', 'status', 'validation', 'source_artifact_id', 'created_at'])
     .where('job_id', '=', jobId)
     .orderBy('created_at', 'desc')
     .execute();
