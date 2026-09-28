@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { mkdtemp, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import {
   createDb,
   ensureSchema,
@@ -21,6 +21,7 @@ import {
   RenderNotRenderableError,
   RenderIdentityUnavailableError,
 } from '../../apps/web/src/lib/render-service';
+import { renderFolderName, safeJoin } from '../../apps/web/src/lib/render-storage';
 
 /**
  * S6 T1 (red→green): artifact schema migration — render kinds, nullable
@@ -191,6 +192,37 @@ describe('render artifact repository (S6 T5)', () => {
 
     await findRenderArtifact(db, src.id, 'pdf').then((row) => expect(row?.kind).toBe('render_pdf'));
     expect(await findRenderArtifact(db, randomUUID(), 'docx')).toBeNull();
+  });
+});
+
+describe('render folder convention (S21 T1)', () => {
+  const JOB = 'a1b2c3d4-5e6f-4777-8888-999900001111';
+  const UTC_NOON = new Date('2026-09-28T12:00:00Z');
+
+  it('builds "date_employer-slug_job8" folders (UTC date, slugged employer)', () => {
+    expect(renderFolderName(UTC_NOON, 'Neo Financial', JOB)).toBe('2026-09-28_neo-financial_a1b2c3d4');
+  });
+
+  it('slugs punctuation and whitespace collapses; non-latin names fall back to "job"', () => {
+    expect(renderFolderName(UTC_NOON, 'ACME  Corp! (EU)', JOB)).toBe('2026-09-28_acme-corp-eu_a1b2c3d4');
+    // no transliteration (YAGNI): non-[a-z0-9] names slug to nothing → 'job'
+    expect(renderFolderName(UTC_NOON, '  --Строймаш--  ', JOB)).toBe('2026-09-28_job_a1b2c3d4');
+  });
+
+  it('falls back to "job" when the employer slugs to nothing', () => {
+    expect(renderFolderName(UTC_NOON, '???', JOB)).toBe('2026-09-28_job_a1b2c3d4');
+    expect(renderFolderName(UTC_NOON, '', JOB)).toBe('2026-09-28_job_a1b2c3d4');
+  });
+
+  it('safeJoin accepts legacy uuid folders and the dated scheme, rejects the rest', () => {
+    const root = resolve('/tmp/root'); // contract: root arrives pre-resolved (resolveArtifactsDir)
+    // positive: legacy uuid folder (S6) and the S21 dated scheme
+    expect(safeJoin(root, 'a1b2c3d4-5e6f-4777-8888-999900001111', 'resume-v1.docx')).not.toBeNull();
+    expect(safeJoin(root, '2026-09-28_neo-financial_a1b2c3d4', 'resume-v1.docx')).not.toBeNull();
+    // negative: traversal, arbitrary strings, wrong file names
+    expect(safeJoin(root, '../etc', 'passwd.docx')).toBeNull();
+    expect(safeJoin(root, 'not-a-scheme', 'resume-v1.docx')).toBeNull();
+    expect(safeJoin(root, '2026-09-28_neo-financial_a1b2c3d4', 'resume-v1.xlsx')).toBeNull();
   });
 });
 

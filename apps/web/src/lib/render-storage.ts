@@ -10,9 +10,11 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, join, resolve, sep } from 'node:path';
 import process from 'node:process';
 
-// The job folder must be a uuid; the file name must match the renderer's
-// exact naming scheme ("resume-v3.docx", "cover-letter-v1.pdf", ...).
+// The job folder must be a uuid (legacy S6 layout) or the S21 dated scheme
+// ("2026-09-28_neo-financial_a1b2c3d4"); the file name must match the
+// renderer's exact naming scheme ("resume-v3.docx", "cover-letter-v1.pdf").
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const FOLDER_RE = /^\d{4}-\d{2}-\d{2}_[a-z0-9-]+_[0-9a-f]{8}$/;
 const RENDER_FILE_RE = /^(resume|cover-letter)-v\d+\.(docx|pdf)$/;
 
 /** data/artifacts root — same repo-layout convention as the master profile path. */
@@ -20,9 +22,30 @@ export function resolveArtifactsDir(explicit?: string): string {
   return resolve(explicit ?? process.env.ARTIFACTS_DIR ?? '../../data/artifacts');
 }
 
-/** Resolves <root>/<uuid>/<file> after validation; null when anything is off. */
-function safeJoin(rootDir: string, jobFolder: string, fileName: string): string | null {
-  if (!UUID_RE.test(jobFolder) || !RENDER_FILE_RE.test(fileName)) return null;
+/** Human-readable employer slug: [a-z0-9-] only; empty → "job" (no transliteration). */
+export function employerSlug(employer: string): string {
+  const slug = employer
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug === '' ? 'job' : slug;
+}
+
+/**
+ * S21 folder convention: "YYYY-MM-DD_<employer-slug>_<jobId8>" — UTC date of
+ * the render, first 8 hex chars of the job id for uniqueness.
+ */
+export function renderFolderName(now: Date, employer: string, jobId: string): string {
+  const y = now.getUTCFullYear();
+  const m = String(now.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(now.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}_${employerSlug(employer)}_${jobId.slice(0, 8)}`;
+}
+
+/** Resolves <root>/<folder>/<file> after validation; null when anything is off. */
+export function safeJoin(rootDir: string, jobFolder: string, fileName: string): string | null {
+  if (!(UUID_RE.test(jobFolder) || FOLDER_RE.test(jobFolder))) return null;
+  if (!RENDER_FILE_RE.test(fileName)) return null;
   const absolutePath = resolve(rootDir, jobFolder, fileName);
   if (!absolutePath.startsWith(rootDir + sep)) return null;
   return absolutePath;
