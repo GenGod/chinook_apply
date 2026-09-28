@@ -5,7 +5,6 @@
 // root and the static master-profile path resolve:
 //   pnpm --filter @chinook/web render:documents
 import process from 'node:process';
-import type { Database } from '@chinook/core';
 import { createDb, ensureSchema } from '@chinook/core';
 import { renderArtifact, readRenderFile, RenderNotRenderableError, RenderIdentityUnavailableError } from '../lib/render-service';
 

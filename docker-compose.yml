@@ -48,6 +48,9 @@ services:
       # path the generation service resolves from WORKDIR /app/apps/web
       # (../../data/profile → /app/data/profile)
       - ./data/profile:/app/data/profile:ro
+      # S6: rendered DOCX/PDF artifacts (gitignored PII) — writable, same
+      # repo-layout convention (../../data/artifacts → /app/data/artifacts)
+      - ./data/artifacts:/app/data/artifacts
     depends_on:
       postgres:
         condition: service_healthy

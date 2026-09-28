@@ -90,7 +90,19 @@
 | flash | glm-5.3-flash (env LLM_MODEL_FLASH) | скоринг/массовое |
 | Цены $/1M | main 1.0/1.5, flash 0.2/0.3 | env LLM_PRICE_*; дефолт — сверить по панели |
 
+## Рендер документов (S6)
+
+| Позиция | Версия | Примечание |
+|---|---|---|
+| docx | 9.8.0 | OOXML-генерация (packages/core); детерминизм — перезиповка с фиксированным mtime |
+| pdfkit | 0.20.2 | PDF (packages/core); `compress:false` → content-гейты из буфера; serverExternalPackages |
+| fflate | 0.8.x | zip-чтение/запись (runtime: нормализация docx) |
+| @types/pdfkit | dev | типы pdfkit |
+| Шрифты документов | Calibri (DOCX) / Helvetica (PDF) | ATS-консервативно; DS-пара — только web |
+| Хранилище | data/artifacts/ (gitignored) | env ARTIFACTS_DIR; в БД — относительный content_path |
+
 ## Changelog
+- 2.3 (2026-09-28) — S6 (PO-мандат «реализуй S6», DESIGN §3.1): рендер-стек документов — docx 9.8.0, pdfkit 0.20.2, fflate, @types/pdfkit; рендер-модель+энкодеры в packages/core; storage data/artifacts.
 - 2.2 (2026-09-21) — S4 (PO-approved): LLM-скоринг через шлюз — golden-set 50 jobs (/usr/bin/bash.025), score в Jobs Explorer, job_match таблица; arch app→llm.
 - 2.1 (2026-09-20) — S3 (PO-approved): LLM-шлюз — retry/backoff, circuit breaker, zod-structured output, PG-кэш, llm_run-учёт; arch llm→core.
 - 2.0 (2026-09-18) — S18 (PO-approved со спекой): без новых зависимостей — нативный HTML5 DnD; подход зафиксирован.

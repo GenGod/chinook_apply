@@ -188,11 +188,13 @@ describe('artifact repository (S5 T5)', () => {
     });
     const got = await getArtifactContent(db, saved.id);
     expect(got).toEqual({
+      jobId, // S6: renders need the job anchor for file paths
       kind: 'cover_letter',
       version: 1,
       status: 'invalid',
       content: { body: 'Dear Hiring Team, ...' },
       violations: ['mentions salary expectations'],
+      contentPath: null, // S6: render artifacts only
     });
     expect(await getArtifactContent(db, crypto.randomUUID())).toBeNull();
   });
