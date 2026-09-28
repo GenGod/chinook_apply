@@ -1,0 +1,120 @@
+import { test, expect, type Page } from '@playwright/test';
+
+/**
+ * S5 T8 — Documents section on the job detail page (superdesign variant A:
+ * versioned accordion). The e2e seed inserts two artifact versions on the
+ * FIRST relevant job — the row a `/?rule=relevant` first-title click opens
+ * (page order: posted_at desc, canonical_hash asc): resume v1 valid,
+ * cover_letter v1 invalid. All content is synthetic — no real PII (G1).
+ */
+
+async function openSeededJob(page: Page): Promise<void> {
+  await page.goto('/?rule=relevant');
+  const link = page.getByTestId('jobs-table').locator('tbody a[href^="/job/"]').first();
+  await link.click();
+  await page.waitForURL(/\/job\/[0-9a-f-]{36}/);
+  await expect(page.getByTestId('documents')).toBeVisible();
+}
+
+test('documents section lists seeded versions with status flags and generate buttons', async ({ page }) => {
+  await openSeededJob(page);
+
+  const rows = page.getByTestId('documents').getByTestId('artifact-row');
+  await expect(rows).toHaveCount(2);
+  const resumeRow = rows.filter({ hasText: 'Resume v1' });
+  const coverRow = rows.filter({ hasText: 'Cover letter v1' });
+  await expect(resumeRow).toHaveCount(1);
+  await expect(coverRow).toHaveCount(1);
+  // invalid version is flagged in the row itself
+  await expect(coverRow).toContainText('Validation failed');
+
+  // generate buttons present and enabled — never clicked against the real LLM
+  await expect(page.getByTestId('generate-resume')).toBeEnabled();
+  await expect(page.getByTestId('generate-cover')).toBeEnabled();
+  await expect(page.getByTestId('generate-both')).toBeEnabled();
+});
+
+test('invalid artifact opens a violations banner with a Regenerate button', async ({ page }) => {
+  await openSeededJob(page);
+
+  await page.getByTestId('artifact-row').filter({ hasText: 'Cover letter' }).click();
+  const banner = page.getByTestId('violations');
+  await expect(banner).toBeVisible();
+  await expect(banner).toContainText('word_limit: 342 words exceeds the 300 word limit');
+  await expect(page.getByTestId('regenerate')).toBeEnabled();
+});
+
+test('valid artifact opens the inline preview with its content', async ({ page }) => {
+  await openSeededJob(page);
+  await expect(page.getByTestId('artifact-content')).toHaveCount(0);
+
+  await page.getByTestId('artifact-row').filter({ hasText: 'Resume' }).click();
+  const preview = page.getByTestId('artifact-content');
+  await expect(preview).toBeVisible();
+  await expect(preview).toContainText('Summary');
+  await expect(preview).toContainText('platform serving 40k users'); // synthetic marker bullet
+});
+
+test('accordion keeps one preview open and the invalid row exposes its violations', async ({ page }) => {
+  await openSeededJob(page);
+
+  await page.getByTestId('artifact-row').filter({ hasText: 'Resume' }).click();
+  await expect(page.getByTestId('artifact-content')).toBeVisible();
+  await expect(page.getByTestId('violations')).toHaveCount(0);
+
+  await page.getByTestId('artifact-row').filter({ hasText: 'Cover letter' }).click();
+  await expect(page.getByTestId('violations')).toBeVisible();
+  await expect(page.getByTestId('violations')).toContainText('word_limit: 342 words exceeds the 300 word limit');
+  await expect(page.getByTestId('artifact-content')).toHaveCount(1); // one at a time
+});
+
+test('documents section visual snapshot (masked layout gate, preview closed)', async ({ page }) => {
+  await openSeededJob(page);
+  // Scrollbars render differently per OS (see s1a snapshot) — hide them for
+  // the pixel gate; the gate protects layout chrome, text is masked for font
+  // determinism and PII never renders with the preview closed.
+  await page.addStyleTag({
+    content: '* { scrollbar-width: none !important } *::-webkit-scrollbar { width: 0 !important; display: none !important }',
+  });
+  // The section sits below the Details block — pin its top to the viewport top
+  // so the pixel gate actually covers the Documents layout (S1a discipline:
+  // text-bearing boxes masked, frames/spacing gated).
+  await page.getByTestId('documents').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+  await expect(page).toHaveScreenshot('s5-documents.png', {
+    mask: [
+      page.locator('main > div').first(), // whole heading row (s1a convention)
+      page.locator('article h2'), // job title
+      page.locator('article > div').first(), // employer · location · source · date meta
+      page.getByRole('link', { name: /Open original posting/ }),
+      page.locator('article section').first(), // Details fields (all text)
+      page.locator('article > div').nth(1), // status row + move buttons
+      page.getByTestId('documents').locator('h3, p'), // section header + subtitle text
+      page.getByTestId('versions-label'), // static caption text (OS font raster)
+      page.getByTestId('documents').locator('button'), // generate buttons + version rows (dates)
+      page.getByTestId('generate-error'), // defensive no-op when absent
+      page.getByTestId('violations'), // defensive no-op (preview closed)
+      page.getByTestId('artifact-content'), // PII mask anchor (closed → no-op)
+      page.locator('article section').nth(2), // long description text below the section
+    ],
+    maskColor: '#1a2f4a',
+  });
+});
+
+test('generate error path surfaces the API message (402 daily cap)', async ({ page }) => {
+  await openSeededJob(page);
+  await page.route('**/api/jobs/*/generate', (route) =>
+    route.fulfill({ status: 402, body: JSON.stringify({ error: 'daily generation limit reached' }) }),
+  );
+  await page.getByTestId('generate-both').click();
+  await expect(page.getByTestId('generate-error')).toContainText('daily generation limit reached');
+  await expect(page.getByTestId('generate-both')).toBeEnabled(); // busy state reset
+});
+
+test('generate error path surfaces the API message (409 not eligible)', async ({ page }) => {
+  await openSeededJob(page);
+  await page.route('**/api/jobs/*/generate', (route) =>
+    route.fulfill({ status: 409, body: JSON.stringify({ error: 'job is excluded by the eligibility rules' }) }),
+  );
+  await page.getByTestId('generate-resume').click();
+  await expect(page.getByTestId('generate-error')).toContainText('job is excluded by the eligibility rules');
+});

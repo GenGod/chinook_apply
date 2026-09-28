@@ -205,7 +205,7 @@ test('job detail description has substantial content', async ({ page }) => {
   const link = page.locator('[data-testid="jobs-table"] tbody a[href^="/job/"]').first();
   await link.click();
   await page.waitForURL(/\/job\//);
-  const descSection = page.getByText('Description');
+  const descSection = page.getByText('Description', { exact: true }); // exact: the Documents subtitle also says "job description"
   await expect(descSection).toBeVisible();
   // description should have more than just the heading
   const article = page.locator('article');

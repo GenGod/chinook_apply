@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { listArtifacts } from '@chinook/core';
 import type { BoardStatus, Database } from '@chinook/core';
 import type { Kysely } from 'kysely';
 import { getDb } from '@/lib/db';
 import { fetchAdzunaFullDescription } from '@chinook/adapters';
 import { StatusControls } from '../../board/status-controls';
+import { DocumentsSection } from './documents-section';
 import styles from '../../board/board.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -124,6 +126,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const { id } = await params;
   const job = await fetchFullJob(getDb(), id);
   if (!job) notFound();
+  const artifacts = await listArtifacts(getDb(), id);
 
   const bs = job.app?.status ?? 'new';
   const bc = job.app?.channel ?? null;
@@ -203,6 +206,8 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           <div style={{ fontSize: 'var(--text-aux)', color: 'var(--text-muted)', marginBottom: 8 }}>Status: {from.replace('_', ' · ')}</div>
           <StatusControls jobId={job.id} from={from} />
         </div>
+
+        <DocumentsSection jobId={job.id} initialArtifacts={artifacts} />
 
         {desc ? (
           <section style={{ marginTop: 24 }}>

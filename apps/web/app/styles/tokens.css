@@ -45,6 +45,8 @@
   --status-warning-bg: #332a12;
   --status-warning-border: #5c4d1d;
   --status-danger: #f85149;
+  --status-danger-bg: #3b1512; /* S5 T8: red-tinted violations banner (AA with danger text, gated) */
+  --status-danger-border: #64251f;
   --status-neutral: #8a93b8; /* lightened from draft #4a4e69 for AA text pairs */
   --status-neutral-bg: #1a2433;
   --status-neutral-border: #2a3a52;

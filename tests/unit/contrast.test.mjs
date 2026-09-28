@@ -43,6 +43,7 @@ const PAIRS = [
   ['status-success', 'status-success-bg', AA_NORMAL],
   ['status-warning', 'status-warning-bg', AA_NORMAL],
   ['status-danger', 'bg-raised', AA_NORMAL],
+  ['status-danger', 'status-danger-bg', AA_NORMAL],
   ['status-neutral', 'status-neutral-bg', AA_NORMAL],
   ['badge-source-text', 'badge-source-bg', AA_NORMAL],
   ['accent-text', 'accent', AA_LARGE],
