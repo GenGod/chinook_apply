@@ -21,6 +21,7 @@ import {
   encodeResumePdf,
   getArtifactContent,
   saveRenderArtifact,
+  nextRenderVersion,
   buildCoverRenderModel,
   buildResumeRenderModel,
   renderIdentityFromContent,
@@ -34,7 +35,7 @@ import {
   type TailoredResume,
 } from '@chinook/core';
 import { loadMasterIdentity } from './generation-service';
-import { loadRenderFile, resolveArtifactsDir, saveRenderFile } from './render-storage';
+import { loadRenderFile, renderFolderName, resolveArtifactsDir, saveRenderFile } from './render-storage';
 
 /** HTTP 404 — the artifact id is unknown. */
 export class RenderSourceNotFoundError extends Error {
@@ -79,17 +80,19 @@ const FORMAT_BY_RENDER_KIND: Record<string, RenderFormat> = {
   render_pdf: 'pdf',
 };
 
-/** Renders one format's file and stores it; returns the relative content_path. */
+/** Renders one format's version and stores it; returns the relative content_path. */
 async function renderOne(
-  source: { jobId: string; kind: 'resume' | 'cover_letter'; version: number },
+  source: { jobId: string; kind: 'resume' | 'cover_letter' },
   identity: RenderIdentity,
   resume: TailoredResume | null,
   letter: string | null,
   masterSkills: Record<string, string[]> | undefined,
   format: RenderFormat,
+  folder: string,
+  version: number,
   rootDir: string,
 ): Promise<string> {
-  const fileName = `${SOURCE_KIND_DASH[source.kind]}-v${source.version}.${format}`;
+  const fileName = `${SOURCE_KIND_DASH[source.kind]}-v${version}.${format}`;
   const buffer =
     resume !== null
       ? format === 'docx'
@@ -98,7 +101,7 @@ async function renderOne(
       : format === 'docx'
         ? await encodeCoverDocx(buildCoverRenderModel(identity, letter ?? ''))
         : await encodeCoverPdf(buildCoverRenderModel(identity, letter ?? ''));
-  return saveRenderFile(rootDir, source.jobId, fileName, buffer);
+  return saveRenderFile(rootDir, folder, fileName, buffer);
 }
 
 /**
@@ -119,13 +122,14 @@ export function resolveRenderIdentity(
 
 /**
  * Renders one valid generated artifact (resume | cover_letter) into both
- * formats, writing the files and upserting the two render artifact rows.
- * Idempotent: re-rendering the same source updates the same rows and files.
+ * formats and APPENDS a new version pair (S21 history): files land under
+ * data/artifacts/<UTC-date>_<employer-slug>_<jobId8>/, rows get
+ * version = max+1 per (job, render kind); nothing is overwritten.
  */
 export async function renderArtifact(
   db: Kysely<Database>,
   artifactId: string,
-  opts?: { artifactsDir?: string; master?: unknown },
+  opts?: { artifactsDir?: string; master?: unknown; now?: Date },
 ): Promise<{ artifacts: ArtifactView[] }> {
   const source = await getArtifactContent(db, artifactId);
   if (!source) throw new RenderSourceNotFoundError(`artifact ${artifactId} not found`);
@@ -157,11 +161,17 @@ export async function renderArtifact(
       ? (masterRecord.skills as Record<string, string[]>)
       : undefined;
 
+  // S21 folder convention needs the employer for the human-readable slug.
+  const job = await db.selectFrom('job').select(['employer']).where('id', '=', source.jobId).executeTakeFirst();
+  const folder = renderFolderName(opts?.now ?? new Date(), job?.employer ?? '', source.jobId);
+
   const rootDir = resolveArtifactsDir(opts?.artifactsDir);
-  const sourceRef = { jobId: source.jobId, kind: source.kind as 'resume' | 'cover_letter', version: source.version };
+  const sourceRef = { jobId: source.jobId, kind: source.kind as 'resume' | 'cover_letter' };
   const artifacts: ArtifactView[] = [];
   for (const format of ['docx', 'pdf'] as const) {
-    const contentPath = await renderOne(sourceRef, identity, resume, letter, masterSkills, format, rootDir);
+    const kind = `render_${format}` as const;
+    const version = await nextRenderVersion(db, source.jobId, kind);
+    const contentPath = await renderOne(sourceRef, identity, resume, letter, masterSkills, format, folder, version, rootDir);
     const view = await saveRenderArtifact(db, {
       jobId: source.jobId,
       sourceArtifactId: artifactId,
@@ -169,6 +179,7 @@ export async function renderArtifact(
       sourceVersion: source.version,
       format,
       contentPath,
+      version,
     });
     artifacts.push(view);
   }

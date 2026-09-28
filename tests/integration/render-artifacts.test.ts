@@ -9,6 +9,7 @@ import {
   saveArtifact,
   saveRenderArtifact,
   findRenderArtifact,
+  nextRenderVersion,
   listArtifacts,
   type Database,
 } from '@chinook/core';
@@ -34,36 +35,47 @@ const db: Kysely<Database> = createDb(
   process.env.DATABASE_URL ?? 'postgres://chinook:chinook_dev@localhost:5433/chinook_test',
 );
 
-let jobId = '';
-
-beforeAll(async () => {
-  await ensureSchema(db);
-  jobId = randomUUID();
+// Each describe owns a synthetic job so render-version counters never
+// interleave between suites sharing the test database.
+async function createSyntheticJob(prefix: string): Promise<string> {
+  const id = randomUUID();
   await db
     .insertInto('job')
     .values({
-      id: jobId,
-      canonical_hash: `s6-${jobId}`,
-      title: 'S6 render test job',
-      employer: 'Chinook Test Inc.',
+      id,
+      canonical_hash: `${prefix}-${id}`,
+      title: 'S21 render test job',
+      employer: 'Fixture Corp',
       city: 'edmonton',
       province: 'AB',
       remote: false,
-      url: 'https://example.invalid/s6',
+      url: 'https://example.invalid/s21',
       urls: [],
       source: 'jobbank',
-      source_job_id: `s6-${jobId}`,
+      source_job_id: `${prefix}-${id}`,
       posted_at: new Date(),
       salary_currency: 'CAD',
       ingested_at: new Date(),
     })
     .execute();
+  return id;
+}
+
+async function deleteSyntheticJob(jobId: string): Promise<void> {
+  await db.deleteFrom('artifact').where('job_id', '=', jobId).execute();
+  await db.deleteFrom('job').where('id', '=', jobId).execute();
+}
+
+let jobId = '';
+
+beforeAll(async () => {
+  await ensureSchema(db);
+  jobId = await createSyntheticJob('s6');
 });
 
 afterAll(async () => {
   if (!db || !jobId) return;
-  await db.deleteFrom('artifact').where('job_id', '=', jobId).execute();
-  await db.deleteFrom('job').where('id', '=', jobId).execute();
+  await deleteSyntheticJob(jobId);
   await db.destroy();
 });
 
@@ -137,8 +149,12 @@ describe('artifact schema (S6 migration)', () => {
   });
 });
 
-describe('render artifact repository (S6 T5)', () => {
-  it('saveRenderArtifact creates version-1 rows keyed by (source, format); re-save upserts', async () => {
+describe('render artifact repository (S21 T2: append versions)', () => {
+  let jobId = '';
+  beforeAll(async () => { jobId = await createSyntheticJob('s21-repo'); });
+  afterAll(async () => { await deleteSyntheticJob(jobId); });
+
+  it('saveRenderArtifact stores explicit versions; nextRenderVersion counts; findRenderArtifact returns the latest', async () => {
     const src = await saveArtifact(db, {
       jobId,
       kind: 'cover_letter',
@@ -148,50 +164,33 @@ describe('render artifact repository (S6 T5)', () => {
       llmRunId: 7,
     });
 
-    const first = await saveRenderArtifact(db, {
+    const input = {
       jobId,
       sourceArtifactId: src.id,
-      sourceKind: 'cover_letter',
+      sourceKind: 'cover_letter' as const,
       sourceVersion: src.version,
-      format: 'docx',
-      contentPath: `${jobId}/cover-letter-v1.docx`,
-    });
-    expect(first.kind).toBe('render_docx');
-    expect(first.version).toBe(1);
-    expect(first.status).toBe('valid');
-    expect(first.violations).toEqual([]);
-    expect(first.sourceArtifactId).toBe(src.id);
+      format: 'docx' as const,
+    };
+    const v1 = await saveRenderArtifact(db, { ...input, version: 1, contentPath: `${jobId}/cover-letter-v1.docx` });
+    expect(v1.kind).toBe('render_docx');
+    expect(v1.version).toBe(1);
+    expect(v1.sourceArtifactId).toBe(src.id);
 
-    const found = await findRenderArtifact(db, src.id, 'docx');
-    expect(found?.id).toBe(first.id);
+    // S21: re-rendering APPENDS a new version — the v1 row/file stay intact.
+    const v2 = await saveRenderArtifact(db, { ...input, version: 2, contentPath: `${jobId}/cover-letter-v2.docx` });
+    expect(v2.id).not.toBe(v1.id);
+    expect(v2.version).toBe(2);
 
-    // Re-render (same source, same format): the same row is updated in place,
-    // not versioned again — renders are derived and deterministic.
-    const again = await saveRenderArtifact(db, {
-      jobId,
-      sourceArtifactId: src.id,
-      sourceKind: 'cover_letter',
-      sourceVersion: src.version,
-      format: 'docx',
-      contentPath: `${jobId}/cover-letter-v1.docx`,
-    });
-    expect(again.id).toBe(first.id);
-    expect(again.version).toBe(1);
+    expect(await nextRenderVersion(db, jobId, 'render_docx')).toBe(3);
 
-    // The other format is an independent row.
-    const pdf = await saveRenderArtifact(db, {
-      jobId,
-      sourceArtifactId: src.id,
-      sourceKind: 'cover_letter',
-      sourceVersion: src.version,
-      format: 'pdf',
-      contentPath: `${jobId}/cover-letter-v1.pdf`,
-    });
-    expect(pdf.kind).toBe('render_pdf');
-    expect(pdf.id).not.toBe(first.id);
-
-    await findRenderArtifact(db, src.id, 'pdf').then((row) => expect(row?.kind).toBe('render_pdf'));
+    // findRenderArtifact = the latest render of (source, format).
+    expect((await findRenderArtifact(db, src.id, 'docx'))?.version).toBe(2);
     expect(await findRenderArtifact(db, randomUUID(), 'docx')).toBeNull();
+
+    // UNIQUE(job_id, kind, version) still guards duplicates.
+    await expect(
+      saveRenderArtifact(db, { ...input, version: 2, contentPath: `${jobId}/cover-letter-v2-again.docx` }),
+    ).rejects.toThrow();
   });
 });
 
@@ -291,7 +290,8 @@ describe('render service (S6 T6)', () => {
       validation: { valid: true, violations: [] },
       llmRunId: 1,
     });
-    const { artifacts } = await renderArtifact(db, src.id, { artifactsDir });
+    const now = new Date('2026-09-28T12:00:00Z');
+    const { artifacts } = await renderArtifact(db, src.id, { artifactsDir, now });
     expect(artifacts.map((a) => a.kind).sort()).toEqual(['render_docx', 'render_pdf']);
     expect(artifacts.every((a) => a.sourceArtifactId === src.id)).toBe(true);
     for (const view of artifacts) {
@@ -300,20 +300,23 @@ describe('render service (S6 T6)', () => {
       expect(file!.buffer.length).toBeGreaterThan(100);
       if (view.kind === 'render_docx') {
         expect(file!.contentType).toContain('wordprocessingml');
-        expect(file!.filename).toBe(`resume-v${src.version}.docx`);
+        expect(file!.filename).toBe(`resume-v${view.version}.docx`);
         expect(file!.buffer.subarray(0, 2).toString('latin1')).toBe('PK');
       } else {
         expect(file!.contentType).toBe('application/pdf');
-        expect(file!.filename).toBe(`resume-v${src.version}.pdf`);
+        expect(file!.filename).toBe(`resume-v${view.version}.pdf`);
         expect(file!.buffer.subarray(0, 5).toString('latin1')).toBe('%PDF-');
       }
     }
-    // Files land under <artifactsDir>/<jobId>/
-    const docxPath = join(artifactsDir, jobId, `resume-v${src.version}.docx`);
+    // S21: files land under the dated convention folder <date>_fixture-corp_<job8>/
+    const docxView = artifacts.find((a) => a.kind === 'render_docx')!;
+    expect(docxView.violations).toEqual([]);
+    const folder = renderFolderName(now, 'Fixture Corp', jobId);
+    const docxPath = join(artifactsDir, folder, `resume-v${docxView.version}.docx`);
     await readFile(docxPath); // throws when missing
   });
 
-  it('is idempotent: re-render upserts the same rows and rewrites the files', async () => {
+  it('appends history: re-render adds new version rows and keeps both files readable', async () => {
     const src = await saveArtifact(db, {
       jobId,
       kind: 'cover_letter',
@@ -322,12 +325,23 @@ describe('render service (S6 T6)', () => {
       validation: { valid: true, violations: [] },
       llmRunId: 1,
     });
-    const first = await renderArtifact(db, src.id, { artifactsDir });
-    const again = await renderArtifact(db, src.id, { artifactsDir });
-    expect(again.artifacts.map((a) => a.id).sort()).toEqual(first.artifacts.map((a) => a.id).sort());
+    const first = await renderArtifact(db, src.id, { artifactsDir, now: new Date('2026-09-28T10:00:00Z') });
+    const again = await renderArtifact(db, src.id, { artifactsDir, now: new Date('2026-09-29T10:00:00Z') });
+    // New ids; each format's version increments by exactly 1 (counters are
+    // per job+kind and earlier tests in this suite may have rendered already).
+    expect(again.artifacts.every((a) => !first.artifacts.some((b) => b.id === a.id))).toBe(true);
+    for (const format of ['render_docx', 'render_pdf'] as const) {
+      const before = first.artifacts.find((a) => a.kind === format)!.version;
+      expect(again.artifacts.find((a) => a.kind === format)!.version).toBe(before + 1);
+    }
     const list = await listArtifacts(db, jobId);
-    const renderRows = list.filter((a) => a.kind.startsWith('render_'));
-    expect(renderRows.filter((a) => a.kind === 'render_docx')).toHaveLength(1);
+    const docxRenders = list.filter((a) => a.kind === 'render_docx' && a.sourceArtifactId === src.id);
+    expect(docxRenders).toHaveLength(2);
+    // Both historical versions stay downloadable, each from its dated folder.
+    for (const view of docxRenders) {
+      const file = await readRenderFile(db, view.id, { artifactsDir });
+      expect(file?.filename).toBe(`cover-letter-v${view.version}.docx`);
+    }
   });
 
   it('falls back to the master profile for legacy artifacts without an identity snapshot', async () => {
@@ -375,6 +389,7 @@ describe('render service (S6 T6)', () => {
       sourceVersion: 1,
       format: 'docx',
       contentPath: `${jobId}/x.docx`,
+      version: 9001, // high: outside the counters other tests in this suite use
     });
     await expect(renderArtifact(db, render.id, { artifactsDir })).rejects.toBeInstanceOf(RenderNotRenderableError);
   });
@@ -399,6 +414,7 @@ describe('render service (S6 T6)', () => {
       sourceVersion: 1,
       format: 'docx',
       contentPath: '../../../etc/passwd.docx',
+      version: 9002, // high: outside the counters other tests in this suite use
     });
     expect(await readRenderFile(db, evil.id, { artifactsDir })).toBeNull();
     // and for an artifact id that does not exist at all

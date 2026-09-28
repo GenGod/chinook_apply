@@ -58,6 +58,7 @@ export {
   getArtifactContent,
   saveRenderArtifact,
   findRenderArtifact,
+  nextRenderVersion,
   type ArtifactView,
   type ArtifactContent,
   type RenderFormat,
