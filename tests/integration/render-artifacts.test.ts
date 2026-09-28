@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import { createDb, ensureSchema, saveArtifact, type Database } from '@chinook/core';
+import {
+  createDb,
+  ensureSchema,
+  saveArtifact,
+  saveRenderArtifact,
+  findRenderArtifact,
+  type Database,
+} from '@chinook/core';
 import type { Kysely } from 'kysely';
 
 /**
@@ -114,5 +121,63 @@ describe('artifact schema (S6 migration)', () => {
         })
         .execute(),
     ).rejects.toThrow();
+  });
+});
+
+describe('render artifact repository (S6 T5)', () => {
+  it('saveRenderArtifact creates version-1 rows keyed by (source, format); re-save upserts', async () => {
+    const src = await saveArtifact(db, {
+      jobId,
+      kind: 'cover_letter',
+      status: 'valid',
+      content: { letter: 'Dear Hiring Manager,' },
+      validation: { valid: true, violations: [] },
+      llmRunId: 7,
+    });
+
+    const first = await saveRenderArtifact(db, {
+      jobId,
+      sourceArtifactId: src.id,
+      sourceKind: 'cover_letter',
+      sourceVersion: src.version,
+      format: 'docx',
+      contentPath: `${jobId}/cover-letter-v1.docx`,
+    });
+    expect(first.kind).toBe('render_docx');
+    expect(first.version).toBe(1);
+    expect(first.status).toBe('valid');
+    expect(first.violations).toEqual([]);
+    expect(first.sourceArtifactId).toBe(src.id);
+
+    const found = await findRenderArtifact(db, src.id, 'docx');
+    expect(found?.id).toBe(first.id);
+
+    // Re-render (same source, same format): the same row is updated in place,
+    // not versioned again — renders are derived and deterministic.
+    const again = await saveRenderArtifact(db, {
+      jobId,
+      sourceArtifactId: src.id,
+      sourceKind: 'cover_letter',
+      sourceVersion: src.version,
+      format: 'docx',
+      contentPath: `${jobId}/cover-letter-v1.docx`,
+    });
+    expect(again.id).toBe(first.id);
+    expect(again.version).toBe(1);
+
+    // The other format is an independent row.
+    const pdf = await saveRenderArtifact(db, {
+      jobId,
+      sourceArtifactId: src.id,
+      sourceKind: 'cover_letter',
+      sourceVersion: src.version,
+      format: 'pdf',
+      contentPath: `${jobId}/cover-letter-v1.pdf`,
+    });
+    expect(pdf.kind).toBe('render_pdf');
+    expect(pdf.id).not.toBe(first.id);
+
+    await findRenderArtifact(db, src.id, 'pdf').then((row) => expect(row?.kind).toBe('render_pdf'));
+    expect(await findRenderArtifact(db, randomUUID(), 'docx')).toBeNull();
   });
 });

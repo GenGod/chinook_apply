@@ -140,3 +140,72 @@ export async function getArtifactContent(
     violations: violationDetails(row.validation),
   };
 }
+
+// --- S6: render artifacts (derived, deterministic) ---
+
+export type RenderFormat = 'docx' | 'pdf';
+
+/**
+ * Stores (or updates) the render artifact of one (source artifact, format).
+ * Renders are derived and deterministic, so there is exactly one row per
+ * (source, format) with version=1 — re-rendering upserts in place instead of
+ * spawning version clones. content_path is relative to the artifacts root.
+ */
+export async function saveRenderArtifact(
+  db: Kysely<Database>,
+  input: {
+    jobId: string;
+    sourceArtifactId: string;
+    sourceKind: 'resume' | 'cover_letter';
+    sourceVersion: number;
+    format: RenderFormat;
+    contentPath: string;
+  },
+): Promise<ArtifactView> {
+  const values = {
+    id: randomUUID(),
+    job_id: input.jobId,
+    kind: `render_${input.format}` as `render_${RenderFormat}`,
+    version: 1,
+    status: 'valid' as const,
+    content: JSON.stringify({
+      format: input.format,
+      sourceKind: input.sourceKind,
+      sourceVersion: input.sourceVersion,
+    }),
+    validation: JSON.stringify({ valid: true, violations: [] }),
+    llm_run_id: null,
+    source_artifact_id: input.sourceArtifactId,
+    content_path: input.contentPath,
+  };
+  const row = await db
+    .insertInto('artifact')
+    .values(values)
+    .onConflict((oc) =>
+      oc.columns(['job_id', 'kind', 'version']).doUpdateSet({
+        content: values.content,
+        validation: values.validation,
+        source_artifact_id: values.source_artifact_id,
+        content_path: values.content_path,
+        created_at: new Date(),
+      }),
+    )
+    .returningAll()
+    .executeTakeFirstOrThrow();
+  return toView(row);
+}
+
+/** The render artifact of one (source, format), or null when not rendered yet. */
+export async function findRenderArtifact(
+  db: Kysely<Database>,
+  sourceArtifactId: string,
+  format: RenderFormat,
+): Promise<ArtifactView | null> {
+  const row = await db
+    .selectFrom('artifact')
+    .select(['id', 'job_id', 'kind', 'version', 'status', 'validation', 'source_artifact_id', 'created_at'])
+    .where('source_artifact_id', '=', sourceArtifactId)
+    .where('kind', '=', `render_${format}`)
+    .executeTakeFirst();
+  return row ? toView(row) : null;
+}

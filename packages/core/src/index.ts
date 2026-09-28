@@ -56,8 +56,11 @@ export {
   saveArtifact,
   listArtifacts,
   getArtifactContent,
+  saveRenderArtifact,
+  findRenderArtifact,
   type ArtifactView,
   type ArtifactContent,
+  type RenderFormat,
 } from './artifacts';
 export {
   extractEntities,
