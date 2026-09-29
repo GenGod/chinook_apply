@@ -102,6 +102,7 @@
 | Хранилище | data/artifacts/ (gitignored) | env ARTIFACTS_DIR; в БД — относительный content_path |
 
 ## Changelog
+- 2.4 (2026-09-29) — S22 (PO-мандат «долги»): pixelmatch + pngjs (devDeps @chinook/tests) — инверсионная проверка визуального компаратора (B-011, threshold 0.01); новые runtime-зависимости отсутствуют.
 - 2.3 (2026-09-28) — S6 (PO-мандат «реализуй S6», DESIGN §3.1): рендер-стек документов — docx 9.8.0, pdfkit 0.20.2, fflate, @types/pdfkit; рендер-модель+энкодеры в packages/core; storage data/artifacts.
 - 2.2 (2026-09-21) — S4 (PO-approved): LLM-скоринг через шлюз — golden-set 50 jobs (/usr/bin/bash.025), score в Jobs Explorer, job_match таблица; arch app→llm.
 - 2.1 (2026-09-20) — S3 (PO-approved): LLM-шлюз — retry/backoff, circuit breaker, zod-structured output, PG-кэш, llm_run-учёт; arch llm→core.

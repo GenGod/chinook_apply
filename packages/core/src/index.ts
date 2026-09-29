@@ -25,7 +25,7 @@ export {
   type ApplicationTable,
   type Kysely,
 } from './db';
-export { seedE2eExtras } from './seed';
+export { seedE2eExtras, seedArtifactsOnJob, type ArtifactFixture } from './seed';
 export {
   listJobs,
   markAppliedManually,
