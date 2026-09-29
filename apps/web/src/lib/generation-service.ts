@@ -157,9 +157,22 @@ async function todayGenerationSpendUsd(db: Kysely<Database>): Promise<number> {
 }
 
 function resolveDailyLimit(explicit?: number): number {
-  if (explicit !== undefined) return explicit;
-  const env = Number(process.env.GEN_DAILY_LIMIT_USD);
-  if (Number.isFinite(env) && env > 0) return env;
+  if (explicit !== undefined) {
+    // S22: non-positive or non-finite explicit limits are a caller bug —
+    // reject loudly instead of degenerate always-blocking (<=0) caps.
+    if (!Number.isFinite(explicit) || explicit <= 0) {
+      throw new Error(`invalid daily limit: GEN_DAILY_LIMIT_USD must be a positive number, got ${explicit}`);
+    }
+    return explicit;
+  }
+  const envRaw = process.env.GEN_DAILY_LIMIT_USD;
+  if (envRaw !== undefined) {
+    const env = Number(envRaw);
+    if (!Number.isFinite(env) || env <= 0) {
+      throw new Error(`invalid daily limit: GEN_DAILY_LIMIT_USD must be a positive number, got "${envRaw}"`);
+    }
+    return env;
+  }
   return DEFAULT_DAILY_LIMIT_USD;
 }
 
@@ -319,15 +332,16 @@ export async function generateDocuments(
   llm: Llm,
   jobId: string,
   kinds: Array<'resume' | 'cover_letter'>,
-  opts?: { dailyLimitUsd?: number; master?: MasterProfileLike },
+  opts?: {
+    dailyLimitUsd?: number;
+    master?: MasterProfileLike;
+    /** Test/alternative-deployment hook: overrides the static master file load. */
+    loadMaster?: () => MasterProfileLike | null;
+  },
 ): Promise<{ artifacts: ArtifactView[] }> {
+  // S22: job eligibility and the daily cap are reported BEFORE master
+  // misconfiguration — a misconfigured master file must not mask a 409.
   const limit = resolveDailyLimit(opts?.dailyLimitUsd);
-  const master = opts?.master ?? loadMasterProfile();
-  if (!master) {
-    throw new Error(
-      'Master profile unavailable: pass opts.master, or place data/profile/master_profile.json at the repo root (Docker: mount it read-only)',
-    );
-  }
 
   const job = await db
     .selectFrom('job')
@@ -343,6 +357,13 @@ export async function generateDocuments(
   if (spent >= limit) {
     throw new GenerationLimitError(
       `daily generation spend $${round6(spent)} has reached the $${round6(limit)} cap`,
+    );
+  }
+
+  const master = opts?.master ?? (opts?.loadMaster ? opts.loadMaster() : loadMasterProfile());
+  if (!master) {
+    throw new Error(
+      'Master profile unavailable: pass opts.master, or place data/profile/master_profile.json at the repo root (Docker: mount it read-only)',
     );
   }
 

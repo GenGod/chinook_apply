@@ -155,6 +155,34 @@ describe('artifact repository (S5 T5)', () => {
     expect(v2.id).not.toBe(v1.id);
   });
 
+  it('saveArtifact survives concurrent saves via version retry (S22)', async () => {
+    await cleanArtifacts();
+    const empty: ValidationReport = { valid: true, violations: [] };
+    const results = await Promise.allSettled([
+      saveArtifact(db, { jobId, kind: 'resume', status: 'valid', content: { v: 'a' }, validation: empty, llmRunId: 141 }),
+      saveArtifact(db, { jobId, kind: 'resume', status: 'valid', content: { v: 'b' }, validation: empty, llmRunId: 142 }),
+      saveArtifact(db, { jobId, kind: 'resume', status: 'valid', content: { v: 'c' }, validation: empty, llmRunId: 143 }),
+    ]);
+    const fulfilled = results.filter((r): r is PromiseFulfilledResult<ArtifactView> => r.status === 'fulfilled');
+    // S22: instead of leaking a raw pg 23505, concurrent savers retry with a
+    // recomputed version — all of them must succeed with distinct versions.
+    expect(fulfilled).toHaveLength(3);
+    const versions = fulfilled.map((r) => r.value.version).sort((a, b) => a - b);
+    expect(versions).toEqual([1, 2, 3]);
+  });
+
+  it('listArtifacts tie-breaks equal created_at by version DESC (S22)', async () => {
+    await cleanArtifacts();
+    const empty: ValidationReport = { valid: true, violations: [] };
+    const v1 = await saveArtifact(db, { jobId, kind: 'resume', status: 'valid', content: { v: 1 }, validation: empty, llmRunId: 121 });
+    const v2 = await saveArtifact(db, { jobId, kind: 'resume', status: 'valid', content: { v: 2 }, validation: empty, llmRunId: 122 });
+    // Force identical created_at — without the version tie-break the order is
+    // DB-arbitrary and the newest version can land below the older one.
+    await sql`update artifact set created_at = now() where id in (${v1.id}, ${v2.id})`.execute(db);
+    const list = await listArtifacts(db, jobId);
+    expect(list.map((a) => a.version)).toEqual([2, 1]);
+  });
+
   it('listArtifacts returns all versions across kinds ordered created DESC, without content', async () => {
     await cleanArtifacts();
     const empty: ValidationReport = { valid: true, violations: [] };

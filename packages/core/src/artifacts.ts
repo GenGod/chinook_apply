@@ -67,6 +67,58 @@ function toView(row: ArtifactSelectRow): ArtifactView {
   };
 }
 
+/** S22: a concurrent saver can race on the same (job_id, kind) version slot. */
+const SAVE_ATTEMPTS = 3;
+
+async function insertNextArtifactVersion(
+  db: Kysely<Database>,
+  input: {
+    jobId: string;
+    kind: 'resume' | 'cover_letter';
+    status: 'valid' | 'invalid';
+    content: unknown;
+    validation: ValidationReport;
+    llmRunId: number;
+  },
+  id: string,
+  attemptsLeft: number,
+): Promise<ArtifactView> {
+  const rows = await db.transaction().execute(async (trx) => {
+    const maxRow = await trx
+      .selectFrom('artifact')
+      .select((eb) => eb.fn.max<number | null>('version').as('max_version'))
+      .where('job_id', '=', input.jobId)
+      .where('kind', '=', input.kind)
+      .executeTakeFirstOrThrow();
+    const version = (maxRow.max_version ?? 0) + 1;
+    // on-conflict-do-nothing turns a lost version race into an empty result —
+    // the caller retries with a freshly computed version, no raw error leaks.
+    return trx
+      .insertInto('artifact')
+      .values({
+        id,
+        job_id: input.jobId,
+        kind: input.kind,
+        version,
+        status: input.status,
+        content: JSON.stringify(input.content),
+        validation: JSON.stringify({
+          valid: input.validation.valid,
+          violations: input.validation.violations,
+        }),
+        llm_run_id: input.llmRunId,
+      })
+      .onConflict((oc) => oc.columns(['job_id', 'kind', 'version']).doNothing())
+      .returningAll()
+      .execute();
+  });
+  if (rows.length > 0) return toView(rows[0]!);
+  if (attemptsLeft <= 1) {
+    throw new Error(`artifact version race: concurrent saves exhausted ${SAVE_ATTEMPTS} attempts`);
+  }
+  return insertNextArtifactVersion(db, input, id, attemptsLeft - 1);
+}
+
 /**
  * Stores a generated artifact as the next version for (job_id, kind).
  * Version = max(version)+1 computed inside a transaction; the whole
@@ -83,43 +135,17 @@ export async function saveArtifact(
     llmRunId: number;
   },
 ): Promise<ArtifactView> {
-  const id = randomUUID();
-  const row = await db.transaction().execute(async (trx) => {
-    const maxRow = await trx
-      .selectFrom('artifact')
-      .select((eb) => eb.fn.max<number | null>('version').as('max_version'))
-      .where('job_id', '=', input.jobId)
-      .where('kind', '=', input.kind)
-      .executeTakeFirstOrThrow();
-    const version = (maxRow.max_version ?? 0) + 1;
-    return trx
-      .insertInto('artifact')
-      .values({
-        id,
-        job_id: input.jobId,
-        kind: input.kind,
-        version,
-        status: input.status,
-        content: JSON.stringify(input.content),
-        validation: JSON.stringify({
-          valid: input.validation.valid,
-          violations: input.validation.violations,
-        }),
-        llm_run_id: input.llmRunId,
-      })
-      .returningAll()
-      .executeTakeFirstOrThrow();
-  });
-  return toView(row);
+  return insertNextArtifactVersion(db, input, randomUUID(), SAVE_ATTEMPTS);
 }
 
-/** All artifact versions of a job, newest first; metadata only (no content). */
+/** All artifact versions of a job, newest first (created DESC, version DESC tie-break), metadata only. */
 export async function listArtifacts(db: Kysely<Database>, jobId: string): Promise<ArtifactView[]> {
   const rows = await db
     .selectFrom('artifact')
     .select(['id', 'job_id', 'kind', 'version', 'status', 'validation', 'source_artifact_id', 'created_at'])
     .where('job_id', '=', jobId)
     .orderBy('created_at', 'desc')
+    .orderBy('version', 'desc')
     .execute();
   return rows.map(toView);
 }
