@@ -151,6 +151,37 @@ test('render history: repeated renders append downloadable versions (S21)', asyn
   expect((await historyDownload).suggestedFilename()).toMatch(/^resume-v1\.docx$/);
 });
 
+test('stale preview responses are discarded when switching rows quickly (S22)', async ({ page }) => {
+  await openSeededJob(page);
+
+  // Delay only the FIRST preview fetch (the resume row clicked below); the
+  // cover fetch returns fast. The slow resume response must be discarded.
+  let delayed = false;
+  await page.route('**/api/artifacts/*', async (route) => {
+    if (!delayed) {
+      delayed = true;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    await route.continue();
+  });
+
+  await page.getByTestId('artifact-row').filter({ hasText: /^Resume v/ }).click();
+  await page.getByTestId('artifact-row').filter({ hasText: /^Cover letter v/ }).click();
+
+  const preview = page.getByTestId('artifact-content');
+  await expect(preview).toContainText('Dear Hiring Manager'); // fast cover content wins
+  // resume-only bullet (the synthetic cover letter shares the 40k-users phrase!)
+  await expect(preview).not.toContainText('Cut batch reporting latency');
+});
+
+test('generate network failure surfaces an error message (S22)', async ({ page }) => {
+  await openSeededJob(page);
+  await page.route('**/api/jobs/*/generate', (route) => route.abort());
+  await page.getByTestId('generate-resume').click();
+  // The fetch rejection must surface in the error box, not vanish.
+  await expect(page.getByTestId('generate-error')).toBeVisible();
+});
+
 test('generate error path surfaces the API message (402 daily cap)', async ({ page }) => {
   await openSeededJob(page);
   await page.route('**/api/jobs/*/generate', (route) =>
