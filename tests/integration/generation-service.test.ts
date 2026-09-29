@@ -309,4 +309,25 @@ describe('generateDocuments (S5 T6)', () => {
     await expect(generateDocuments(db, llm, crypto.randomUUID(), ['resume'], { master })).rejects.toBeInstanceOf(JobNotEligibleError);
     expect(call).not.toHaveBeenCalled();
   });
+
+  // S22: eligibility must be reported BEFORE master misconfiguration — an
+  // excluded job yields 409 even when the master loader returns nothing.
+  it('ineligible job is reported before master unavailability', async () => {
+    const jobId = await seedJob({ ruleStatus: 'excluded' });
+    const { llm, call } = makeMockLlm(() => validDiff);
+    await expect(
+      generateDocuments(db, llm, jobId, ['resume'], { loadMaster: () => null }),
+    ).rejects.toBeInstanceOf(JobNotEligibleError);
+    expect(call).not.toHaveBeenCalled();
+  });
+
+  // S22: non-positive explicit limits are a configuration error — rejected
+  // up front with a clear message instead of degenerate 402s.
+  it('rejects non-positive explicit dailyLimitUsd before any call', async () => {
+    const { llm, call } = makeMockLlm(() => validDiff);
+    // Validation precedes even the job fetch — any id string works here.
+    await expect(generateDocuments(db, llm, crypto.randomUUID(), ['resume'], { master, dailyLimitUsd: 0 })).rejects.toThrow(/daily limit/i);
+    await expect(generateDocuments(db, llm, crypto.randomUUID(), ['resume'], { master, dailyLimitUsd: -5 })).rejects.toThrow(/daily limit/i);
+    expect(call).not.toHaveBeenCalled();
+  });
 });

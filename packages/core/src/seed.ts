@@ -96,13 +96,52 @@ function syntheticCoverContent(): unknown {
   };
 }
 
+/** S22: parameterizable artifact fixture — a row as the e2e seed inserts it. */
+export interface ArtifactFixture {
+  kind: 'resume' | 'cover_letter' | 'render_docx' | 'render_pdf';
+  version?: number;
+  status: 'valid' | 'invalid';
+  content: unknown;
+  validation?: { valid: boolean; violations: Array<{ kind: string; detail: string }> };
+  createdAt?: Date;
+}
+
+/**
+ * S22: inserts artifact fixtures on an explicit job (direct insertInto mirrors
+ * saveArtifact without the version-derivation transaction; llm_run_id points
+ * at the always-present first run slot — no FK on artifact.llm_run_id).
+ * Previous fixtures on the job are replaced.
+ */
+export async function seedArtifactsOnJob(
+  db: ReturnType<typeof createDb>,
+  jobId: string,
+  fixtures: ArtifactFixture[],
+): Promise<void> {
+  await db.deleteFrom('artifact').where('job_id', '=', jobId).execute();
+  await db
+    .insertInto('artifact')
+    .values(
+      fixtures.map((f) => ({
+        id: randomUUID(),
+        job_id: jobId,
+        kind: f.kind,
+        version: f.version ?? 1,
+        status: f.status,
+        content: JSON.stringify(f.content),
+        validation: JSON.stringify(
+          f.validation ?? { valid: f.status === 'valid', violations: [] },
+        ),
+        llm_run_id: 1,
+        created_at: f.createdAt ?? new Date(),
+      })),
+    )
+    .execute();
+}
+
 /**
  * Seeds two artifact versions on the FIRST relevant job (the row a
  * `/?rule=relevant` first-title click opens — page order is posted_at desc,
- * canonical_hash asc): resume v1 valid + cover_letter v1 invalid. Direct
- * insertInto mirrors saveArtifact (packages/core/artifacts.ts) without the
- * version-derivation transaction; llm_run_id points at the always-present
- * first run slot (no FK on artifact.llm_run_id).
+ * canonical_hash asc): resume v1 valid + cover_letter v1 invalid.
  */
 async function seedArtifacts(db: ReturnType<typeof createDb>): Promise<void> {
   const firstRelevant = await db
@@ -114,39 +153,26 @@ async function seedArtifacts(db: ReturnType<typeof createDb>): Promise<void> {
     .executeTakeFirst();
   if (!firstRelevant) return;
 
-  await db.deleteFrom('artifact').where('job_id', '=', firstRelevant.id).execute();
-  await db
-    .insertInto('artifact')
-    .values([
-      {
-        id: randomUUID(),
-        job_id: firstRelevant.id,
-        kind: 'cover_letter',
-        version: 1,
-        status: 'invalid',
-        content: JSON.stringify(syntheticCoverContent()),
-        validation: JSON.stringify({
-          valid: false,
-          violations: [
-            { kind: 'word_limit', detail: 'word_limit: 342 words exceeds the 300 word limit' },
-          ],
-        }),
-        llm_run_id: 1,
-        created_at: new Date('2026-09-21T10:00:00Z'),
+  await seedArtifactsOnJob(db, firstRelevant.id, [
+    {
+      kind: 'cover_letter',
+      status: 'invalid',
+      content: syntheticCoverContent(),
+      validation: {
+        valid: false,
+        violations: [
+          { kind: 'word_limit', detail: 'word_limit: 342 words exceeds the 300 word limit' },
+        ],
       },
-      {
-        id: randomUUID(),
-        job_id: firstRelevant.id,
-        kind: 'resume',
-        version: 1,
-        status: 'valid',
-        content: JSON.stringify(syntheticResumeContent()),
-        validation: JSON.stringify({ valid: true, violations: [] }),
-        llm_run_id: 1,
-        created_at: new Date('2026-09-20T10:00:00Z'),
-      },
-    ])
-    .execute();
+      createdAt: new Date('2026-09-21T10:00:00Z'),
+    },
+    {
+      kind: 'resume',
+      status: 'valid',
+      content: syntheticResumeContent(),
+      createdAt: new Date('2026-09-20T10:00:00Z'),
+    },
+  ]);
   console.log('e2e seed: +2 artifact versions on first relevant job (resume v1 valid, cover_letter v1 invalid)');
 }
 

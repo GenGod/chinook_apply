@@ -11,6 +11,8 @@
   "devDependencies": {
     "@playwright/test": "^1.63.0",
     "kysely": "^0.29.5",
+    "pixelmatch": "^7.2.0",
+    "pngjs": "^7.0.0",
     "vitest": "^5.0.0"
   },
   "dependencies": {

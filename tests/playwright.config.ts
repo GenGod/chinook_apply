@@ -16,8 +16,12 @@ export default defineConfig({
   expect: {
     toHaveScreenshot: {
       // Strict: any pixel diff fails (S0 inversion-proof requirement).
-      // Cross-platform font drift in CI is handled by pinned browser/fonts
-      // in CI, not by loosening the gate (see S0 report, known risks).
+      // B-011 (S22): the old default per-pixel threshold 0.2 was blind to
+      // intra-palette drift (measured: even a ~10% YIQ shift passed as zero);
+      // 0.01 is the only lock that sees both drift probes (see
+      // tests/scripts/verify-visual-threshold.mjs). Cross-platform font drift
+      // in CI is handled by pinned browser/fonts, not by loosening the gate.
+      threshold: 0.01,
       maxDiffPixelRatio: 0,
     },
   },

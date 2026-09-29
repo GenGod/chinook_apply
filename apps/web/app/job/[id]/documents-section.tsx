@@ -6,7 +6,7 @@
 // rows appear in the version list and download directly. Colors only via
 // tokens; resume renders Summary/Skills/Experience/Education — NO identity in
 // the preview (G1; the rendered files carry the identity header instead).
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { ArtifactView } from '@chinook/core';
 import styles from './documents.module.css';
 
@@ -141,6 +141,9 @@ export function DocumentsSection({ jobId, initialArtifacts }: { jobId: string; i
   const [detailLoading, setDetailLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // S22: monotonically increasing token — preview fetches that finish after
+  // the user switched to another row are discarded (stale-response guard).
+  const previewFetchSeq = useRef(0);
 
   const open = artifacts.find((a) => a.id === openId) ?? null;
 
@@ -171,17 +174,21 @@ export function DocumentsSection({ jobId, initialArtifacts }: { jobId: string; i
       setDetail(null);
       return;
     }
+    const seq = ++previewFetchSeq.current;
     setOpenId(a.id);
     setDetail(null);
     setDetailLoading(true);
     try {
       const res = await fetch(`/api/artifacts/${a.id}`);
       const body = (await res.json().catch(() => null)) as { artifact?: ArtifactDetail; error?: string } | null;
+      if (seq !== previewFetchSeq.current) return; // a newer row was opened meanwhile
       if (res.ok && body?.artifact) {
         setDetail(body.artifact);
       } else {
         setError(body?.error ?? `HTTP ${res.status}`);
       }
+    } catch (error) {
+      if (seq === previewFetchSeq.current) setError(error instanceof Error ? error.message : 'network error');
     } finally {
       setDetailLoading(false);
     }
@@ -201,6 +208,8 @@ export function DocumentsSection({ jobId, initialArtifacts }: { jobId: string; i
       await refreshArtifacts();
       const created = body?.artifacts?.find((a) => a.kind === `render_${format}`);
       if (created) triggerFileDownload(created.id);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'network error');
     } finally {
       setBusy(false);
     }
@@ -226,6 +235,8 @@ export function DocumentsSection({ jobId, initialArtifacts }: { jobId: string; i
         setOpenId(null);
         setDetail(null);
       }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'network error');
     } finally {
       setBusy(false);
     }
