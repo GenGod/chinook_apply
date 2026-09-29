@@ -151,10 +151,10 @@ export async function getArtifactContent(
 export type RenderFormat = 'docx' | 'pdf';
 
 /**
- * Stores (or updates) the render artifact of one (source artifact, format).
- * Renders are derived and deterministic, so there is exactly one row per
- * (source, format) with version=1 — re-rendering upserts in place instead of
- * spawning version clones. content_path is relative to the artifacts root.
+ * S21: stores one render version of (source artifact, format). The caller
+ * derives the version via nextRenderVersion — every render action appends a
+ * new version (history), nothing is overwritten. content_path is relative to
+ * the artifacts root. UNIQUE(job_id, kind, version) guards duplicates.
  */
 export async function saveRenderArtifact(
   db: Kysely<Database>,
@@ -165,42 +165,48 @@ export async function saveRenderArtifact(
     sourceVersion: number;
     format: RenderFormat;
     contentPath: string;
+    version: number;
   },
 ): Promise<ArtifactView> {
-  const values = {
-    id: randomUUID(),
-    job_id: input.jobId,
-    kind: `render_${input.format}` as `render_${RenderFormat}`,
-    version: 1,
-    status: 'valid' as const,
-    content: JSON.stringify({
-      format: input.format,
-      sourceKind: input.sourceKind,
-      sourceVersion: input.sourceVersion,
-    }),
-    validation: JSON.stringify({ valid: true, violations: [] }),
-    llm_run_id: null,
-    source_artifact_id: input.sourceArtifactId,
-    content_path: input.contentPath,
-  };
   const row = await db
     .insertInto('artifact')
-    .values(values)
-    .onConflict((oc) =>
-      oc.columns(['job_id', 'kind', 'version']).doUpdateSet({
-        content: values.content,
-        validation: values.validation,
-        source_artifact_id: values.source_artifact_id,
-        content_path: values.content_path,
-        created_at: new Date(),
+    .values({
+      id: randomUUID(),
+      job_id: input.jobId,
+      kind: `render_${input.format}` as `render_${RenderFormat}`,
+      version: input.version,
+      status: 'valid' as const,
+      content: JSON.stringify({
+        format: input.format,
+        sourceKind: input.sourceKind,
+        sourceVersion: input.sourceVersion,
       }),
-    )
+      validation: JSON.stringify({ valid: true, violations: [] }),
+      llm_run_id: null,
+      source_artifact_id: input.sourceArtifactId,
+      content_path: input.contentPath,
+    })
     .returningAll()
     .executeTakeFirstOrThrow();
   return toView(row);
 }
 
-/** The render artifact of one (source, format), or null when not rendered yet. */
+/** Next free render version for (job, kind) = max(existing)+1 (S21 append history). */
+export async function nextRenderVersion(
+  db: Kysely<Database>,
+  jobId: string,
+  kind: 'render_docx' | 'render_pdf',
+): Promise<number> {
+  const row = await db
+    .selectFrom('artifact')
+    .select((eb) => eb.fn.max<number | null>('version').as('max_version'))
+    .where('job_id', '=', jobId)
+    .where('kind', '=', kind)
+    .executeTakeFirstOrThrow();
+  return (row.max_version ?? 0) + 1;
+}
+
+/** The LATEST render of (source, format), or null when not rendered yet. */
 export async function findRenderArtifact(
   db: Kysely<Database>,
   sourceArtifactId: string,
@@ -211,6 +217,7 @@ export async function findRenderArtifact(
     .select(['id', 'job_id', 'kind', 'version', 'status', 'validation', 'source_artifact_id', 'created_at'])
     .where('source_artifact_id', '=', sourceArtifactId)
     .where('kind', '=', `render_${format}`)
+    .orderBy('version', 'desc')
     .executeTakeFirst();
   return row ? toView(row) : null;
 }

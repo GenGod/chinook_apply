@@ -29,6 +29,9 @@ export default defineConfig({
       DATABASE_URL:
         process.env.E2E_DATABASE_URL ??
         (process.env.DATABASE_URL ?? 'postgres://chinook:chinook_dev@localhost:5433/chinook').replace(/\/[^/]+$/, '/chinook_e2e'),
+      // S21: e2e render files must never mix into the live data/artifacts
+      // folder (gitignored either way — synthetic fixtures only land here).
+      ARTIFACTS_DIR: '../../data/artifacts-e2e',
     },
     url: 'http://localhost:3999',
     timeout: 180_000,

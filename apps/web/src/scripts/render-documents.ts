@@ -5,7 +5,7 @@
 // root and the static master-profile path resolve:
 //   pnpm --filter @chinook/web render:documents
 import process from 'node:process';
-import { createDb, ensureSchema } from '@chinook/core';
+import { createDb, ensureSchema, findRenderArtifact } from '@chinook/core';
 import { renderArtifact, readRenderFile, RenderNotRenderableError, RenderIdentityUnavailableError } from '../lib/render-service';
 
 interface Row {
@@ -51,8 +51,16 @@ async function main(): Promise<void> {
 
   const rows: Row[] = [];
   let rendered = 0;
+  let skipped = 0;
   let failed = 0;
   for (const src of sources) {
+    // S21: renders append history — re-running the script must not pile up
+    // duplicate versions, so sources that already have a render are skipped.
+    if (await findRenderArtifact(db, src.id, 'docx')) {
+      skipped += 1;
+      rows.push({ kind: src.kind, label: `v${src.version}`, status: 'skip', files: 'already rendered' });
+      continue;
+    }
     try {
       const { artifacts } = await renderArtifact(db, src.id);
       rendered += 1;
@@ -81,7 +89,7 @@ async function main(): Promise<void> {
   for (const r of rows) {
     console.log(`${r.kind.padEnd(13)} | ${r.label.padEnd(4)} | ${r.status.padEnd(6)} | ${r.files}`);
   }
-  console.log(`\ntotal: ${rendered}/${sources.length} rendered, ${failed} failed, 0 llm calls, $0`);
+  console.log(`\ntotal: ${rendered}/${sources.length} rendered, ${skipped} skipped, ${failed} failed, 0 llm calls, $0`);
   await db.destroy();
 }
 
