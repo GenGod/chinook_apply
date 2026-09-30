@@ -247,3 +247,78 @@ export async function findRenderArtifact(
     .executeTakeFirst();
   return row ? toView(row) : null;
 }
+
+// --- S8: dispatch audit (email sends) ---
+
+export interface DispatchAttachment {
+  kind: 'render_docx' | 'render_pdf';
+  artifactId: string;
+  filename: string;
+  bytes: number;
+}
+
+/**
+ * Writes one dispatch-audit row (Constitution 8.2: any sent response is
+ * reconstructible from records). Metadata only — the email body never lands
+ * here. Returns the generated dispatch id.
+ */
+export async function saveDispatchLog(
+  db: Kysely<Database>,
+  input: {
+    jobId: string;
+    applicationId: number | null;
+    outcome: 'sent' | 'failed';
+    toAddress: string;
+    subject: string;
+    attachments: DispatchAttachment[];
+    smtpMessageId: string | null;
+    error: string | null;
+  },
+): Promise<{ id: number }> {
+  const row = await db
+    .insertInto('dispatch_log')
+    .values({
+      job_id: input.jobId,
+      application_id: input.applicationId,
+      channel: 'email',
+      outcome: input.outcome,
+      to_address: input.toAddress,
+      subject: input.subject,
+      attachments: JSON.stringify(input.attachments),
+      smtp_message_id: input.smtpMessageId,
+      error: input.error,
+    })
+    .returningAll()
+    .executeTakeFirstOrThrow();
+  return { id: Number(row.id) };
+}
+
+/** Dispatches successfully sent today (channel email) — the art. 4.3 daily cap input. */
+export async function countSentToday(db: Kysely<Database>): Promise<number> {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const row = await db
+    .selectFrom('dispatch_log')
+    .where('outcome', '=', 'sent')
+    .where('channel', '=', 'email')
+    .where('created_at', '>=', todayStart)
+    .select((eb) => eb.fn.count<number>('id').as('count'))
+    .executeTakeFirst();
+  return Number(row?.count ?? 0);
+}
+
+/** The LATEST render artifact of a job for one render kind (S21 append versions). */
+export async function latestRenderArtifactByKind(
+  db: Kysely<Database>,
+  jobId: string,
+  kind: 'render_docx' | 'render_pdf',
+): Promise<ArtifactView | null> {
+  const row = await db
+    .selectFrom('artifact')
+    .select(['id', 'job_id', 'kind', 'version', 'status', 'validation', 'source_artifact_id', 'created_at'])
+    .where('job_id', '=', jobId)
+    .where('kind', '=', kind)
+    .orderBy('version', 'desc')
+    .executeTakeFirst();
+  return row ? toView(row) : null;
+}

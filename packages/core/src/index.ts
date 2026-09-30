@@ -59,9 +59,13 @@ export {
   saveRenderArtifact,
   findRenderArtifact,
   nextRenderVersion,
+  saveDispatchLog,
+  countSentToday,
+  latestRenderArtifactByKind,
   type ArtifactView,
   type ArtifactContent,
   type RenderFormat,
+  type DispatchAttachment,
 } from './artifacts';
 export {
   extractEntities,
