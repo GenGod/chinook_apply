@@ -9,13 +9,6 @@ import { useState } from 'react';
 import type { ArtifactView } from '@chinook/core';
 import styles from './email-dispatch.module.css';
 
-const KIND_LABEL: Record<string, string> = {
-  render_docx: 'Resume DOCX',
-  render_pdf: 'Resume PDF',
-  render_cover_docx: 'Cover DOCX',
-  render_cover_pdf: 'Cover PDF',
-};
-
 function attachmentLabel(view: ArtifactView, sourceLabel: string): string {
   const format = view.kind === 'render_docx' ? 'DOCX' : 'PDF';
   return `${sourceLabel} ${format} v${view.version}`;

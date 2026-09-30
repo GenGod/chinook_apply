@@ -6,7 +6,7 @@
 import process from 'node:process';
 import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import type { Job } from '@chinook/contracts';
 import { createDb, ensureSchema, upsertJobs, DEV_DATABASE_URL } from './db';
 import { saveRenderArtifact } from './artifacts';

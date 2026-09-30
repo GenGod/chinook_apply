@@ -19,8 +19,6 @@ import {
   latestRenderArtifactByKind,
   saveDispatchLog,
   renderIdentityFromContent,
-  renderIdentityFromMaster,
-  getArtifactContent,
   normalizeLetter,
   setApplicationStatus,
   type Database,
@@ -272,7 +270,7 @@ export async function sendApplicationEmail(
   // To: header always shows the real recipient for review (Constitution 1.3).
   const envelopeTo = mode === 'dry-run' ? 'dispatch-sink@localhost' : to;
 
-  let messageId: string | null = null;
+  let messageId: string | null;
   try {
     const result = await transport.sendMail({
       from: config.from,
@@ -303,7 +301,7 @@ export async function sendApplicationEmail(
 
   // Audit first, then board state. If the job is already applied (any channel)
   // the board stays untouched — it is already in an Applied column.
-  let applicationId: number | null = null;
+  let applicationId: number | null;
   const current = await db
     .selectFrom('application')
     .select(['id', 'status', 'channel'])
