@@ -38,7 +38,7 @@ test('metrics v2 renders LLM cost, dispatch and quality sections (S10)', async (
   // DOM ↔ API: the llm calls card equals the API aggregate.
   const api = (await (await request.get('/api/metrics')).json()) as {
     metrics?: { llm: { calls: number }; dispatch: { sent: number }; quality: { artifactsTotal: number } };
-  };
+  } & { llm: { calls: number }; dispatch: { sent: number }; quality: { artifactsTotal: number } };
   const metrics = api.metrics ?? api;
   await expect(page.getByTestId('llm-cards')).toContainText(String(metrics.llm.calls));
 
