@@ -79,6 +79,7 @@ import { randomUUID } from 'node:crypto';
 
 describe('getMetrics v2 (S10)', () => {
   let jobId = '';
+  let runIds: number[] = [];
   let baselineLlm = { calls: 0, cacheHits: 0 };
   let baselineScoring = { calls: 0, cacheHits: 0, costUsd: 0, avgLatencyMs: 0 };
   let baselineGen = { calls: 0, cacheHits: 0, costUsd: 0, avgLatencyMs: 0 };
@@ -120,7 +121,7 @@ describe('getMetrics v2 (S10)', () => {
       { stage: 'match_llm', role: 'flash', model: 'glm-5.3-flash', prompt_tokens: 1000, completion_tokens: 100, cost_usd: 0.005, latency_ms: 2000, cache_hit: true, ok: true },
       { stage: 'generate_resume', role: 'main', model: 'glm-5.3', prompt_tokens: 2000, completion_tokens: 500, cost_usd: 0.01, latency_ms: 3000, cache_hit: false, ok: true },
     ]).returningAll().execute();
-    const runIds = runs.map((r) => Number(r.id));
+    runIds = runs.map((r) => Number(r.id));
     // job_match: the scored funnel step
     await db.insertInto('job_match').values({
       job_id: jobId, score: 88, reasons: JSON.stringify(['r']), risks: JSON.stringify([]),
