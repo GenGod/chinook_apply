@@ -246,6 +246,23 @@ export async function seedE2eExtras(artifactsDir?: string): Promise<void> {
     .orderBy('job.posted_at', 'desc')
     .orderBy('job.canonical_hash', 'asc')
     .executeTakeFirst();
+  if (firstRelevant) {
+    // S9: form dispatch fixture — targets the app's own /mock-form page.
+    await db
+      .updateTable('job')
+      .set({
+        raw: {
+          formConfig: {
+            url: 'http://localhost:3999/mock-form',
+            selectors: {},
+            successText: 'Thank you for your application!',
+          },
+        },
+      })
+      .where('id', '=', firstRelevant.id)
+      .execute();
+    console.log('e2e seed: +formConfig (mock-form) on first relevant job');
+  }
   if (artifactsDir && firstRelevant) await seedDispatchFixtures(db, firstRelevant.id, artifactsDir);
   await db.destroy();
   console.log('e2e seed: +2 S19 synthetic rows (ON relevant, remote relevant)');

@@ -18,6 +18,7 @@
     "@chinook/llm": "workspace:*",
     "next": "^16.3.5",
     "nodemailer": "^10.0.12",
+    "playwright": "1.63.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "zod": "^4.6.5"

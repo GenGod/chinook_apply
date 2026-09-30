@@ -102,6 +102,7 @@
 | Хранилище | data/artifacts/ (gitignored) | env ARTIFACTS_DIR; в БД — относительный content_path |
 
 ## Changelog
+- 2.6 (2026-10-01) — S9 (PO-мандат «бери M4»): playwright 1.63.0 (runtime, apps/web — та же версия, что @playwright/test); chromium в web-образе (--with-deps); dispatch_log screenshot_paths.
 - 2.5 (2026-09-29) — S8 (PO-мандат «го», SMTP-инструкции одобрены): nodemailer ^10.0.12 (runtime, apps/web), Mailpit v1.31.3 (compose+CI, SMTP :1025 / UI :8025); dispatch_log таблица; dry-run envelope по умолчанию.
 - 2.4 (2026-09-29) — S22 (PO-мандат «долги»): pixelmatch + pngjs (devDeps @chinook/tests) — инверсионная проверка визуального компаратора (B-011, threshold 0.01); новые runtime-зависимости отсутствуют.
 - 2.3 (2026-09-28) — S6 (PO-мандат «реализуй S6», DESIGN §3.1): рендер-стек документов — docx 9.8.0, pdfkit 0.20.2, fflate, @types/pdfkit; рендер-модель+энкодеры в packages/core; storage data/artifacts.
