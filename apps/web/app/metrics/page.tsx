@@ -114,6 +114,70 @@ export default async function MetricsPage() {
         </table>
       </div>
 
+
+      <div className={styles.sectionTitle}>LLM cost</div>
+      <div className={styles.cards} data-testid="llm-cards">
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>Calls</div>
+          <div className={styles.cardValue} style={{ fontFamily: 'var(--font-display)' }}>{m.llm.calls}</div>
+          <div className={styles.cardMeta}>cache hits {m.llm.cacheHits}</div>
+        </div>
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>Cost, $</div>
+          <div className={styles.cardValue} style={{ fontFamily: 'var(--font-display)' }}>{m.llm.costUsd.toFixed(4)}</div>
+          <div className={styles.cardMeta}>tokens {m.llm.promptTokens + m.llm.completionTokens}</div>
+        </div>
+        {m.llm.byStage.map((st) => (
+          <div className={styles.card} key={st.stage} data-testid={`llm-stage-${st.stage}`}>
+            <div className={styles.cardLabel}>{st.stage}</div>
+            <div className={styles.cardValue} style={{ fontFamily: 'var(--font-display)' }}>${st.costUsd.toFixed(4)}</div>
+            <div className={styles.cardMeta}>{st.calls} calls · {st.avgLatencyMs} ms avg</div>
+          </div>
+        ))}
+      </div>
+
+      <div className={styles.sectionTitle}>Dispatch</div>
+      <div className={styles.cards} data-testid="dispatch-cards">
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>Sent</div>
+          <div className={styles.cardValue} style={{ fontFamily: 'var(--font-display)' }}>{m.dispatch.sent}</div>
+        </div>
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>Failed</div>
+          <div className={styles.cardValue} style={{ fontFamily: 'var(--font-display)' }}>{m.dispatch.failed}</div>
+        </div>
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>Skipped (captcha)</div>
+          <div className={styles.cardValue} style={{ fontFamily: 'var(--font-display)' }}>{m.quality.captchaStops}</div>
+        </div>
+        {m.dispatch.byChannel.map((c) => (
+          <div className={styles.card} key={c.channel} data-testid={`dispatch-channel-${c.channel}`}>
+            <div className={styles.cardLabel}>{c.channel}</div>
+            <div className={styles.cardValue} style={{ fontFamily: 'var(--font-display)' }}>{c.sent}</div>
+            <div className={styles.cardMeta}>sent · {c.failed} failed · {c.skipped} skipped</div>
+          </div>
+        ))}
+      </div>
+
+      <div className={styles.sectionTitle}>Quality</div>
+      <div className={styles.cards} data-testid="quality-cards">
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>Artifacts</div>
+          <div className={styles.cardValue} style={{ fontFamily: 'var(--font-display)' }}>{m.quality.artifactsTotal}</div>
+        </div>
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>Invalid share</div>
+          <div className={styles.cardValue} style={{ fontFamily: 'var(--font-display)' }}>
+            {m.quality.invalidShare === null ? '—' : `${(m.quality.invalidShare * 100).toFixed(1)}%`}
+          </div>
+          <div className={styles.cardMeta}>{m.quality.artifactsInvalid} invalid</div>
+        </div>
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>Scored → drafted</div>
+          <div className={styles.cardValue} style={{ fontFamily: 'var(--font-display)' }}>{f.scored} → {f.drafted}</div>
+        </div>
+      </div>
+
       <div className={styles.sectionTitle}>Ingest history</div>
       <div className={styles.tableWrap}>
         <table className={styles.table} data-testid="history-table">

@@ -26,6 +26,7 @@ jobs:
         image: axllent/mailpit:v1.31.3
         ports:
           - 1025:1025
+          - 8025:8025
     steps:
       # ubuntu-latest no longer ships git-lfs; snapshots live in LFS,
       # so install it BEFORE checkout can pull them.
@@ -66,11 +67,13 @@ jobs:
       - name: Docker build gate (scheduler image, S15)
         run: docker build -f apps/worker/Dockerfile -t chinook-scheduler:${{ github.sha }} .
 
-      - name: Upload test artifacts (diffs)
+      - name: Upload test artifacts (diffs + missing snapshots)
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: test-results
-          path: tests/test-results/
+          path: |
+            tests/test-results/
+            tests/e2e/__snapshots__/
           retention-days: 7
           if-no-files-found: ignore

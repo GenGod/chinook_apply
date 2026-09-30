@@ -28,6 +28,26 @@ test('funnel bar widths follow the funnel proportions (S13 AC5, DOM-level)', asy
   expect(relevant).toBeLessThan(total);
 });
 
+test('metrics v2 renders LLM cost, dispatch and quality sections (S10)', async ({ page, request }) => {
+  await page.goto('/metrics');
+
+  await expect(page.getByTestId('llm-cards')).toBeVisible();
+  await expect(page.getByTestId('dispatch-cards')).toBeVisible();
+  await expect(page.getByTestId('quality-cards')).toBeVisible();
+
+  // DOM ↔ API: the llm calls card equals the API aggregate.
+  const api = (await (await request.get('/api/metrics')).json()) as {
+    metrics?: { llm: { calls: number }; dispatch: { sent: number }; quality: { artifactsTotal: number } };
+  } & { llm: { calls: number }; dispatch: { sent: number }; quality: { artifactsTotal: number } };
+  const metrics = api.metrics ?? api;
+  await expect(page.getByTestId('llm-cards')).toContainText(String(metrics.llm.calls));
+
+  // dispatch section shows the sent count from the API.
+  await expect(page.getByTestId('dispatch-cards')).toContainText(String(metrics.dispatch.sent));
+  // quality section shows the artifacts total.
+  await expect(page.getByTestId('quality-cards')).toContainText(String(metrics.quality.artifactsTotal));
+});
+
 test('navigation Jobs ↔ Metrics works (S13 AC4)', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Metrics' }).click();
