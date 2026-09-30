@@ -233,7 +233,7 @@ CREATE INDEX IF NOT EXISTS artifact_job_idx ON artifact (job_id);
 CREATE TABLE IF NOT EXISTS dispatch_log (
   id BIGSERIAL PRIMARY KEY,
   job_id UUID NOT NULL REFERENCES job(id) ON DELETE CASCADE,
-  application_id BIGINT REFERENCES application(id),
+  application_id BIGINT REFERENCES application(id) ON DELETE SET NULL,
   channel TEXT NOT NULL DEFAULT 'email',
   outcome TEXT NOT NULL CHECK (outcome IN ('sent','failed')),
   to_address TEXT NOT NULL,
@@ -244,6 +244,10 @@ CREATE TABLE IF NOT EXISTS dispatch_log (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS dispatch_log_created_idx ON dispatch_log (created_at);
+-- S8 fixup for databases created before the SET NULL behavior (idempotent).
+ALTER TABLE dispatch_log DROP CONSTRAINT IF EXISTS dispatch_log_application_id_fkey;
+ALTER TABLE dispatch_log ADD CONSTRAINT dispatch_log_application_id_fkey
+  FOREIGN KEY (application_id) REFERENCES application(id) ON DELETE SET NULL;
 -- S6 migration for databases created before render artifacts existed (idempotent).
 ALTER TABLE artifact DROP CONSTRAINT IF EXISTS artifact_kind_check;
 ALTER TABLE artifact ADD CONSTRAINT artifact_kind_check

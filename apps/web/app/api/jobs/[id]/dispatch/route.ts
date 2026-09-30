@@ -3,6 +3,7 @@
 // approve for ONE dispatch — no delegation).
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { ensureSchema, type Database, type Kysely } from '@chinook/core';
 import { getDb } from '@/lib/db';
 import {
   sendApplicationEmail,
@@ -16,6 +17,14 @@ import {
 } from '@/lib/dispatch-service';
 
 export const dynamic = 'force-dynamic';
+
+// The dispatch route owns the newest tables (dispatch_log): ensure the schema
+// once per process — the live DB may predate this increment.
+let schemaReady: Promise<unknown> | null = null;
+function schemaReadyOnce(db: Kysely<Database>): Promise<unknown> {
+  schemaReady ??= ensureSchema(db);
+  return schemaReady;
+}
 
 const Body = z.object({
   to: z.string().min(3),
@@ -31,6 +40,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   if (!parsed.success) return NextResponse.json({ error: 'invalid body' }, { status: 400 });
 
   const db = getDb();
+  await schemaReadyOnce(db);
   try {
     const result = await sendApplicationEmail(db, uuid.data, parsed.data);
     return NextResponse.json({ dispatch: { id: result.dispatchId }, envelopeTo: result.envelopeTo, mode: process.env.DISPATCH_MODE ?? 'dry-run' });
