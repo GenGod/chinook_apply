@@ -10,7 +10,7 @@ export interface FormConfig {
   successText?: string;
 }
 
-const SAFE_SELECTOR_RE = /^[A-Za-z0-9\s\[\]="'.:_#*(),>+~^-]{1,200}$/;
+const SAFE_SELECTOR_RE = /^[A-Za-z0-9\s[\]="'.:_#*(),>+~^-]{1,200}$/;
 
 /** Validates a form config from the job payload; null when anything is off. */
 export function validateFormConfig(raw: unknown): FormConfig | null {

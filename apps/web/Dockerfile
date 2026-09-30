@@ -18,6 +18,12 @@ COPY tests/package.json tests/
 
 RUN pnpm install --frozen-lockfile
 
+# S9: system chromium for the form-dispatch service (alpine is not officially
+# supported by `playwright install --with-deps`; the service consumes the
+# system executable via CHROMIUM_EXECUTABLE_PATH).
+RUN apk add --no-cache chromium
+ENV CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
 COPY . .
 
 # build the app inside the image (sources are already copied)

@@ -6,7 +6,7 @@
 //
 // The form target comes ONLY from job.raw.formConfig (never from a client
 // request). The browser launcher is injectable for tests.
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Kysely } from 'kysely';
 import {
@@ -84,7 +84,10 @@ export type LaunchBrowserFn = () => Promise<BrowserLike>;
 async function defaultLaunchBrowser(): Promise<BrowserLike> {
   try {
     const { chromium } = await import('playwright');
-    return (await chromium.launch()) as unknown as BrowserLike;
+    // Deployments may point at a system chromium (alpine images have no
+    // playwright-managed browser download); local dev uses the managed one.
+    const executablePath = process.env.CHROMIUM_EXECUTABLE_PATH;
+    return (await chromium.launch(executablePath ? { executablePath } : {})) as unknown as BrowserLike;
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     throw new FormBrowserUnavailableError(`browser unavailable: ${detail.slice(0, 160)}`);
