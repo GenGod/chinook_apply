@@ -7,7 +7,9 @@ import { test, expect, type Page } from '@playwright/test';
  * DISPATCH_MODE=dry-run rewrites the envelope to dispatch-sink@localhost.
  */
 
-const MAILPIT = 'http://localhost:8025';
+// Node's fetch resolves localhost to ::1 first; GitHub service containers
+// bind 127.0.0.1 — pin IPv4 unless the environment overrides it.
+const MAILPIT = process.env.MAILPIT_URL ?? 'http://127.0.0.1:8025';
 const RECIPIENT = 'jobs@fixture-e2e.example';
 
 async function openSeededJob(page: Page): Promise<void> {

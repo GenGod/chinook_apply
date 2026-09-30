@@ -5,9 +5,10 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 1 : 0,
-  // Stable, platform-suffix-free snapshot path under the git-LFS attribute
-  // (tests/**/__snapshots__/**/*.png) — same file locally and in CI.
-  snapshotPathTemplate: '{testDir}/__snapshots__/{arg}{ext}',
+  // Platform-suffixed snapshots (S22/B-011 follow-up): Windows and Linux
+  // rasterize text differently at the same threshold 0.01, so each platform
+  // keeps its own baseline set (both under the git-LFS attribute).
+  snapshotPathTemplate: '{testDir}/__snapshots__/{arg}-{snapshotSuffix}{ext}',
   use: {
     ...devices['Desktop Chrome'],
     viewport: { width: 1280, height: 720 },
