@@ -1,11 +1,15 @@
-// E2E extra fixtures (S19/S20 synthetic rows, S5 artifact versions) — lives in
-// core so the env-sourced connection string flows through the guarded createDb
-// path (assertSafeDatabaseUrl host allowlist). Database bootstrap stays in the
-// worker seed script; this module only seeds rows.
+// E2E extra fixtures (S19/S20 synthetic rows, S5 artifact versions, S8 dispatch
+// render files) — lives in core so the env-sourced connection string flows
+// through the guarded createDb path (assertSafeDatabaseUrl host allowlist).
+// Database bootstrap stays in the worker seed script; this module seeds rows
+// and writes synthetic render files (tiny headers + padding — no real PII).
 import process from 'node:process';
 import { randomUUID } from 'node:crypto';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 import type { Job } from '@chinook/contracts';
 import { createDb, ensureSchema, upsertJobs, DEV_DATABASE_URL } from './db';
+import { saveRenderArtifact } from './artifacts';
 
 function e2eUrl(): string {
   const base = process.env.DATABASE_URL ?? DEV_DATABASE_URL;
@@ -138,6 +142,50 @@ export async function seedArtifactsOnJob(
     .execute();
 }
 
+/** S8: synthetic render file bytes (magic headers + padding, no real content). */
+function renderFileBytes(format: 'docx' | 'pdf'): Buffer {
+  if (format === 'docx') {
+    return Buffer.concat([Buffer.from([0x50, 0x4b, 0x03, 0x04]), Buffer.alloc(180, 7)]);
+  }
+  return Buffer.concat([Buffer.from([0x25, 0x50, 0x44, 0x46]), Buffer.alloc(150, 7)]);
+}
+
+/** S8: seeds render rows + synthetic files for the dispatch e2e. The caller
+ * supplies the e2e artifacts dir as an ABSOLUTE path (computed by the worker
+ * seed script from its own cwd) — core never derives filesystem paths itself.
+ */
+async function seedDispatchFixtures(
+  db: ReturnType<typeof createDb>,
+  jobId: string,
+  artifactsDir: string,
+): Promise<void> {
+  if (!/^(?:[A-Za-z]:)?[\\/]/.test(artifactsDir)) return; // absolute paths only
+  const source = await db
+    .selectFrom('artifact')
+    .where('job_id', '=', jobId)
+    .where('kind', '=', 'resume')
+    .where('status', '=', 'valid')
+    .orderBy('version', 'desc')
+    .select(['id', 'version'])
+    .executeTakeFirst();
+  if (!source) return;
+  for (const format of ['docx', 'pdf'] as const) {
+    const fileName = `resume-v${source.version}.${format}`;
+    await saveRenderArtifact(db, {
+      jobId,
+      sourceArtifactId: source.id,
+      sourceKind: 'resume',
+      sourceVersion: source.version,
+      format,
+      contentPath: `${jobId}/${fileName}`,
+      version: 1,
+    });
+    await mkdir(join(artifactsDir, jobId), { recursive: true });
+    await writeFile(join(artifactsDir, jobId, fileName), renderFileBytes(format));
+  }
+  console.log('e2e seed: +render fixtures (docx/pdf files) for dispatch');
+}
+
 /**
  * Seeds two artifact versions on the FIRST relevant job (the row a
  * `/?rule=relevant` first-title click opens — page order is posted_at desc,
@@ -176,8 +224,9 @@ async function seedArtifacts(db: ReturnType<typeof createDb>): Promise<void> {
   console.log('e2e seed: +2 artifact versions on first relevant job (resume v1 valid, cover_letter v1 invalid)');
 }
 
-/** Inserts the S19/S20 synthetic rows plus S5 artifact fixtures into the e2e database. */
-export async function seedE2eExtras(): Promise<void> {
+/** Inserts the S19/S20 synthetic rows plus S5 artifact fixtures into the e2e database.
+ * artifactsDir (absolute, optional) enables the S8 dispatch render-file fixtures. */
+export async function seedE2eExtras(artifactsDir?: string): Promise<void> {
   const db = createDb(e2eUrl());
   await ensureSchema(db);
   await upsertJobs(db, [
@@ -190,6 +239,14 @@ export async function seedE2eExtras(): Promise<void> {
     .where('canonical_hash', 'in', ['s19-e2e-on-developer', 's19-e2e-remote-developer'])
     .execute();
   await seedArtifacts(db);
+  const firstRelevant = await db
+    .selectFrom('job')
+    .select(['job.id'])
+    .where('rule_status', '=', 'relevant')
+    .orderBy('job.posted_at', 'desc')
+    .orderBy('job.canonical_hash', 'asc')
+    .executeTakeFirst();
+  if (artifactsDir && firstRelevant) await seedDispatchFixtures(db, firstRelevant.id, artifactsDir);
   await db.destroy();
   console.log('e2e seed: +2 S19 synthetic rows (ON relevant, remote relevant)');
 }

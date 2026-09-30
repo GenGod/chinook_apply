@@ -36,6 +36,11 @@ export default defineConfig({
       // S21: e2e render files must never mix into the live data/artifacts
       // folder (gitignored either way — synthetic fixtures only land here).
       ARTIFACTS_DIR: '../../data/artifacts-e2e',
+      // S8: dispatch sends go to the Mailpit container (never relays out).
+      SMTP_HOST: 'localhost',
+      SMTP_PORT: '1025',
+      SMTP_FROM: 'Chinook E2E <chinook-e2e@example.com>',
+      DISPATCH_MODE: 'dry-run',
     },
     url: 'http://localhost:3999',
     timeout: 180_000,
