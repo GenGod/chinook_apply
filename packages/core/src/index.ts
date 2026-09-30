@@ -25,6 +25,12 @@ export {
   type ApplicationTable,
   type Kysely,
 } from './db';
+export {
+  extractEmailCandidates,
+  buildDispatchEmail,
+  type DispatchJobLike,
+  type DispatchEmail,
+} from './dispatch';
 export { seedE2eExtras, seedArtifactsOnJob, type ArtifactFixture } from './seed';
 export {
   listJobs,
