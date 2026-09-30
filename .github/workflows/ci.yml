@@ -22,6 +22,10 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
+      mailpit:
+        image: axllent/mailpit:v1.31.3
+        ports:
+          - 1025:1025
     steps:
       # ubuntu-latest no longer ships git-lfs; snapshots live in LFS,
       # so install it BEFORE checkout can pull them.
@@ -55,6 +59,8 @@ jobs:
       - name: Integration tests (fixtures → postgres service)
         env:
           DATABASE_URL: postgres://chinook:chinook_dev@localhost:5432/chinook
+          SMTP_HOST: localhost
+          SMTP_PORT: '1025'
         run: pnpm --filter @chinook/tests exec vitest run --config vitest.integration.config.ts
 
       - name: Docker build gate (scheduler image, S15)

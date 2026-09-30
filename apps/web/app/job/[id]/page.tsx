@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { listArtifacts } from '@chinook/core';
+import { listArtifacts, latestRenderArtifactByKind, extractEmailCandidates } from '@chinook/core';
 import type { BoardStatus, Database } from '@chinook/core';
 import type { Kysely } from 'kysely';
 import { getDb } from '@/lib/db';
 import { fetchAdzunaFullDescription } from '@chinook/adapters';
 import { StatusControls } from '../../board/status-controls';
 import { DocumentsSection } from './documents-section';
+import { EmailDispatchSection } from './email-dispatch-section';
 import styles from '../../board/board.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -127,6 +128,19 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const job = await fetchFullJob(getDb(), id);
   if (!job) notFound();
   const artifacts = await listArtifacts(getDb(), id);
+  const db = getDb();
+  const renders = (
+    await Promise.all(
+      (['render_docx', 'render_pdf'] as const).map(async (kind) => {
+        const view = await latestRenderArtifactByKind(db, id, kind);
+        if (!view) return null;
+        const source = artifacts.find((a) => a.id === view.sourceArtifactId);
+        const sourceLabel = source?.kind === 'cover_letter' ? 'Cover letter' : 'Resume';
+        return { view, sourceLabel };
+      }),
+    )
+  ).filter((entry): entry is { view: typeof artifacts[number]; sourceLabel: string } => entry !== null);
+  const candidates = extractEmailCandidates(job.raw);
 
   const bs = job.app?.status ?? 'new';
   const bc = job.app?.channel ?? null;
@@ -208,6 +222,13 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
         </div>
 
         <DocumentsSection jobId={job.id} initialArtifacts={artifacts} />
+
+        <EmailDispatchSection
+          jobId={job.id}
+          renders={renders}
+          candidates={candidates}
+          mode={process.env.DISPATCH_MODE ?? 'dry-run'}
+        />
 
         {desc ? (
           <section style={{ marginTop: 24 }}>
