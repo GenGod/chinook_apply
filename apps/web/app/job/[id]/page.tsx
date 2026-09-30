@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { listArtifacts, latestRenderArtifactByKind, extractEmailCandidates } from '@chinook/core';
+import { listArtifacts, latestRenderArtifactByKind, extractEmailCandidates, validateFormConfig } from '@chinook/core';
 import type { BoardStatus, Database } from '@chinook/core';
 import type { Kysely } from 'kysely';
 import { getDb } from '@/lib/db';
@@ -8,6 +8,7 @@ import { fetchAdzunaFullDescription } from '@chinook/adapters';
 import { StatusControls } from '../../board/status-controls';
 import { DocumentsSection } from './documents-section';
 import { EmailDispatchSection } from './email-dispatch-section';
+import { WebFormDispatchSection } from './web-form-dispatch-section';
 import styles from '../../board/board.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -141,6 +142,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
     )
   ).filter((entry): entry is { view: typeof artifacts[number]; sourceLabel: string } => entry !== null);
   const candidates = extractEmailCandidates(job.raw);
+  const formConfig = validateFormConfig((job.raw as Record<string, unknown> | null)?.formConfig);
 
   const bs = job.app?.status ?? 'new';
   const bc = job.app?.channel ?? null;
@@ -229,6 +231,8 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           candidates={candidates}
           mode={process.env.DISPATCH_MODE ?? 'dry-run'}
         />
+
+        {formConfig ? <WebFormDispatchSection jobId={job.id} formUrl={formConfig.url} /> : null}
 
         {desc ? (
           <section style={{ marginTop: 24 }}>
