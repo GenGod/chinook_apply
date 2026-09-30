@@ -1,6 +1,7 @@
 import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
 import type { Database } from './db.js';
+import { funnelV2, llmAggregates, dispatchAggregates, qualityAggregates } from './metrics-v2.js';
 
 export interface SourceHealth {
   source: string;
@@ -28,9 +29,43 @@ export interface MetricsSummary {
     review: number;
     excluded: number;
     appliedManual: number;
+    /** S10 v2: the full pipeline funnel (DESIGN §5.3). */
+    scored: number;
+    drafted: number;
+    dispatchedSent: number;
+    appliedTotal: number;
   };
   sources: SourceHealth[];
   history: HistoryRow[];
+  /** S10 v2: LLM usage/cost (DESIGN §5.1). */
+  llm: {
+    calls: number;
+    cacheHits: number;
+    costUsd: number;
+    promptTokens: number;
+    completionTokens: number;
+    byStage: Array<{
+      stage: string;
+      calls: number;
+      cacheHits: number;
+      costUsd: number;
+      avgLatencyMs: number;
+    }>;
+  };
+  /** S10 v2: dispatch outcomes (S8/S9 audit). */
+  dispatch: {
+    sent: number;
+    failed: number;
+    skipped: number;
+    byChannel: Array<{ channel: string; sent: number; failed: number; skipped: number }>;
+  };
+  /** S10 v2: generation quality proxies (DESIGN §5.2). */
+  quality: {
+    artifactsTotal: number;
+    artifactsInvalid: number;
+    invalidShare: number | null;
+    captchaStops: number;
+  };
 }
 
 export const DEFAULT_INTERVALS: Record<string, number> = { jobbank: 30, adzuna: 120 };
@@ -97,6 +132,12 @@ export async function getMetrics(
     error: string | null;
   }>;
 
+  // --- S10 v2 aggregates (typed builders, metrics-v2.ts) ---
+  const funnel2 = await funnelV2(db);
+  const llm = await llmAggregates(db);
+  const dispatch = await dispatchAggregates(db);
+  const quality = await qualityAggregates(db);
+
   return {
     funnel: {
       total: funnelRow.total,
@@ -104,6 +145,10 @@ export async function getMetrics(
       review: funnelRow.review,
       excluded: funnelRow.excluded,
       appliedManual,
+      scored: funnel2.scored,
+      drafted: funnel2.drafted,
+      dispatchedSent: funnel2.dispatchedSent,
+      appliedTotal: funnel2.appliedTotal,
     },
     sources: health,
     history: history.map((h) => ({
@@ -114,5 +159,8 @@ export async function getMetrics(
       uniqueJobs: h.unique_jobs,
       error: h.error,
     })),
+    llm,
+    dispatch,
+    quality,
   };
 }
