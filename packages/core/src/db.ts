@@ -76,6 +76,20 @@ export interface ArtifactRow {
   created_at: Generated<Date>;
 }
 
+export interface DispatchLogRow {
+  id: Generated<number>;
+  job_id: string;
+  application_id: number | null;
+  channel: string;
+  outcome: string;
+  to_address: string;
+  subject: string;
+  attachments: unknown;
+  smtp_message_id: string | null;
+  error: string | null;
+  created_at: Generated<Date>;
+}
+
 export interface Database {
   job: JobRow;
   ingest_run: IngestRunRow;
@@ -84,6 +98,7 @@ export interface Database {
   llm_run: LlmRunRow;
   llm_cache: LlmCacheRow;
   artifact: ArtifactRow;
+  dispatch_log: DispatchLogRow;
 }
 
 export interface LlmRunRow {
@@ -215,6 +230,24 @@ CREATE TABLE IF NOT EXISTS artifact (
   UNIQUE (job_id, kind, version)
 );
 CREATE INDEX IF NOT EXISTS artifact_job_idx ON artifact (job_id);
+CREATE TABLE IF NOT EXISTS dispatch_log (
+  id BIGSERIAL PRIMARY KEY,
+  job_id UUID NOT NULL REFERENCES job(id) ON DELETE CASCADE,
+  application_id BIGINT REFERENCES application(id) ON DELETE SET NULL,
+  channel TEXT NOT NULL DEFAULT 'email',
+  outcome TEXT NOT NULL CHECK (outcome IN ('sent','failed')),
+  to_address TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  attachments JSONB NOT NULL DEFAULT '[]',
+  smtp_message_id TEXT,
+  error TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS dispatch_log_created_idx ON dispatch_log (created_at);
+-- S8 fixup for databases created before the SET NULL behavior (idempotent).
+ALTER TABLE dispatch_log DROP CONSTRAINT IF EXISTS dispatch_log_application_id_fkey;
+ALTER TABLE dispatch_log ADD CONSTRAINT dispatch_log_application_id_fkey
+  FOREIGN KEY (application_id) REFERENCES application(id) ON DELETE SET NULL;
 -- S6 migration for databases created before render artifacts existed (idempotent).
 ALTER TABLE artifact DROP CONSTRAINT IF EXISTS artifact_kind_check;
 ALTER TABLE artifact ADD CONSTRAINT artifact_kind_check

@@ -102,6 +102,7 @@
 | Хранилище | data/artifacts/ (gitignored) | env ARTIFACTS_DIR; в БД — относительный content_path |
 
 ## Changelog
+- 2.5 (2026-09-29) — S8 (PO-мандат «го», SMTP-инструкции одобрены): nodemailer ^10.0.12 (runtime, apps/web), Mailpit v1.31.3 (compose+CI, SMTP :1025 / UI :8025); dispatch_log таблица; dry-run envelope по умолчанию.
 - 2.4 (2026-09-29) — S22 (PO-мандат «долги»): pixelmatch + pngjs (devDeps @chinook/tests) — инверсионная проверка визуального компаратора (B-011, threshold 0.01); новые runtime-зависимости отсутствуют.
 - 2.3 (2026-09-28) — S6 (PO-мандат «реализуй S6», DESIGN §3.1): рендер-стек документов — docx 9.8.0, pdfkit 0.20.2, fflate, @types/pdfkit; рендер-модель+энкодеры в packages/core; storage data/artifacts.
 - 2.2 (2026-09-21) — S4 (PO-approved): LLM-скоринг через шлюз — golden-set 50 jobs (/usr/bin/bash.025), score в Jobs Explorer, job_match таблица; arch app→llm.

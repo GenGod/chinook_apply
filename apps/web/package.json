@@ -17,11 +17,13 @@
     "@chinook/core": "workspace:*",
     "@chinook/llm": "workspace:*",
     "next": "^16.3.5",
+    "nodemailer": "^10.0.12",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@types/nodemailer": "^8.0.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "kysely": "^0.29.5",
