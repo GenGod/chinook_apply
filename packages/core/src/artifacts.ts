@@ -267,12 +267,14 @@ export async function saveDispatchLog(
   input: {
     jobId: string;
     applicationId: number | null;
-    outcome: 'sent' | 'failed';
+    outcome: 'sent' | 'failed' | 'skipped';
     toAddress: string;
     subject: string;
     attachments: DispatchAttachment[];
     smtpMessageId: string | null;
     error: string | null;
+    channel?: string;
+    screenshotPaths?: string[];
   },
 ): Promise<{ id: number }> {
   const row = await db
@@ -280,27 +282,27 @@ export async function saveDispatchLog(
     .values({
       job_id: input.jobId,
       application_id: input.applicationId,
-      channel: 'email',
+      channel: input.channel ?? 'email',
       outcome: input.outcome,
       to_address: input.toAddress,
       subject: input.subject,
       attachments: JSON.stringify(input.attachments),
       smtp_message_id: input.smtpMessageId,
       error: input.error,
+      screenshot_paths: JSON.stringify(input.screenshotPaths ?? []),
     })
     .returningAll()
     .executeTakeFirstOrThrow();
   return { id: Number(row.id) };
 }
 
-/** Dispatches successfully sent today (channel email) — the art. 4.3 daily cap input. */
+/** Dispatches successfully sent today (ALL channels) — the art. 4.3 daily cap input. */
 export async function countSentToday(db: Kysely<Database>): Promise<number> {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const row = await db
     .selectFrom('dispatch_log')
     .where('outcome', '=', 'sent')
-    .where('channel', '=', 'email')
     .where('created_at', '>=', todayStart)
     .select((eb) => eb.fn.count<number>('id').as('count'))
     .executeTakeFirst();

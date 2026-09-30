@@ -87,6 +87,7 @@ export interface DispatchLogRow {
   attachments: unknown;
   smtp_message_id: string | null;
   error: string | null;
+  screenshot_paths: unknown;
   created_at: Generated<Date>;
 }
 
@@ -235,14 +236,20 @@ CREATE TABLE IF NOT EXISTS dispatch_log (
   job_id UUID NOT NULL REFERENCES job(id) ON DELETE CASCADE,
   application_id BIGINT REFERENCES application(id) ON DELETE SET NULL,
   channel TEXT NOT NULL DEFAULT 'email',
-  outcome TEXT NOT NULL CHECK (outcome IN ('sent','failed')),
+  outcome TEXT NOT NULL CHECK (outcome IN ('sent','failed','skipped')),
   to_address TEXT NOT NULL,
   subject TEXT NOT NULL,
   attachments JSONB NOT NULL DEFAULT '[]',
   smtp_message_id TEXT,
   error TEXT,
+  screenshot_paths JSONB NOT NULL DEFAULT '[]',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- S9 fixups for databases created before the form channel (idempotent).
+ALTER TABLE dispatch_log DROP CONSTRAINT IF EXISTS dispatch_log_outcome_check;
+ALTER TABLE dispatch_log ADD CONSTRAINT dispatch_log_outcome_check
+  CHECK (outcome IN ('sent','failed','skipped'));
+ALTER TABLE dispatch_log ADD COLUMN IF NOT EXISTS screenshot_paths JSONB NOT NULL DEFAULT '[]';
 CREATE INDEX IF NOT EXISTS dispatch_log_created_idx ON dispatch_log (created_at);
 -- S8 fixup for databases created before the SET NULL behavior (idempotent).
 ALTER TABLE dispatch_log DROP CONSTRAINT IF EXISTS dispatch_log_application_id_fkey;

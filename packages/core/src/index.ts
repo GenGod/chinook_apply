@@ -26,6 +26,13 @@ export {
   type Kysely,
 } from './db';
 export {
+  validateFormConfig,
+  detectCaptcha,
+  buildFormValues,
+  type FormConfig,
+  type FormValues,
+} from './form-dispatch';
+export {
   extractEmailCandidates,
   buildDispatchEmail,
   type DispatchJobLike,
