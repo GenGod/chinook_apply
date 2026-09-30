@@ -23,7 +23,7 @@ test('web form dispatch fills the mock form and audits screenshots', async ({ pa
   await expect(page.getByTestId('web-form-success')).toContainText('Sent via web form');
 
   // Art. 11.2: three screenshots landed in the (gitignored) artifacts dir.
-  const jobId = page.url().match(/job\/([0-9a-f-]{36})/)![1];
+  const jobId = page.url().match(/job\/([0-9a-f-]{36})/)![1]!;
   const dir = join(process.cwd(), '..', 'data', 'artifacts-e2e', 'form');
   const files = await readdir(dir);
   const shot = files.filter((f) => f.startsWith(jobId.slice(0, 8)) && f.endsWith('.png'));
