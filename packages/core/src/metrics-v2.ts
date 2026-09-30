@@ -2,8 +2,8 @@
 // pipeline funnel (§5.3) and quality proxies (§5.2). Kysely query builders
 // (typed, parameterized) — same data as the S13 aggregates in metrics.ts.
 import type { Kysely } from 'kysely';
-import type { Database } from './db.js';
-import type { MetricsSummary } from './metrics.js';
+import type { Database } from './db';
+import type { MetricsSummary } from './metrics';
 
 /** Full pipeline funnel steps: scored → drafted → dispatched → applied. */
 export async function funnelV2(db: Kysely<Database>): Promise<{

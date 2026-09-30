@@ -1,7 +1,7 @@
 import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
 import type { Database } from './db.js';
-import { funnelV2, llmAggregates, dispatchAggregates, qualityAggregates } from './metrics-v2.js';
+import { funnelV2, llmAggregates, dispatchAggregates, qualityAggregates } from './metrics-v2';
 
 export interface SourceHealth {
   source: string;
