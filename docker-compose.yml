@@ -23,6 +23,10 @@ services:
     container_name: chinook-scheduler
     init: true
     restart: unless-stopped
+    volumes:
+      # S23: auto-draft needs the gitignored master profile (read-only), same
+      # static path convention as the web service.
+      - ./data/profile:/app/data/profile:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -33,6 +37,11 @@ services:
       CRAWLER_CONTACT_EMAIL: ${CRAWLER_CONTACT_EMAIL:-}
       SCHED_JOBBANK_MIN: ${SCHED_JOBBANK_MIN:-30}
       SCHED_ADZUNA_MIN: ${SCHED_ADZUNA_MIN:-120}
+      AUTO_DRAFT: ${AUTO_DRAFT:-1}
+      AUTO_DRAFT_SCORE: ${AUTO_DRAFT_SCORE:-85}
+      AUTO_DRAFT_JOBS_PER_DAY: ${AUTO_DRAFT_JOBS_PER_DAY:-10}
+      GEN_DAILY_LIMIT_USD: ${GEN_DAILY_LIMIT_USD:-}
+      ZAI_API_KEY: ${ZAI_API_KEY:-}
 
   mailpit:
     image: axllent/mailpit:v1.31.3

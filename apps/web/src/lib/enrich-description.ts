@@ -42,10 +42,11 @@ export async function getEnrichedDescription(
 
   // try to fetch the full posting page
   try {
-    const full = await fetchPostingDescription(job.url);
+    const { description: full, applyEmail } = await fetchPostingDescription(job.url);
     if (full && full.length > (feed?.length ?? 0)) {
-      // cache in raw for future views
-      const enrichedRaw = { ...raw, fullDescription: full };
+      // cache in raw for future views (S23: applyEmail when statically exposed)
+      const enrichedRaw: Record<string, unknown> = { ...raw, fullDescription: full };
+      if (applyEmail) enrichedRaw.applyEmail = applyEmail;
       await db
         .updateTable('job')
         .set({ raw: enrichedRaw })

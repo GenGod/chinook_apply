@@ -98,7 +98,14 @@ export default async function MetricsPage() {
           <tbody>
             {m.sources.map((s) => (
               <tr key={s.source}>
-                <td>{s.source}</td>
+                <td>
+                  {s.source}
+                  {s.stale ? (
+                    <span style={{ marginLeft: 8, color: 'var(--status-danger)', fontSize: 'var(--text-aux)', fontWeight: 700 }} data-testid="source-stale">
+                      STALE
+                    </span>
+                  ) : null}
+                </td>
                 <td>{s.lastRunAt ? `${new Date(s.lastRunAt).toISOString().slice(0, 16).replace('T', ' ')}Z` : 'never'}</td>
                 <td>{s.intervalMin}m</td>
                 <td>{s.avgFetched}</td>

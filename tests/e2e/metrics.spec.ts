@@ -28,6 +28,20 @@ test('funnel bar widths follow the funnel proportions (S13 AC5, DOM-level)', asy
   expect(relevant).toBeLessThan(total);
 });
 
+test('stale source badge renders when a source has no fresh yields (S23)', async ({ page }) => {
+  await page.goto('/metrics');
+  const badges = page.getByTestId('source-stale');
+  const count = await badges.count();
+  // seed state: adzuna has no recent yields → at least one badge may show;
+  // the badge presence must match the API flag exactly.
+  const api = (await (await page.request.get('/api/metrics')).json()) as {
+    metrics?: { sources: Array<{ source: string; stale: boolean }> };
+  } & { sources: Array<{ source: string; stale: boolean }> };
+  const m = api.metrics ?? api;
+  const staleCount = m.sources.filter((x) => x.stale).length;
+  expect(count).toBe(staleCount);
+});
+
 test('metrics v2 renders LLM cost, dispatch and quality sections (S10)', async ({ page, request }) => {
   await page.goto('/metrics');
 

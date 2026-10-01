@@ -55,6 +55,11 @@ test('send delivers the package to Mailpit (dry-run) and shows success', async (
   expect(sent!.Attachments).toBe(2); // summary counts attachments
 });
 
+test('recipient prefills from the captured apply email (S23)', async ({ page }) => {
+  await openSeededJob(page);
+  await expect(page.getByTestId('dispatch-recipient')).toHaveValue('apply@fixture-e2e.example');
+});
+
 test('dispatch errors surface in the section (invalid recipient)', async ({ page }) => {
   await openSeededJob(page);
   await page.getByTestId('dispatch-recipient').fill('not-an-email');

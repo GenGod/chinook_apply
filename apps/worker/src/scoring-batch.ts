@@ -36,7 +36,7 @@ async function enrichDescription(
   if (typeof raw.fullDescription === 'string' && raw.fullDescription.length > 100) return raw;
   let full: string | null = null;
   try {
-    if (job.source === 'jobbank') full = await fetchPostingDescription(job.url);
+    if (job.source === 'jobbank') full = (await fetchPostingDescription(job.url)).description;
     else if (job.source === 'adzuna') full = await fetchAdzunaFullDescription(job.url);
   } catch {
     return raw; // enrichment is best-effort
