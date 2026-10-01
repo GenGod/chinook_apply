@@ -262,6 +262,21 @@ export async function seedE2eExtras(artifactsDir?: string): Promise<void> {
       .where('id', '=', firstRelevant.id)
       .execute();
     console.log('e2e seed: +formConfig (mock-form) on first relevant job');
+    // S23: dispatch recipient prefill fixture (applyEmail wins over body scan)
+    await db
+      .updateTable('job')
+      .set({
+        raw: {
+          formConfig: {
+            url: 'http://localhost:3999/mock-form',
+            selectors: {},
+            successText: 'Thank you for your application!',
+          },
+          applyEmail: 'apply@fixture-e2e.example',
+        },
+      })
+      .where('id', '=', firstRelevant.id)
+      .execute();
   }
   if (artifactsDir && firstRelevant) await seedDispatchFixtures(db, firstRelevant.id, artifactsDir);
   await db.destroy();

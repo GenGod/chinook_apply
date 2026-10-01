@@ -2,7 +2,14 @@ import process from 'node:process';
 import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
 import type { Database } from '@chinook/core';
-import { createDbFromEnv, ensureSchema, planSources, nextDue, type SourceSchedule } from '@chinook/core';
+import {
+  createDbFromEnv,
+  ensureSchema,
+  planSources,
+  nextDue,
+  type SourceSchedule,
+} from '@chinook/core';
+import { createLlm, createPgLlmDb, runAutoDraft, autodraftEnabled, type AutoDraftSummary } from '@chinook/llm';
 import type { JobSourceId } from '@chinook/contracts';
 import { runIngest } from './ingest.js';
 import { loadRootEnv } from './ingest.js';
@@ -76,9 +83,13 @@ export function startScheduler(opts: {
   schedules?: SourceSchedule[];
   tickMs?: number;
   runIngestFn?: typeof runIngest;
+  autoDraftFn?: (db: Kysely<Database>) => Promise<AutoDraftSummary>;
   log?: (line: string) => void;
 }): SchedulerHandle {
   const { schedules = defaultSchedules(), tickMs = 60_000, runIngestFn = runIngest } = opts;
+  const autoDraftFn =
+    opts.autoDraftFn ??
+    ((dbRef: Kysely<Database>) => runAutoDraft(dbRef, createLlm({ db: createPgLlmDb(dbRef) })));
   const log = opts.log ?? ((line: string) => console.log(`[${new Date().toISOString()}] ${line}`));
   const cooldowns = new Map<string, Date>();
   let stopped = false;
@@ -117,6 +128,22 @@ export function startScheduler(opts: {
         }
       });
       if (!ran) log('skip: another ingest holds the advisory lock');
+
+      // S23: auto-draft top-scored fresh jobs after the ingest cycle (skipped
+      // entirely when AUTO_DRAFT=0). USD cap lives inside generateDocuments.
+      if (autodraftEnabled()) {
+        try {
+          const summary = await autoDraftFn(dbRef);
+          if (summary.considered > 0) {
+            log(
+              `auto-draft: considered=${summary.considered} drafted=${summary.drafted} ` +
+                `skipped=${summary.skipped} errors=${summary.errors}`,
+            );
+          }
+        } catch (error) {
+          log(`auto-draft error: ${String(error)}`);
+        }
+      }
     })();
     try {
       await inFlight;

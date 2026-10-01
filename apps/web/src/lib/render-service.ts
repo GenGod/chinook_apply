@@ -146,8 +146,13 @@ export async function renderArtifact(
     throw new RenderNotRenderableError(`artifact ${artifactId} content does not match its kind (${source.kind})`);
   }
 
-  // Identity: content snapshot → opts.master (raw JSON) → master file loader.
-  const identity = resolveRenderIdentity(source.content, opts?.master, loadMasterIdentity());
+  // Identity: content snapshot → opts.master (raw JSON; explicit null disables
+  // the file fallback for tests) → master file loader.
+  const identity = resolveRenderIdentity(
+    source.content,
+    opts?.master,
+    opts?.master !== undefined ? null : loadMasterIdentity(),
+  );
   if (!identity) {
     throw new RenderIdentityUnavailableError(
       'no identity available: artifact content has no identity snapshot and the master profile is unavailable',

@@ -41,7 +41,7 @@ export interface MasterProfileLike {
 export interface ResumeDiffLike {
   summary: string;
   skills_order: string[];
-  bullets: Array<{ experience_id: string; bullet_index: number; rephrase?: string }>;
+  bullets: Array<{ experience_id: string; bullet_index: number; rephrase?: string | undefined }>;
   keywords: string[];
 }
 

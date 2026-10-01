@@ -142,6 +142,9 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
     )
   ).filter((entry): entry is { view: typeof artifacts[number]; sourceLabel: string } => entry !== null);
   const candidates = extractEmailCandidates(job.raw);
+  // S23: statically captured apply email wins over body-scan candidates.
+  const applyEmailRaw = (job.raw as Record<string, unknown> | null)?.applyEmail;
+  const recipients = typeof applyEmailRaw === 'string' && applyEmailRaw !== '' ? [applyEmailRaw, ...candidates] : candidates;
   const formConfig = validateFormConfig((job.raw as Record<string, unknown> | null)?.formConfig);
 
   const bs = job.app?.status ?? 'new';
@@ -228,7 +231,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
         <EmailDispatchSection
           jobId={job.id}
           renders={renders}
-          candidates={candidates}
+          candidates={recipients}
           mode={process.env.DISPATCH_MODE ?? 'dry-run'}
         />
 

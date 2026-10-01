@@ -11,6 +11,8 @@ export interface SourceHealth {
   avgFetched: number;
   avgUnique: number;
   dedupRatio: number | null;
+  /** S23: no successful run with unique_jobs > 0 within 3× interval — alert (DESIGN §7). */
+  stale: boolean;
 }
 
 export interface HistoryRow {
@@ -109,6 +111,12 @@ export async function getMetrics(
     const avgFetched = runs.length ? runs.reduce((s, r) => s + r.fetched, 0) / runs.length : 0;
     const avgUnique = runs.length ? runs.reduce((s, r) => s + r.unique_jobs, 0) / runs.length : 0;
 
+    // S23: staleness — the latest SUCCESSFUL run that actually yielded jobs;
+    // older than 3× the interval (or none at all) → stale.
+    const lastGood = runs.find((r) => r.error == null && r.unique_jobs > 0);
+    const staleMs = intervals[source]! * 3 * 60_000;
+    const stale = lastGood ? Date.now() - new Date(lastGood.started_at).getTime() > staleMs : true;
+
     health.push({
       source,
       lastRunAt: runs[0]?.started_at ? new Date(runs[0].started_at).toISOString() : null,
@@ -117,6 +125,7 @@ export async function getMetrics(
       avgFetched: Math.round(avgFetched * 10) / 10,
       avgUnique: Math.round(avgUnique * 10) / 10,
       dedupRatio: avgFetched > 0 ? Math.round((1 - avgUnique / avgFetched) * 1000) / 1000 : null,
+      stale,
     });
   }
 

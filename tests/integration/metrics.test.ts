@@ -74,6 +74,20 @@ describe('getMetrics (S13)', () => {
   });
 });
 
+  it('S23: stale source flag when no successful non-empty run within 3 intervals', async () => {
+    const db = createDb(databaseUrl);
+    // fresh successful jobbank runs (seeded minutes ago) → not stale
+    let m = await getMetrics(db);
+    expect(m.sources.find((s) => s.source === 'jobbank')!.stale).toBe(false);
+    // age EVERY run beyond 3× any interval → all sources stale
+    await db.updateTable('ingest_run').set({ started_at: new Date(Date.now() - 24 * 3600_000) }).execute();
+    m = await getMetrics(db);
+    for (const src of m.sources) expect(src.stale).toBe(true);
+    // restore freshness for the suites that run after this one
+    await db.updateTable('ingest_run').set({ started_at: new Date() }).execute();
+    await db.destroy();
+  });
+
 // --- S10: metrics v2 (self-contained synthetic seed) ---
 import { randomUUID } from 'node:crypto';
 

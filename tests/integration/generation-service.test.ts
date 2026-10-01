@@ -6,7 +6,7 @@ import {
   generateDocuments,
   GenerationLimitError,
   JobNotEligibleError,
-} from '../../apps/web/src/lib/generation-service';
+} from '@chinook/llm';
 
 /**
  * S5 T6 (red→green): generation orchestration — generateDocuments against real
@@ -201,7 +201,12 @@ describe('generateDocuments (S5 T6)', () => {
     const jobId = await seedJob(); // no job_match rows
     const { llm, call } = makeMockLlm(() => ({ letter: validLetter }));
 
-    const { artifacts } = await generateDocuments(db, llm, jobId, ['cover_letter'], { master });
+    const { artifacts } = await generateDocuments(db, llm, jobId, ['cover_letter'], {
+      master,
+      // shape test: exactly {letter} regardless of the dev machine's master
+      // profile presence (the core module path resolves it locally)
+      loadIdentity: () => null,
+    });
 
     expect(call).toHaveBeenCalledTimes(1);
     const input = call.mock.calls[0]![0] as RecordedCall;
@@ -323,6 +328,19 @@ describe('generateDocuments (S5 T6)', () => {
 
   // S22: non-positive explicit limits are a configuration error — rejected
   // up front with a clear message instead of degenerate 402s.
+  it('empty-string GEN_DAILY_LIMIT_USD (compose default) falls back to the built-in cap', async () => {
+    const { llm, call } = makeMockLlm(() => validDiff);
+    const prev = process.env.GEN_DAILY_LIMIT_USD;
+    process.env.GEN_DAILY_LIMIT_USD = '';
+    try {
+      await expect(generateDocuments(db, llm, crypto.randomUUID(), ['resume'], { master })).rejects.not.toThrow(/invalid daily limit/);
+    } finally {
+      if (prev === undefined) delete process.env.GEN_DAILY_LIMIT_USD;
+      else process.env.GEN_DAILY_LIMIT_USD = prev;
+    }
+    expect(call).not.toHaveBeenCalled();
+  });
+
   it('rejects non-positive explicit dailyLimitUsd before any call', async () => {
     const { llm, call } = makeMockLlm(() => validDiff);
     // Validation precedes even the job fetch — any id string works here.

@@ -33,7 +33,7 @@ for (const job of rows) {
   }
   let full: string | null = null;
   try {
-    if (job.source === 'jobbank') full = await fetchPostingDescription(job.url);
+    if (job.source === 'jobbank') full = (await fetchPostingDescription(job.url)).description;
     else if (job.source === 'adzuna') full = await fetchAdzunaFullDescription(job.url);
   } catch (error) {
     failed += 1;
