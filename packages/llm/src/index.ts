@@ -50,3 +50,10 @@ export {
   type AutoDraftCandidate,
   type AutoDraftSummary,
 } from './autodraft';
+export {
+  ProfileFactsSchema,
+  buildFactExtractionPrompt,
+  FACTS_PROMPT_VERSION,
+  type ProfileFacts,
+  type ExtractedFact,
+} from './profile-facts';

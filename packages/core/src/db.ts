@@ -76,6 +76,25 @@ export interface ArtifactRow {
   created_at: Generated<Date>;
 }
 
+export interface ProfileSourceRow {
+  id: Generated<string>;
+  file_name: string;
+  format: string;
+  storage_path: string;
+  sha256: string;
+  text_chars: number;
+  created_at: Generated<Date>;
+}
+
+export interface ProfileFactRow {
+  id: Generated<string>;
+  source_id: string;
+  kind: string;
+  payload: unknown;
+  excerpt: string;
+  created_at: Generated<Date>;
+}
+
 export interface DispatchLogRow {
   id: Generated<number>;
   job_id: string;
@@ -100,6 +119,8 @@ export interface Database {
   llm_cache: LlmCacheRow;
   artifact: ArtifactRow;
   dispatch_log: DispatchLogRow;
+  profile_source: ProfileSourceRow;
+  profile_fact: ProfileFactRow;
 }
 
 export interface LlmRunRow {
@@ -251,6 +272,24 @@ ALTER TABLE dispatch_log ADD CONSTRAINT dispatch_log_outcome_check
   CHECK (outcome IN ('sent','failed','skipped'));
 ALTER TABLE dispatch_log ADD COLUMN IF NOT EXISTS screenshot_paths JSONB NOT NULL DEFAULT '[]';
 CREATE INDEX IF NOT EXISTS dispatch_log_created_idx ON dispatch_log (created_at);
+CREATE TABLE IF NOT EXISTS profile_source (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  file_name TEXT NOT NULL,
+  format TEXT NOT NULL CHECK (format IN ('docx','pdf','txt')),
+  storage_path TEXT NOT NULL,
+  sha256 TEXT NOT NULL UNIQUE,
+  text_chars INT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS profile_fact (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  source_id UUID NOT NULL REFERENCES profile_source(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('summary','skill','experience','education','certification')),
+  payload JSONB NOT NULL,
+  excerpt TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS profile_fact_source_idx ON profile_fact (source_id);
 -- S8 fixup for databases created before the SET NULL behavior (idempotent).
 ALTER TABLE dispatch_log DROP CONSTRAINT IF EXISTS dispatch_log_application_id_fkey;
 ALTER TABLE dispatch_log ADD CONSTRAINT dispatch_log_application_id_fkey
