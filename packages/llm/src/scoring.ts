@@ -7,9 +7,9 @@ export const SCORING_PROMPT_VERSION = 'v6';
 
 export const MatchScoreSchema = z.object({
   score: z.number().min(0).max(100).int(),
-  reasons: z.array(z.string().min(1)).min(1).max(5),
-  risks: z.array(z.string()).max(3).default([]),
-  noc_guess: z.string().nullable().default(null),
+  reasons: z.array(z.string().min(1)).min(1).max(8),
+  risks: z.array(z.string()).max(6).default([]),
+  noc_guess: z.union([z.string(), z.number()]).nullable().transform((v) => (v === null ? null : String(v))).default(null),
   // S24: track-aware scoring (optional for backward compatibility). The
   // refinement below restricts best_track to the ids actually provided.
   best_track: z.string().optional(),
@@ -24,7 +24,9 @@ export type MatchScore = z.infer<typeof MatchScoreSchema>;
  *  and every track_scores entry must do the same. */
 export const TrackAwareMatchScoreSchema = (trackIds: string[]) =>
   MatchScoreSchema.superRefine((value, ctx) => {
-    if (!trackIds.includes(value.best_track ?? '')) {
+    // Only validate membership when the model emitted the field — flash
+    // sometimes omits best_track on sparse postings; omission is acceptable.
+    if (value.best_track !== undefined && !trackIds.includes(value.best_track)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['best_track'],
@@ -63,7 +65,7 @@ export function buildScoringPrompt(profile: ProfileSummary, job: ScoringJob, tra
   const schemaLine =
     tracks && tracks.length > 0
       ? `{"score": <integer 0-100>, "reasons": [...], "risks": [...], "noc_guess": ... or null, "best_track": "<track id above>", "track_scores": [{"track_id": "...", "score": <0-100>}]}`
-      : `{"score": <integer 0-100>, "reasons": [<3-5 concise strings explaining the score>], "risks": [<0-3 strings noting concerns>], "noc_guess": "<best NOC 2021 code guess, e.g. '21231'>" or null}`;
+      : `{"score": <integer 0-100>, "reasons": [<3-6 concise strings explaining the score>], "risks": [<0-5 strings noting concerns>], "noc_guess": "<best NOC 2021 code guess, e.g. '21231'>" or null}`;
   const system = `You are an expert technical recruiter evaluating job postings against a candidate profile. Score the match from 0 (completely irrelevant) to 100 (perfect match). Consider: skills overlap, seniority alignment, domain relevance, location fit, and growth potential.
 
 WORK AUTHORIZATION EVALUATION (the candidate requires employer-sponsored work authorization / LMIA):

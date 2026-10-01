@@ -45,6 +45,8 @@ describe('track-aware scoring (S24 T2)', () => {
     ).not.toThrow();
     // Refinement (ids-aware) — only TrackAwareMatchScoreSchema enforces membership:
     const Schema = TrackAwareMatchScoreSchema(tracks.map((t) => t.id));
+    // omission is acceptable (flash drops fields on sparse postings)
+    expect(() => Schema.parse(base)).not.toThrow();
     expect(() => Schema.parse({ ...base, best_track: 'unknown-id' })).toThrow();
     expect(() =>
       Schema.parse({ ...base, best_track: 'voki-games', track_scores: [{ track_id: 'other', score: 10 }] }),

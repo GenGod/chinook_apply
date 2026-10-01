@@ -184,10 +184,12 @@ export function createLlm(opts: {
       if (schema) {
         let parsed: unknown;
         let parseFailed = false;
+        let parseError: string = '';
         try {
           parsed = schema.parse(safeJsonParse(text));
-        } catch {
+        } catch (e) {
           parseFailed = true;
+          parseError = e instanceof Error ? e.message.slice(0, 160) : String(e);
         }
         if (parseFailed) {
           if (!correctiveUsed) {
@@ -200,7 +202,7 @@ export function createLlm(opts: {
             continue; // corrective retry: same backoff slot
           }
           await recordFailure(stage, role, model, key, 'schema validation failed twice', started);
-          throw new DegradeError('schema validation failed after retry');
+          throw new DegradeError(`schema validation failed after retry: ${parseError}`);
         }
         const runId = await recordSuccess(stage, role, model, key, started, promptTokens, completionTokens);
         if (useCache) {

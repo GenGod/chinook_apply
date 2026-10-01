@@ -102,6 +102,7 @@
 | Хранилище | data/artifacts/ (gitignored) | env ARTIFACTS_DIR; в БД — относительный content_path |
 
 ## Changelog
+- 2.9 (2026-10-01) — S24 (PO-мандат «продолжай S11» = v1.1 спеки S11): career tracks (детерминированный вывод из experience-фактов), track-aware скоринг v6 (best_track+track_scores, один flash-вызов), job_match.best_track, бейдж в Jobs, jobsByTrack-метрика, track-акцент генерации. Без новых пакетов.
 - 2.8 (2026-10-01) — S11 (PO-мандат «давай S11»): pdf-parse ^1.1.1 (apps/web runtime, best-effort PDF-текст; docx — своим fflate-экстрактором); profile_source/profile_fact; /profile; golden 62/62.
 - 2.7 (2026-10-01) — S23 (PO-мандат «операционные улучшения»): без новых пакетов — перенос generation-оркестрации в @chinook/llm (document-generation.ts, цикл core↔llm разорван), автодрафт в scheduler (AUTO_DRAFT*), фикс extraction job-posting-content + applyEmail, stale-алерт источников.
 - 2.6 (2026-10-01) — S9 (PO-мандат «бери M4»): playwright 1.63.0 (runtime, apps/web — та же версия, что @playwright/test); chromium в web-образе (--with-deps); dispatch_log screenshot_paths.
