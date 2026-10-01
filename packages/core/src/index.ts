@@ -58,6 +58,7 @@ export {
   type ProfileSearch,
 } from './rules';
 export { loadProfileSearch, DEFAULT_PROFILE_SEARCH } from './profile';
+export { extractDocxText } from './profile-doc';
 export {
   saveProfileSource,
   findProfileSourceByHash,
