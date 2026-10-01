@@ -10,9 +10,7 @@ const DEFAULT_DAILY_LIMIT_USD = Number(process.env.LLM_SCORING_DAILY_LIMIT_USD ?
 /** S24: career tracks from the gitignored master profile (best-effort; [] in CI). */
 function readTracksFromMaster(): CareerTrack[] {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { masterProfileFilePath } = require('@chinook/core') as typeof import('@chinook/core');
-    const raw = JSON.parse(require('node:fs').readFileSync(masterProfileFilePath(), 'utf8')) as {
+    const raw = JSON.parse(readFileSync(masterProfileFilePath(), 'utf8')) as {
       tracks?: CareerTrack[];
     };
     return Array.isArray(raw.tracks) ? raw.tracks : [];
@@ -38,7 +36,8 @@ export function descriptionFrom(raw: unknown): string | null {
 
 import type { Llm } from '@chinook/llm';
 import { TrackAwareMatchScoreSchema, type CareerTrack } from '@chinook/llm';
-import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
+import { masterProfileFilePath } from '@chinook/core';
 import { fetchPostingDescription, fetchAdzunaFullDescription } from '@chinook/adapters';
 
 /** Fetches the full posting description for truncated jobs and caches it in

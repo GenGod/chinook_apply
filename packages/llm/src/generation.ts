@@ -4,8 +4,7 @@
 // passed through up to 6000 chars. G1 decision: identity (name, contacts, PII) never
 // enters the prompts — MasterProfileLike carries professional content only.
 import { z } from 'zod';
-import type { CareerTrack } from '@chinook/core';
-import type { MasterProfileLike, Violation } from '@chinook/core';
+import type { CareerTrack, MasterProfileLike, Violation } from '@chinook/core';
 
 export const RESUME_PROMPT_VERSION = 'v1';
 export const COVER_PROMPT_VERSION = 'v1';
@@ -90,7 +89,7 @@ ${list}`;
 export function buildResumePrompt(
   master: MasterProfileLike,
   job: GenerationJob,
-  opts?: { violations?: Violation[]; track?: import('@chinook/core').CareerTrack },
+  opts?: { violations?: Violation[]; track?: CareerTrack },
 ): { system: string; user: string } {
   // S24: track emphasis — reorder/rephrase towards the track, never invent.
   const trackBlock = opts?.track
