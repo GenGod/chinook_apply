@@ -45,6 +45,8 @@ afterAll(async () => {
     await db.deleteFrom('profile_fact').where('source_id', '=', sourceId).execute();
     await db.deleteFrom('profile_source').where('id', '=', sourceId).execute();
   }
+  // sweep any leftovers from earlier iterations of this suite
+  await db.deleteFrom('profile_source').where('file_name', 'in', ['roundtrip.docx', 'dbg.docx', 'fixture.txt', 'fixture-copy.txt']).execute();
   if (sourcesDir) await rm(sourcesDir, { recursive: true, force: true });
   await db.destroy();
 });
@@ -116,7 +118,7 @@ describe('ingestProfileDocument (S11 T4)', () => {
       sections: [
         {
           children: [
-            new Paragraph({ children: [new TextRun({ text: 'Fixture Round-Trip Resume for extraction testing purposes.' })] }),
+            new Paragraph({ children: [new TextRun({ text: `Fixture Round-Trip Resume for extraction testing purposes. Run ${Date.now()}.` })] }),
             new Paragraph({ children: [new TextRun({ text: 'Skills: RoundTripLang and supporting tooling across platforms.' })] }),
             new Paragraph({ children: [new TextRun({ text: 'Experience building systems with measurable outcomes over years.' })] }),
           ],
@@ -127,7 +129,7 @@ describe('ingestProfileDocument (S11 T4)', () => {
     const result = await ingestProfileDocument(
       db,
       mockLlm({
-        facts: [{ kind: 'skill', payload: { category: 'languages', name: 'RoundTripLang' }, excerpt: 'Skills: RoundTripLang.' }],
+        facts: [{ kind: 'skill', payload: { category: 'languages', name: 'RoundTripLang' }, excerpt: 'Skills: RoundTripLang and supporting tooling' }],
       }),
       { fileName: 'roundtrip.docx', format: 'docx', bytes: Buffer.from(bytes) },
       { sourcesDir },
