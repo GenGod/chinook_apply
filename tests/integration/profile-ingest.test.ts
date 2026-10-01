@@ -113,7 +113,15 @@ describe('ingestProfileDocument (S11 T4)', () => {
   it('docx bytes go through the docx extractor (round-trip with our encoder)', async () => {
     const { Document, Packer, Paragraph, TextRun } = await import('docx');
     const doc = new Document({
-      sections: [{ children: [new Paragraph({ children: [new TextRun({ text: 'Skills: RoundTripLang.' })] })] }],
+      sections: [
+        {
+          children: [
+            new Paragraph({ children: [new TextRun({ text: 'Fixture Round-Trip Resume for extraction testing purposes.' })] }),
+            new Paragraph({ children: [new TextRun({ text: 'Skills: RoundTripLang and supporting tooling across platforms.' })] }),
+            new Paragraph({ children: [new TextRun({ text: 'Experience building systems with measurable outcomes over years.' })] }),
+          ],
+        },
+      ],
     });
     const bytes = await Packer.toBuffer(doc);
     const result = await ingestProfileDocument(
