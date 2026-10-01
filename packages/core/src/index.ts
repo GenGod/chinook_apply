@@ -59,6 +59,18 @@ export {
 } from './rules';
 export { loadProfileSearch, DEFAULT_PROFILE_SEARCH } from './profile';
 export {
+  saveProfileSource,
+  findProfileSourceByHash,
+  listProfileSources,
+  saveProfileFacts,
+  listProfileFacts,
+  listAllProfileFacts,
+  type ProfileSourceView,
+  type ProfileFactRow,
+  type ProfileFactKind,
+  type NewProfileFact,
+} from './profile-store';
+export {
   BOARD_STATUSES, TRANSITIONS, canTransition, requiredChannel,
   getBoard, setApplicationStatus, TransitionError,
   type BoardStatus, type StoredStatus, type BoardCard, type BoardColumn, type BoardData, type BoardFilters,
