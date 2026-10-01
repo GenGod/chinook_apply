@@ -60,10 +60,12 @@ export {
 export { loadProfileSearch, DEFAULT_PROFILE_SEARCH } from './profile';
 export { extractDocxText } from './profile-doc';
 export {
+  buildTracksProposal,
   buildSuperprofileProposal,
   type SuperprofileDiffEntry,
   type SuperprofileDiffOp,
   type SuperprofileProposal,
+  type CareerTrack,
 } from './superprofile';
 export { masterProfileFilePath, profileSourcesDir, safeSourceFilePath } from './profile-paths';
 export {
