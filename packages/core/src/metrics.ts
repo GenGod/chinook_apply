@@ -1,7 +1,7 @@
 import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
 import type { Database } from './db.js';
-import { funnelV2, llmAggregates, dispatchAggregates, qualityAggregates } from './metrics-v2';
+import { funnelV2, llmAggregates, dispatchAggregates, qualityAggregates, jobsByTrack } from './metrics-v2';
 
 export interface SourceHealth {
   source: string;
@@ -68,6 +68,8 @@ export interface MetricsSummary {
     invalidShare: number | null;
     captchaStops: number;
   };
+  /** S24: jobs by best career track. */
+  byTrack: Array<{ track: string; jobs: number }>;
 }
 
 export const DEFAULT_INTERVALS: Record<string, number> = { jobbank: 30, adzuna: 120 };
@@ -171,5 +173,6 @@ export async function getMetrics(
     llm,
     dispatch,
     quality,
+    byTrack: await jobsByTrack(db),
   };
 }

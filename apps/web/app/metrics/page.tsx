@@ -183,6 +183,13 @@ export default async function MetricsPage() {
           <div className={styles.cardLabel}>Scored → drafted</div>
           <div className={styles.cardValue} style={{ fontFamily: 'var(--font-display)' }}>{f.scored} → {f.drafted}</div>
         </div>
+        {m.byTrack.map((t) => (
+          <div className={styles.card} key={t.track} data-testid={`track-${t.track}`}>
+            <div className={styles.cardLabel}>Track: {t.track}</div>
+            <div className={styles.cardValue} style={{ fontFamily: 'var(--font-display)' }}>{t.jobs}</div>
+            <div className={styles.cardMeta}>jobs best-matched</div>
+          </div>
+        ))}
       </div>
 
       <div className={styles.sectionTitle}>Ingest history</div>
