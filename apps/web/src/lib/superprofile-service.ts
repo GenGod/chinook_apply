@@ -22,6 +22,7 @@ import {
   safeSourceFilePath,
   masterProfileFilePath,
   buildSuperprofileProposal,
+  buildTracksProposal,
   type SuperprofileDiffEntry,
   type Database,
 } from '@chinook/core';
@@ -133,8 +134,10 @@ export async function buildProposal(db: Kysely<Database>): Promise<ProposalView>
   const [masterRaw, facts, sources] = await Promise.all([readMasterRaw(), listAllProfileFacts(db), listProfileSources(db)]);
   const masterObj = (masterRaw ?? {}) as Record<string, unknown>;
   const { diff } = buildSuperprofileProposal(masterObj, facts);
+  // S24: track derivation joins the same proposal (add_track entries).
+  const { diff: trackDiff } = buildTracksProposal(masterObj, facts);
   return {
-    diff,
+    diff: [...diff, ...trackDiff],
     conflicts: diff.filter((d) => d.op === 'conflict').length,
     masterVersion: typeof masterObj.version === 'number' ? masterObj.version : 1,
     sources: sources.length,
@@ -151,9 +154,14 @@ export async function approveProposal(db: Kysely<Database>): Promise<{ applied: 
   if (!masterRaw) throw new Error('master profile unavailable');
   const masterObj = masterRaw as Record<string, unknown>;
   const facts = await listAllProfileFacts(db);
-  const { proposed, diff } = buildSuperprofileProposal(masterObj, facts);
-  const applicable = diff.filter((d) => d.op.startsWith('add_') || d.op === 'new_category');
   const currentVersion = typeof masterObj.version === 'number' ? masterObj.version : 1;
+  const { proposed: merged, diff } = buildSuperprofileProposal(masterObj, facts);
+  // S24: apply the track derivation too (same approve semantics); both
+  // builders bump version independently → pin it to a single +1.
+  const { proposed: trackProposed, diff: trackDiff } = buildTracksProposal(merged, facts);
+  const proposed = { ...trackProposed, version: currentVersion + 1 };
+  const allDiff = [...diff, ...trackDiff];
+  const applicable = allDiff.filter((d) => d.op.startsWith('add_') || d.op === 'new_category');
   if (applicable.length === 0) {
     return { applied: 0, version: currentVersion };
   }

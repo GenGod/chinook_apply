@@ -1,17 +1,19 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { resetFixtureMaster } from './fixture-master';
 
 /**
- * S11 — /profile workspace e2e. The seed registers one source with two facts
- * (skill + certification) and the webServer runs against the ISOLATED fixture
- * master (MASTER_PROFILE_PATH under data/artifacts-e2e) — the real PII profile
+ * S11 — /profile workspace e2e. The seed registers one source with facts
+ * and the webServer runs against the ISOLATED fixture master
+ * (MASTER_PROFILE_PATH under data/artifacts-e2e) — the real PII profile
  * is never touched by the approve.
  */
 
 const FIXTURE_MASTER = join(process.cwd(), '..', 'data', 'artifacts-e2e', 'master-profile-e2e.json');
 
 test('profile page lists sources and builds a proposal with excerpts', async ({ page }) => {
+  await resetFixtureMaster();
   await page.goto('/profile');
 
   const sources = page.getByTestId('profile-sources');
@@ -32,6 +34,7 @@ test('profile page lists sources and builds a proposal with excerpts', async ({ 
 });
 
 test('approve applies additions to the fixture master and empties the diff', async ({ page }) => {
+  await resetFixtureMaster();
   await page.goto('/profile');
   await page.getByTestId('profile-build').click();
   const proposal = page.getByTestId('profile-proposal');
