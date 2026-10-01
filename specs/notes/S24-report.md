@@ -49,8 +49,3 @@ Mimosa: известных новых находок нет (FP-класс пр�
 1. **Мастер v2 применён golden-скриптом** (= тот же approve-код, что кнопка; спека S11 ОВ-2 исходно допускала только UI-approve) — строго говоря, это CLI-approve PO-действием. Если хочешь строго UI — откати файл бэкапом (`data/profile/master_profile.*.bak.json`) и нажми Approve в /profile.
 2. Названия/состав треков — правится руками в master_profile.json (скоринг читает файл на лету, per S24 спека ОВ-1).
 3. NOC-расширение — по-прежнему отдельное решение (не в S24).
-REPOEOF
-git add -A && git commit -q -m "S24 report + STACK 2.9: tracks golden (4 tracks, v6 rescore 5/5 \$0.003), schema hardening, gates green" && git log --oneline origin/main..HEAD | head -12
-__zcode_status=$?
-if [ "$__zcode_status" -eq 0 ]; then pwd -P > '/c/Users/bvetr/AppData/Local/Temp/zcode-577ff5dd-070f-448e-a136-f2716b4517d0-cwd'; fi
-exit "$__zcode_status"
