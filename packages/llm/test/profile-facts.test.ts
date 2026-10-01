@@ -26,7 +26,7 @@ describe('ProfileFactsSchema (S11 T3)', () => {
       },
       {
         kind: 'summary',
-        payload: { text: 'Developer with 10 years of experience.' },
+        payload: { text: 'Developer with 10 years of experience building platforms, pipelines and teams across fintech and gaming.' },
         excerpt: 'Developer with 10 years of experience.',
       },
     ],
