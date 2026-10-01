@@ -1,0 +1,161 @@
+/* S11 — /profile workspace. Colors exclusively via tokens.css (check-colors gate). */
+
+.section {
+  border-top: 1px solid var(--border-subtle);
+  margin: 20px 0;
+  padding-top: 16px;
+}
+
+.title {
+  margin: 0 0 4px;
+  font-size: var(--text-section);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.hint {
+  margin: 0 0 12px;
+  color: var(--text-muted);
+  font-size: var(--text-aux);
+  line-height: 1.5;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sourceList {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sourceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sourceName {
+  color: var(--text-primary);
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.sourceMeta {
+  color: var(--text-muted);
+  font-size: var(--text-aux);
+}
+
+.diffList {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.diffRow,
+.diffConflict {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--bg-raised);
+}
+
+.diffConflict {
+  border-color: var(--status-danger-border);
+  background: var(--status-danger-bg);
+}
+
+.diffOp {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.diffConflict .diffOp {
+  color: var(--status-danger);
+}
+
+.diffLine {
+  color: var(--text-primary);
+  font-size: var(--text-body);
+}
+
+.diffExcerpt {
+  color: var(--text-muted);
+  font-size: var(--text-aux);
+  font-style: italic;
+}
+
+.errorBox {
+  color: var(--status-danger);
+  font-size: var(--text-aux);
+  margin: 10px 0;
+}
+
+.noticeBox {
+  color: var(--status-success);
+  font-size: var(--text-aux);
+  margin: 10px 0;
+}
+
+.btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--text-aux);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--bg-raised);
+  border-color: var(--border-strong);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.btnPrimary {
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: var(--text-aux);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btnPrimary:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}

@@ -42,6 +42,10 @@ export default defineConfig({
       SMTP_PORT: '1025',
       SMTP_FROM: 'Chinook E2E <chinook-e2e@example.com>',
       DISPATCH_MODE: 'dry-run',
+      // S11: isolated fixture master + sources dir — the e2e approve NEVER
+      // touches the real gitignored profile.
+      MASTER_PROFILE_PATH: '../../data/artifacts-e2e/master-profile-e2e.json',
+      PROFILE_SOURCES_DIR: '../../data/artifacts-e2e/profile-sources',
     },
     url: 'http://localhost:3999',
     timeout: 180_000,

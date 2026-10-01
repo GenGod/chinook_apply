@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import type { Job } from '@chinook/contracts';
 import { createDb, ensureSchema, upsertJobs, DEV_DATABASE_URL } from './db';
 import { saveRenderArtifact } from './artifacts';
+import { saveProfileSource, saveProfileFacts } from './profile-store';
 
 function e2eUrl(): string {
   const base = process.env.DATABASE_URL ?? DEV_DATABASE_URL;
@@ -279,6 +280,24 @@ export async function seedE2eExtras(artifactsDir?: string): Promise<void> {
       .execute();
   }
   if (artifactsDir && firstRelevant) await seedDispatchFixtures(db, firstRelevant.id, artifactsDir);
+
+  // S11: profile fixtures — one source + facts so /profile renders a proposal
+  // without any LLM in e2e.
+  {
+    await db.deleteFrom('profile_source').where('sha256', '=', 'e2e-fixed-sha-0001').execute();
+    const src = await saveProfileSource(db, {
+      fileName: 'e2e-fixture-resume.txt',
+      format: 'txt',
+      storagePath: 'e2e-fixture-resume.txt',
+      sha256: 'e2e-fixed-sha-0001',
+      textChars: 400,
+    });
+    await saveProfileFacts(db, src.id, [
+      { kind: 'skill', payload: { category: 'languages', name: 'E2EFixtureLang' }, excerpt: 'Skills: E2EFixtureLang and friends' },
+      { kind: 'certification', payload: { name: 'E2E Fixture Cert' }, excerpt: 'Certified E2E Fixture Cert in testing' },
+    ]);
+    console.log('e2e seed: +profile source with 2 facts');
+  }
   await db.destroy();
   console.log('e2e seed: +2 S19 synthetic rows (ON relevant, remote relevant)');
 }
