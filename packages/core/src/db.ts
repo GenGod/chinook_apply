@@ -59,6 +59,7 @@ export interface JobMatchRow {
   risks: unknown;
   noc_guess: string | null;
   prompt_version: string;
+  best_track: string | null;
   created_at: Generated<Date>;
 }
 
@@ -233,8 +234,10 @@ CREATE TABLE IF NOT EXISTS job_match (
   risks JSONB NOT NULL DEFAULT '[]',
   noc_guess TEXT,
   prompt_version TEXT NOT NULL,
+  best_track TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+ALTER TABLE job_match ADD COLUMN IF NOT EXISTS best_track TEXT;
 CREATE INDEX IF NOT EXISTS job_match_job_idx ON job_match (job_id);
 CREATE INDEX IF NOT EXISTS job_match_score_idx ON job_match (score DESC);
 CREATE TABLE IF NOT EXISTS artifact (

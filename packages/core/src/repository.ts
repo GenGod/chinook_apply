@@ -281,7 +281,7 @@ export async function upsertMatch(
   db: Kysely<Database>,
   jobId: string,
   llmRunId: number,
-  match: { score: number; reasons: string[]; risks: string[]; noc_guess: string | null },
+  match: { score: number; reasons: string[]; risks: string[]; noc_guess: string | null; best_track?: string | null | undefined },
   promptVersion: string,
 ): Promise<void> {
   await db
@@ -293,6 +293,7 @@ export async function upsertMatch(
       reasons: JSON.stringify(match.reasons),
       risks: JSON.stringify(match.risks),
       noc_guess: match.noc_guess,
+      best_track: match.best_track ?? null,
       prompt_version: promptVersion,
     })
     .execute();

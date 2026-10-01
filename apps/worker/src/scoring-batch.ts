@@ -7,6 +7,20 @@ import { listUnscoredJobs, upsertMatch } from '@chinook/core';
 
 const DEFAULT_DAILY_LIMIT_USD = Number(process.env.LLM_SCORING_DAILY_LIMIT_USD ?? 0.5);
 
+/** S24: career tracks from the gitignored master profile (best-effort; [] in CI). */
+function readTracksFromMaster(): CareerTrack[] {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { masterProfileFilePath } = require('@chinook/core') as typeof import('@chinook/core');
+    const raw = JSON.parse(require('node:fs').readFileSync(masterProfileFilePath(), 'utf8')) as {
+      tracks?: CareerTrack[];
+    };
+    return Array.isArray(raw.tracks) ? raw.tracks : [];
+  } catch {
+    return [];
+  }
+}
+
 /** Extracts description text from raw job payload. Prefers the enriched full
  *  description (jobbank posting page / adzuna details JSON-LD); falls back to
  *  the feed/API snippet capped at 2000 chars. */
@@ -23,6 +37,8 @@ export function descriptionFrom(raw: unknown): string | null {
 }
 
 import type { Llm } from '@chinook/llm';
+import { TrackAwareMatchScoreSchema, type CareerTrack } from '@chinook/llm';
+import { readFile } from 'node:fs/promises';
 import { fetchPostingDescription, fetchAdzunaFullDescription } from '@chinook/adapters';
 
 /** Fetches the full posting description for truncated jobs and caches it in
@@ -54,9 +70,10 @@ async function enrichDescription(
 export async function scoreUnscoredBatch(
   db: Kysely<Database>,
   llm: Llm,
-  opts: { promptVersion: string; profileSummary: { summary: string; skills: string[]; targetTitles: string[]; nocCodes: string[]; location: string; workAuthorization: string }; dailyLimitUsd?: number },
+  opts: { promptVersion: string; profileSummary: { summary: string; skills: string[]; targetTitles: string[]; nocCodes: string[]; location: string; workAuthorization: string }; dailyLimitUsd?: number; tracks?: CareerTrack[] },
 ): Promise<{ scored: number; skipped: number; costUsd: number }> {
   const dailyLimit = opts.dailyLimitUsd ?? DEFAULT_DAILY_LIMIT_USD;
+  const tracks = opts.tracks ?? readTracksFromMaster();
 
   // check today's LLM spend
   const todayStart = new Date();
@@ -89,13 +106,14 @@ export async function scoreUnscoredBatch(
       salaryMax: job.salaryMax,
       description: descriptionFrom(raw) ?? undefined,
     };
-    const { system, user } = buildScoringPrompt(opts.profileSummary, scoringJob as import('@chinook/llm').ScoringJob);
+    const { system, user } = buildScoringPrompt(opts.profileSummary, scoringJob as import('@chinook/llm').ScoringJob, tracks);
+    const schema = tracks.length > 0 ? TrackAwareMatchScoreSchema(tracks.map((t) => t.id)) : MatchScoreSchema;
     const result = await llm.call({
       role: 'flash',
       stage: 'match_llm',
       system,
       user,
-      schema: MatchScoreSchema,
+      schema,
       temperature: 0,
     });
     await upsertMatch(db, job.id, result.runId, result.data, opts.promptVersion);

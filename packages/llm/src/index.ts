@@ -19,6 +19,8 @@ export {
   type MatchScore,
   type ScoringJob,
 } from './scoring';
+export { TrackAwareMatchScoreSchema } from './scoring';
+export type { CareerTrack } from '@chinook/core';
 export {
   buildResumePrompt,
   buildCoverPrompt,
