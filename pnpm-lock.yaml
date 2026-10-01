@@ -245,6 +245,9 @@ importers:
       '@playwright/test':
         specifier: ^1.63.0
         version: 1.63.0
+      docx:
+        specifier: ^9.8.0
+        version: 9.8.0
       kysely:
         specifier: ^0.29.5
         version: 0.29.5

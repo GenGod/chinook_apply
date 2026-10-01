@@ -60,6 +60,13 @@ export {
 export { loadProfileSearch, DEFAULT_PROFILE_SEARCH } from './profile';
 export { extractDocxText } from './profile-doc';
 export {
+  buildSuperprofileProposal,
+  type SuperprofileDiffEntry,
+  type SuperprofileDiffOp,
+  type SuperprofileProposal,
+} from './superprofile';
+export { masterProfileFilePath, profileSourcesDir, safeSourceFilePath } from './profile-paths';
+export {
   saveProfileSource,
   findProfileSourceByHash,
   listProfileSources,
