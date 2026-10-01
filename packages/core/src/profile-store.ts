@@ -149,6 +149,7 @@ export async function saveProfileFacts(
 export async function listProfileFacts(db: Kysely<Database>, sourceId: string): Promise<ProfileFactRow[]> {
   const rows = await db
     .selectFrom('profile_fact')
+    .select(['id', 'source_id', 'kind', 'payload', 'excerpt', 'created_at'])
     .where('source_id', '=', sourceId)
     .orderBy('created_at', 'asc')
     .limit(500)
@@ -167,6 +168,7 @@ export async function listProfileFacts(db: Kysely<Database>, sourceId: string): 
 export async function listAllProfileFacts(db: Kysely<Database>): Promise<ProfileFactRow[]> {
   const rows = await db
     .selectFrom('profile_fact')
+    .select(['id', 'source_id', 'kind', 'payload', 'excerpt', 'created_at'])
     .orderBy('created_at', 'asc')
     .limit(2000)
     .execute();
