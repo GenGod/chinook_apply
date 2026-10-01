@@ -68,6 +68,8 @@ export function buildFactExtractionPrompt(documentText: string): { system: strin
     '2. For EVERY fact set "excerpt" to a SHORT passage copied VERBATIM (character-for-character) from the document text that proves the fact. Excerpts are checked mechanically; a mismatch discards the fact.',
     '3. Do not merge different employers or periods into one experience fact.',
     '4. Output facts in document order.',
+    'OUTPUT SHAPE — every fact object MUST use exactly these keys: "kind" (one of skill|experience|education|certification|summary), "payload" (the structured object for that kind), "excerpt" (verbatim quote).',
+    'Example: {"facts":[{"kind":"skill","payload":{"category":"languages","name":"TypeScript"},"excerpt":"Skills: TypeScript, React"}]}',
     `Respond as JSON matching the schema. ${FACTS_PROMPT_VERSION}`,
   ].join('\n');
 
