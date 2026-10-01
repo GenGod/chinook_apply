@@ -18,9 +18,9 @@ import {
   saveProfileFacts,
   listAllProfileFacts,
   listProfileSources,
-  masterProfileFilePath,
   profileSourcesDir,
   safeSourceFilePath,
+  masterProfileFilePath,
   buildSuperprofileProposal,
   type SuperprofileDiffEntry,
   type Database,
@@ -165,3 +165,6 @@ export async function approveProposal(db: Kysely<Database>): Promise<{ applied: 
   await writeFile(file, JSON.stringify(proposed, null, 2));
   return { applied: applicable.length, version: currentVersion + 1 };
 }
+
+export { masterProfileFilePath };
+export { masterProfileFilePath as masterProfilePath };
