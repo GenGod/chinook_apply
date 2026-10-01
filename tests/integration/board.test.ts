@@ -79,8 +79,31 @@ describe('board integration (S7)', () => {
 
   it('rejects forbidden transitions and wrong channels (AC2)', async () => {
     const db = createDb(databaseUrl);
-    const jobs = await listJobs(db, { rule: 'relevant', limit: 2 });
-    const job = jobs[1]!;
+    // Own synthetic job: sibling suites (e.g. metrics) mark fixture jobs
+    // applied in their beforeAll, and CI file order is not alphabetical.
+    const { randomUUID } = await import('node:crypto');
+    const jobId = randomUUID();
+    await db
+      .insertInto('job')
+      .values({
+        id: jobId,
+        canonical_hash: `s23-board-${jobId}`,
+        title: 'S23 board transitions job',
+        employer: 'Chinook Test Inc.',
+        city: 'edmonton',
+        province: 'AB',
+        remote: false,
+        url: `https://example.invalid/${jobId}`,
+        urls: [],
+        source: 'jobbank',
+        source_job_id: `s23-board-${jobId}`,
+        posted_at: new Date(),
+        salary_currency: 'CAD',
+        rule_status: 'relevant',
+        ingested_at: new Date(),
+      })
+      .execute();
+    const job = { id: jobId };
 
     await expect(setApplicationStatus(db, job.id, { status: 'interview' })).rejects.toBeInstanceOf(TransitionError);
     await expect(setApplicationStatus(db, job.id, { status: 'applied' })).rejects.toBeInstanceOf(TransitionError); // channel missing
@@ -92,6 +115,8 @@ describe('board integration (S7)', () => {
     await setApplicationStatus(db, job.id, { status: 'applying' });
     const again = await setApplicationStatus(db, job.id, { status: 'applying' });
     expect(again.status).toBe('applying');
+    await db.deleteFrom('application').where('job_id', '=', job.id).execute();
+    await db.deleteFrom('job').where('id', '=', job.id).execute();
     await db.destroy();
   });
 
