@@ -70,6 +70,8 @@ test('profile page visual snapshot (masked chrome)', async ({ page }) => {
     mask: [
       page.locator('main h1'),
       page.locator('main > p'),
+      // source meta rows carry fact counts + dates that shift between runs
+      page.getByTestId('profile-sources').locator('li'),
     ],
     maskColor: '#1a2f4a',
   });
