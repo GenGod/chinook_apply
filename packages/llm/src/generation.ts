@@ -4,7 +4,7 @@
 // passed through up to 6000 chars. G1 decision: identity (name, contacts, PII) never
 // enters the prompts — MasterProfileLike carries professional content only.
 import { z } from 'zod';
-import type { MasterProfileLike, Violation } from '@chinook/core';
+import type { CareerTrack, MasterProfileLike, Violation } from '@chinook/core';
 
 export const RESUME_PROMPT_VERSION = 'v1';
 export const COVER_PROMPT_VERSION = 'v1';
@@ -89,9 +89,15 @@ ${list}`;
 export function buildResumePrompt(
   master: MasterProfileLike,
   job: GenerationJob,
-  opts?: { violations?: Violation[] },
+  opts?: { violations?: Violation[]; track?: CareerTrack },
 ): { system: string; user: string } {
+  // S24: track emphasis — reorder/rephrase towards the track, never invent.
+  const trackBlock = opts?.track
+    ? `
+TRACK EMPHASIS: This job best fits the candidate's "${opts.track.title}" track. Emphasize and front-load the track's existing skills where the master content supports it: ${opts.track.skills.join(', ')}. Do not invent new skills — only reorder and rephrase existing master content to highlight these.`
+    : '';
   const system = `You are a senior technical resume writer tailoring an existing master resume to a specific job posting. The final resume document is assembled by code from the master profile and your diff, then fact-checked by a validator — you never write the document itself and you never invent content.
+${trackBlock}
 
 HARD RULES (a violation causes automatic validation rejection):
 - ONLY select, reorder and rephrase existing master content; you cannot add, remove or merge experience entries.

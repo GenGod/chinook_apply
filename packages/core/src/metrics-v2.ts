@@ -134,6 +134,21 @@ export async function dispatchAggregates(db: Kysely<Database>): Promise<MetricsS
   };
 }
 
+/** S24: jobs by best career track (from the latest job_match per job). */
+export async function jobsByTrack(db: Kysely<Database>): Promise<Array<{ track: string; jobs: number }>> {
+  const rows = await db
+    .selectFrom('job_match')
+    .where('best_track', 'is not', null)
+    .select((eb) => ['best_track as track', eb.fn.count<number>('id').as('jobs')])
+    .groupBy('best_track')
+    .orderBy('jobs', 'desc')
+    .execute();
+  return (rows as Array<{ track: string; jobs: string | number }>).map((r) => ({
+    track: r.track,
+    jobs: Number(r.jobs),
+  }));
+}
+
 /** Quality proxies: invalid artifact share + captcha stops (§5.2). */
 export async function qualityAggregates(db: Kysely<Database>): Promise<MetricsSummary['quality']> {
   const artifactsRow = (

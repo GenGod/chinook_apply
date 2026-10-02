@@ -217,6 +217,11 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
                     ) : (
                       <span className={styles.muted}>—</span>
                     )}
+                    {job.bestTrack ? (
+                      <span data-testid="track-badge" style={{ marginLeft: 8, fontSize: 'var(--text-aux)', color: 'var(--text-muted)' }}>
+                        {job.bestTrack}
+                      </span>
+                    ) : null}
                   </td>
                   <td>{salaryLabel(job)}</td>
                   <td className={styles.muted}>{postedLabel(job)}</td>

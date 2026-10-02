@@ -10,7 +10,8 @@
     "generate:documents": "tsx --env-file-if-exists=../../.env src/scripts/generate-documents.ts",
     "render:documents": "tsx --env-file-if-exists=../../.env src/scripts/render-documents.ts",
     "migrate:render-layout": "tsx --env-file-if-exists=../../.env src/scripts/migrate-render-layout.ts",
-    "golden:profile": "tsx --env-file-if-exists=../../.env src/scripts/golden-profile.ts"
+    "golden:profile": "tsx --env-file-if-exists=../../.env src/scripts/golden-profile.ts",
+    "golden:tracks": "tsx --env-file-if-exists=../../.env src/scripts/golden-tracks.ts"
   },
   "dependencies": {
     "@chinook/adapters": "workspace:*",

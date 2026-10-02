@@ -17,11 +17,12 @@ export interface JobFilters {
   limit?: number;
 }
 
-/** Job plus the manual-application flag, rule status and LLM match score. */
+/** Job plus the manual-application flag, rule status, LLM match score and S24 best track. */
 export interface JobListItem extends Job {
   appliedManually: boolean;
   ruleStatus: RuleStatus | null;
   matchScore: number | null;
+  bestTrack: string | null;
 }
 
 export interface ApplicationRow {
@@ -77,6 +78,7 @@ function toJob(row: ListRow): JobListItem {
     appliedManually: row.applied_manually != null,
     ruleStatus: (row.rule_status as RuleStatus | null) ?? null,
     matchScore: row.match_score ?? null,
+    bestTrack: null,
   };
 }
 
@@ -138,23 +140,26 @@ export async function listJobs(db: Kysely<Database>, filters: JobFilters): Promi
   const rows = await query.limit(Math.min(limit * 2, 400)).execute();
   const jobIds = rows.map((r) => r.id);
 
-  // fetch latest match scores in one query (avoids complex JOIN in the main query)
+  // fetch latest match scores + best tracks in one query (avoids complex JOIN in the main query)
   const scoreMap = new Map<string, number>();
+  const trackMap = new Map<string, string>();
   if (jobIds.length > 0) {
     const scores = await db
       .selectFrom('job_match')
       .where('job_match.job_id', 'in', jobIds)
-      .select(['job_match.job_id as job_id', 'job_match.score as score'])
+      .select(['job_match.job_id as job_id', 'job_match.score as score', 'job_match.best_track as best_track'])
       .orderBy('job_match.id', 'desc')
       .execute();
     for (const s of scores) {
       if (!scoreMap.has(s.job_id)) scoreMap.set(s.job_id, s.score);
+      if (!trackMap.has(s.job_id) && s.best_track !== null) trackMap.set(s.job_id, s.best_track);
     }
   }
 
   let items = rows.map((row) => ({
     ...toJob(row as ListRow),
     matchScore: scoreMap.get(row.id) ?? null,
+    bestTrack: trackMap.get(row.id) ?? null,
   }));
 
   if (minScore !== undefined) {
@@ -281,7 +286,7 @@ export async function upsertMatch(
   db: Kysely<Database>,
   jobId: string,
   llmRunId: number,
-  match: { score: number; reasons: string[]; risks: string[]; noc_guess: string | null },
+  match: { score: number; reasons: string[]; risks: string[]; noc_guess: string | null; best_track?: string | null | undefined },
   promptVersion: string,
 ): Promise<void> {
   await db
@@ -293,6 +298,7 @@ export async function upsertMatch(
       reasons: JSON.stringify(match.reasons),
       risks: JSON.stringify(match.risks),
       noc_guess: match.noc_guess,
+      best_track: match.best_track ?? null,
       prompt_version: promptVersion,
     })
     .execute();

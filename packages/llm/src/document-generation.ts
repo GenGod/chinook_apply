@@ -214,6 +214,7 @@ async function generateOne(
   budget: Budget,
   renderIdentity: RenderIdentity | null,
   autodraft: boolean,
+  track: import('@chinook/core').CareerTrack | undefined,
 ): Promise<ArtifactView | null> {
   const stage = kind === 'resume' ? 'generate_resume' : 'generate_cover';
   let violations: Violation[] = [];
@@ -222,7 +223,7 @@ async function generateOne(
     if (!budget.canSpend()) return null; // cap reached — stop, keep what is already saved
     const prompt =
       kind === 'resume'
-        ? buildResumePrompt(master, genJob, { violations })
+        ? buildResumePrompt(master, genJob, { violations, ...(track ? { track } : {}) })
         : buildCoverPrompt(master, genJob, violations);
     // two call forms (not a ternary schema) so each branch keeps its own zod output type
     const result =
@@ -350,6 +351,8 @@ export async function generateDocuments(
     autodraft?: boolean;
     /** Test hook: overrides the identity-snapshot loader (default: master file). */
     loadIdentity?: () => RenderIdentity | null;
+    /** S24: override the career track (default: job_match.best_track → master.tracks). */
+    track?: import('@chinook/core').CareerTrack | null;
   },
 ): Promise<{ artifacts: ArtifactView[] }> {
   // S22: job eligibility and the daily cap are reported BEFORE master
@@ -386,7 +389,7 @@ export async function generateDocuments(
   if (description) genJob.description = description;
   const match = await db
     .selectFrom('job_match')
-    .select(['score', 'reasons'])
+    .select(['score', 'reasons', 'best_track'])
     .where('job_id', '=', jobId)
     .orderBy('id', 'desc')
     .executeTakeFirst();
@@ -394,6 +397,25 @@ export async function generateDocuments(
     // renderJob shows reasons only alongside a score — pass both or neither (T4 note)
     genJob.score = match.score;
     genJob.reasons = Array.isArray(match.reasons) ? match.reasons.map(String) : [];
+  }
+
+  // S24: resolve the career track for emphasis — opts override, else the
+  // job's best_track from the scoring run, resolved against master.tracks.
+  let track: import('@chinook/core').CareerTrack | undefined;
+  if (opts?.track !== undefined) {
+    track = opts.track ?? undefined;
+  } else if (match?.best_track) {
+    const tracks = Array.isArray((master as unknown as { tracks?: unknown }).tracks)
+      ? ((master as unknown as { tracks: unknown[] }).tracks as Array<Record<string, unknown>>)
+      : [];
+    const found = tracks.find((t) => t.id === match.best_track);
+    if (found && typeof found.title === 'string' && Array.isArray(found.skills)) {
+      track = {
+        id: String(found.id),
+        title: found.title,
+        skills: found.skills.filter((sk): sk is string => typeof sk === 'string'),
+      };
+    }
   }
 
   let runCost = 0;
@@ -405,7 +427,7 @@ export async function generateDocuments(
       addCost: (usd) => {
         runCost += usd;
       },
-    }, renderIdentity, opts?.autodraft === true);
+    }, renderIdentity, opts?.autodraft === true, track);
     if (saved) artifacts.push(saved);
   }
   return { artifacts };

@@ -247,6 +247,7 @@ export async function seedE2eExtras(artifactsDir?: string): Promise<void> {
     .orderBy('job.posted_at', 'desc')
     .orderBy('job.canonical_hash', 'asc')
     .executeTakeFirst();
+  const firstRelevantId = firstRelevant?.id ?? '';
   if (firstRelevant) {
     // S9: form dispatch fixture — targets the app's own /mock-form page.
     await db
@@ -295,8 +296,29 @@ export async function seedE2eExtras(artifactsDir?: string): Promise<void> {
     await saveProfileFacts(db, src.id, [
       { kind: 'skill', payload: { category: 'languages', name: 'E2EFixtureLang' }, excerpt: 'Skills: E2EFixtureLang and friends' },
       { kind: 'certification', payload: { name: 'E2E Fixture Cert' }, excerpt: 'Certified E2E Fixture Cert in testing' },
+      { kind: 'experience', payload: { employer: 'E2E Fixture Corp', title: 'E2E Track Engineer', start: '2024-01', end: null, bullets: ['Shipped E2EFixtureLang platform.'], technology: ['E2EFixtureLang'] }, excerpt: 'E2E Fixture Corp — E2E Track Engineer (2024-01)' },
     ]);
-    console.log('e2e seed: +profile source with 2 facts');
+    console.log('e2e seed: +profile source with 3 facts');
+  }
+
+  // S24: best_track fixture — a track-scored match on the first relevant job
+  // so the Jobs badge and the metrics track cards render without LLM in e2e.
+  {
+    await db.deleteFrom('job_match').where('job_id', '=', firstRelevantId).where('prompt_version', '=', 'v6-e2e').execute();
+    await db
+      .insertInto('job_match')
+      .values({
+        job_id: firstRelevantId,
+        llm_run_id: 1,
+        score: 86,
+        reasons: JSON.stringify(['e2e fixture reason']),
+        risks: JSON.stringify([]),
+        noc_guess: '21231',
+        best_track: 'fixture-track',
+        prompt_version: 'v6-e2e',
+      })
+      .execute();
+    console.log('e2e seed: +best_track fixture on first relevant job');
   }
   await db.destroy();
   console.log('e2e seed: +2 S19 synthetic rows (ON relevant, remote relevant)');

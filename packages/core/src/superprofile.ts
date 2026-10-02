@@ -4,6 +4,9 @@
 // start, divergent details) NEVER enter the proposal — they surface as a
 // decision queue for the PO. identity/search_config pass through untouched
 // (Constitution 2.3: automation does not edit identity).
+// S24: career-track derivation (B-002 p.3) — tracks are a DETERMINISTIC
+// regrouping of provenance facts (one per experience; skills from its
+// technology list + skill facts named in its bullets). No invention.
 import type { ProfileFactRow } from './profile-store';
 
 export type SuperprofileDiffOp =
@@ -12,6 +15,7 @@ export type SuperprofileDiffOp =
   | 'add_education'
   | 'add_certification'
   | 'new_category'
+  | 'add_track'
   | 'conflict';
 
 export interface SuperprofileDiffEntry {
@@ -24,6 +28,12 @@ export interface SuperprofileDiffEntry {
 export interface SuperprofileProposal {
   proposed: Record<string, unknown>;
   diff: SuperprofileDiffEntry[];
+}
+
+export interface CareerTrack {
+  id: string;
+  title: string;
+  skills: string[];
 }
 
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
@@ -224,4 +234,82 @@ function expKey(employer: string, start: string): string {
 
 function eduKey(degree: string, institution: string): string {
   return `${norm(degree)}|${norm(institution)}`;
+}
+
+// --- S24: career tracks (B-002 p.3) ---
+
+/**
+ * Derives career tracks from experience + skill facts: one track per
+ * experience fact; the track's skills are the experience's technology list
+ * plus every skill fact whose name appears in that experience's bullets.
+ * Tracks already present in the master (by id) are kept untouched. Pure
+ * regrouping of provenance facts — no invention.
+ */
+export function buildTracksProposal(
+  masterRaw: Record<string, unknown>,
+  facts: ProfileFactRow[],
+): SuperprofileProposal {
+  const proposed: Record<string, unknown> = structuredClone(masterRaw);
+  const diff: SuperprofileDiffEntry[] = [];
+
+  const experienceFacts = facts.filter((f) => f.kind === 'experience');
+  const skillFacts = facts
+    .filter((f) => f.kind === 'skill')
+    .map((f) => {
+      const payload = asRecord(f.payload) as { name?: unknown } | null;
+      const name = typeof payload?.name === 'string' ? payload.name : null;
+      return name ? { fact: f, name, key: norm(name) } : null;
+    })
+    .filter((s): s is { fact: ProfileFactRow; name: string; key: string } => s !== null);
+
+  const existingTracks = Array.isArray(proposed.tracks)
+    ? [...(proposed.tracks as Array<Record<string, unknown>>)]
+    : [];
+  const trackIds = new Set(existingTracks.map((t) => norm(String(t.id ?? ''))));
+
+  for (const exp of experienceFacts) {
+    const payload = asRecord(exp.payload);
+    if (!payload) continue;
+    const employer = typeof payload.employer === 'string' ? payload.employer : '';
+    const title = typeof payload.title === 'string' ? payload.title : '';
+    if (employer === '' || title === '') continue;
+
+    const id = slugId(employer);
+    if (trackIds.has(norm(id))) continue; // existing track kept as-is
+    trackIds.add(norm(id));
+
+    const bullets = Array.isArray(payload.bullets)
+      ? payload.bullets.filter((b): b is string => typeof b === 'string')
+      : [];
+    const bulletText = norm(bullets.join(' '));
+    const tech = Array.isArray(payload.technology)
+      ? payload.technology.filter((t): t is string => typeof t === 'string')
+      : [];
+
+    const skills: string[] = [];
+    const seen = new Set<string>();
+    for (const skill of [...tech, ...skillFacts.filter((s) => bulletText.includes(s.key)).map((s) => s.name)]) {
+      const key = norm(skill);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      skills.push(skill);
+    }
+
+    existingTracks.push({ id, title, skills });
+    diff.push({
+      op: 'add_track',
+      line: `${title} @ ${employer} · ${skills.length} skills`,
+      factIds: [exp.id],
+      excerpts: [exp.excerpt],
+    });
+  }
+
+  if (existingTracks.length > 0) proposed.tracks = existingTracks;
+  proposed.version = (typeof masterRaw.version === 'number' ? masterRaw.version : 1) + 1;
+  proposed.updated_at = new Date().toISOString().slice(0, 10);
+  return { proposed, diff };
+}
+
+function slugId(employer: string): string {
+  return norm(employer).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
