@@ -82,15 +82,17 @@ export async function revealJobApplyMethods(
     .where('id', '=', jobId)
     .executeTakeFirst();
   if (!job) throw new RevealJobNotFoundError();
-  if (job.source !== 'jobbank' || !job.url) return { status: 'unavailable', methods: null };
 
   const raw = (job.raw ?? {}) as Record<string, unknown>;
   const cached = parseCachedApplyMethods(raw);
   const ttlMin = opts?.ttlMin ?? REVEAL_TTL_MIN;
   const now = opts?.now ?? new Date();
+  // Fresh cache wins over the source check: the cache is written only by the
+  // jobbank reveal service (data provenance), and answering it needs no network.
   if (cached && now.getTime() - cached.revealedAt.getTime() < ttlMin * 60_000) {
     return { status: 'cached', methods: cached.methods };
   }
+  if (job.source !== 'jobbank' || !job.url) return { status: 'unavailable', methods: null };
 
   // Политика egress (B-010) живёт в httpRevealFetch; инъекция fetcher — для
   // тестов/локального сервера (политика вызывающей стороны — урок Mimosa).

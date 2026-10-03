@@ -43,3 +43,11 @@ test('dispatch auto-reveal: send without a typed recipient resolves the revealed
   await page.getByTestId('dispatch-send').click();
   await expect(page.getByTestId('dispatch-success')).toContainText('Sent ✓');
 });
+
+test('apply methods section visual baseline (S16/S17 tokens, B-011 threshold)', async ({ page }) => {
+  await openSeededJob(page);
+  const section = page.getByTestId('apply-methods');
+  await expect(section).toBeVisible();
+  await expect(section).toContainText('apply@fixture-e2e.example');
+  await expect(section).toHaveScreenshot('s25-apply-methods.png', { threshold: 0.01 });
+});

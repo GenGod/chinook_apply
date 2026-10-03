@@ -240,11 +240,12 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           renders={renders}
           candidates={recipients}
           mode={process.env.DISPATCH_MODE ?? 'dry-run'}
+          autoRecipient={cachedApply?.methods.email != null}
         />
 
         {formConfig ? <WebFormDispatchSection jobId={job.id} formUrl={formConfig.url} /> : null}
 
-        {job.source === 'jobbank' ? (
+        {(job.source === 'jobbank' || cachedApply) ? (
           <ApplyMethodsSection
             jobId={job.id}
             initial={
