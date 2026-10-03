@@ -27,6 +27,14 @@
     "./posting-fetcher": {
       "types": "./src/posting-fetcher.ts",
       "default": "./src/posting-fetcher.ts"
+    },
+    "./jobbank-apply": {
+      "types": "./src/jobbank-apply.ts",
+      "default": "./src/jobbank-apply.ts"
+    },
+    "./jobbank-apply.js": {
+      "types": "./src/jobbank-apply.ts",
+      "default": "./src/jobbank-apply.ts"
     }
   },
   "scripts": {
