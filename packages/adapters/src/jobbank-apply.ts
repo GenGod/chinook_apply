@@ -139,15 +139,12 @@ const UA_HEADERS = { 'User-Agent': crawlerUserAgent(), Accept: 'text/html' };
 const TIMEOUT_MS = 30_000;
 
 /**
- * Прод-транспорт раскрытия: egress-guard B-010 (только allowlist-хосты,
- * https) + cookie-jar — JSESSIONID из GET обязателен для POST-постбэка.
- * `allowedHosts` — политика вызывающей стороны (тесты/локальный сервер).
+ * Транспорт раскрытия с cookie-jar (JSESSIONID из GET обязателен для
+ * POST-постбэка). URL фиксируется при создании; без egress-guard — обёртка
+ * httpRevealFetch. Отдельно выделен для интеграционных тестов против
+ * локального http-сервера (политика URL — у вызывающей стороны).
  */
-export function httpRevealFetch(
-  postingUrl: string,
-  allowedHosts: readonly string[] = EGRESS_JOBBANK_HOSTS,
-): RevealFetch {
-  const base = assertSafeExternalUrl(postingUrl, allowedHosts).toString();
+export function cookieJarRevealFetch(base: string): RevealFetch {
   let cookie = '';
   const request = async (method: 'GET' | 'POST', body?: string): Promise<RevealResponse> => {
     const headers: Record<string, string> = { ...UA_HEADERS };
@@ -164,6 +161,14 @@ export function httpRevealFetch(
     return { status: response.status, body: await response.text() };
   };
   return { get: () => request('GET'), post: (_url, body) => request('POST', body) };
+}
+
+/** Прод-транспорт: egress-guard B-010 (https + allowlist-хосты) + cookie-jar. */
+export function httpRevealFetch(
+  postingUrl: string,
+  allowedHosts: readonly string[] = EGRESS_JOBBANK_HOSTS,
+): RevealFetch {
+  return cookieJarRevealFetch(assertSafeExternalUrl(postingUrl, allowedHosts).toString());
 }
 
 /**

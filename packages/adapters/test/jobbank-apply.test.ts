@@ -6,6 +6,7 @@ import {
   extractApplyMethods,
   buildRevealPostBody,
   revealApplyMethods,
+  httpRevealFetch,
   type RevealFetch,
 } from '../src/jobbank-apply.js';
 
@@ -133,5 +134,21 @@ describe('revealApplyMethods (S25 R1/R4)', () => {
       post: () => Promise.reject(new Error('unreachable')),
     };
     expect(await revealApplyMethods(f, POST_URL, '99990001')).toEqual({ kind: 'unavailable' });
+  });
+});
+
+describe('httpRevealFetch egress composition (S25/B-010)', () => {
+  it('не-https URL отвергается до создания транспорта', () => {
+    expect(() => httpRevealFetch('http://www.jobbank.gc.ca/jobsearch/jobposting/1')).toThrow(/egress blocked/);
+  });
+
+  it('хост вне allowlist отвергается', () => {
+    expect(() => httpRevealFetch('https://evil.example/jobsearch/jobposting/1')).toThrow(/egress blocked/);
+  });
+
+  it('jobbank https URL принимается (транспорт создаётся)', () => {
+    expect(() =>
+      httpRevealFetch('https://www.jobbank.gc.ca/jobsearch/jobposting/50415430'),
+    ).not.toThrow();
   });
 });
