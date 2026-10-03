@@ -9,6 +9,8 @@ import { StatusControls } from '../../board/status-controls';
 import { DocumentsSection } from './documents-section';
 import { EmailDispatchSection } from './email-dispatch-section';
 import { WebFormDispatchSection } from './web-form-dispatch-section';
+import { ApplyMethodsSection } from './apply-methods-section';
+import { parseCachedApplyMethods } from '@/lib/jobbank-dispatch-service';
 import styles from '../../board/board.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -143,8 +145,13 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   ).filter((entry): entry is { view: typeof artifacts[number]; sourceLabel: string } => entry !== null);
   const candidates = extractEmailCandidates(job.raw);
   // S23: statically captured apply email wins over body-scan candidates.
+  // S25: revealed apply-panel email (job.raw.applyMethods) joins the list too.
   const applyEmailRaw = (job.raw as Record<string, unknown> | null)?.applyEmail;
   const recipients = typeof applyEmailRaw === 'string' && applyEmailRaw !== '' ? [applyEmailRaw, ...candidates] : candidates;
+  const cachedApply = parseCachedApplyMethods(job.raw);
+  if (cachedApply?.methods.email && !recipients.includes(cachedApply.methods.email)) {
+    recipients.push(cachedApply.methods.email);
+  }
   const formConfig = validateFormConfig((job.raw as Record<string, unknown> | null)?.formConfig);
 
   const bs = job.app?.status ?? 'new';
@@ -236,6 +243,17 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
         />
 
         {formConfig ? <WebFormDispatchSection jobId={job.id} formUrl={formConfig.url} /> : null}
+
+        {job.source === 'jobbank' ? (
+          <ApplyMethodsSection
+            jobId={job.id}
+            initial={
+              cachedApply
+                ? { methods: cachedApply.methods, revealedAt: cachedApply.revealedAt.toISOString() }
+                : null
+            }
+          />
+        ) : null}
 
         {desc ? (
           <section style={{ marginTop: 24 }}>
