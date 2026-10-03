@@ -43,16 +43,16 @@ function panelOf(pageHtml: string): string | null {
 
 /** Первый email секции: mailto-ссылка приоритетна, иначе первый адрес в тексте. */
 function emailOf(sectionHtml: string): string | null {
-  const mailto = /href="mailto:([^"'?]+)/i.exec(sectionHtml);
+  const mailto = sectionHtml.match(/href="mailto:([^"'?]+)/i);
   if (mailto?.[1] && EMAIL_RE.test(mailto[1])) return mailto[1];
-  const plain = EMAIL_RE.exec(sectionHtml);
+  const plain = sectionHtml.match(EMAIL_RE);
   return plain?.[0] ?? null;
 }
 
 /** Первая внешняя http(s)-ссылка секции (ссылки jobbank.gc.ca пропускаются). */
 function webUrlOf(sectionHtml: string): string | null {
   const re = /href="(https?:\/\/[^"]+)"/gi;
-  for (let m = re.exec(sectionHtml); m; m = re.exec(sectionHtml)) {
+  for (const m of sectionHtml.matchAll(re)) {
     const url = m[1]!;
     if (!/jobbank\.gc\.ca/i.test(url)) return url;
   }
@@ -65,7 +65,7 @@ function listItems(sectionHtml: string): string[] {
   const normalized = sectionHtml.replace(/<li[^>]*>([^<]*)(<ul[\s>])/gi, '$2');
   const items: string[] = [];
   const re = /<li[^>]*>([\s\S]*?)<\/li>/gi;
-  for (let m = re.exec(normalized); m; m = re.exec(normalized)) {
+  for (const m of normalized.matchAll(re)) {
     const text = stripHtml(m[1]!).trim();
     if (text !== '') items.push(text);
   }

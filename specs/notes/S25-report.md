@@ -67,6 +67,7 @@ unit (adapters) 18/18 (+18 к S24); integration **110/110** (+13); e2e **92/92**
 
 - **Новые env/секреты**: нет.
 - **Mimosa-флаги на инкремент** (таинт-анализ, тестовый файл tests/integration/jobbank-apply.test.ts): «SSRF entry» на cookieJarRevealFetch в тестах — инъекция fetcher сделана намеренно (политика вызывающей стороны; прод-путь — httpRevealFetch под guard, покрыт юнит-тестами на отказ http:// и чужих хостов); «XSS» на readFileSync фикстуры — HTML-строка в тесте, не рендерится в браузер; «sql-injection» на revealJobApplyMethods — Kysely-параметризация (kysely-гейт зелёный). Флаги не воспроизводимы как эксплойты.
+- **L2-флаг «命令注入» (jobbank-apply.ts:46/48/55)** — ложное срабатывание по имени метода: это `RegExp.prototype.exec()` (ECMA-262 §21.2.5.2, сопоставление строки), не исполнение команд; в файле нет ни одного реального sink (child_process/spawn/eval — grep пуст; рекомендация хука ссылалась на Python `subprocess.run`, к TS неприменима). Для чистоты будущих сканов вызовы переписаны на эквивалентные `String.match`/`matchAll` (поведение идентично, тесты 49/49 + 12/12 green).
 - **Наследуемые флаги** (не S25): SSRF в tests/e2e/dispatch.spec.ts (fetch к Mailpit по константе 127.0.0.1 — тест-фикстура), ingest.ts:64 (источник URL — фид-адаптер под egress-guard с B-010), llm/gateway.ts «sql-injection» (Kysely + pg-параметризация; проверено ранее). Рекомендация PO: разовая сверка с B-010-аудитом.
 - dispatch route: to из запроса проходит EMAIL_RE-валидацию в sendApplicationEmail (400 на мусор); авто-reveal не принимает адрес из запроса.
 
