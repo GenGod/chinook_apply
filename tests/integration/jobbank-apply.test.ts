@@ -127,7 +127,7 @@ describe('parseCachedApplyMethods (S25 AC5)', () => {
 });
 
 describe('revealJobApplyMethods (S25 AC5/AC6)', () => {
-  let jobIds: string[] = [];
+  const jobIds: string[] = [];
 
   async function seedJobbankJob(overrides: Record<string, unknown> = {}, source = 'jobbank'): Promise<string> {
     const id = randomUUID();

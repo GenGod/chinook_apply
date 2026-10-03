@@ -28,10 +28,11 @@ function schemaReadyOnce(db: Kysely<Database>): Promise<unknown> {
 }
 
 const Body = z.object({
-  // S25: to is optional for Job Bank jobs — the recipient is resolved from the
-  // revealed apply panel (cached or fresh reveal). The Send click IS the
-  // approve (art. 1.2) for the resolved address, same as for a typed one.
-  to: z.string().min(3).optional(),
+  // S25: to is optional (empty = auto) for Job Bank jobs — the recipient is
+  // resolved from the revealed apply panel (cached or fresh reveal). A typed
+  // garbage address still fails downstream (EMAIL_RE → 400). The Send click
+  // IS the approve (art. 1.2) for the resolved address, same as typed ones.
+  to: z.string().optional(),
   kinds: z.array(z.enum(['render_docx', 'render_pdf'])).min(1),
 });
 
@@ -46,7 +47,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const db = getDb();
   await schemaReadyOnce(db);
 
-  let to = parsed.data.to?.trim();
+  const typedTo = parsed.data.to?.trim() ?? '';
+  let to = typedTo !== '' ? typedTo : undefined;
   if (!to) {
     // Auto-reveal (S25 R6): recipient from the apply panel (cache-first).
     const reveal = await revealJobApplyMethods(db, uuid.data);
