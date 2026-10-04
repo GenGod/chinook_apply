@@ -63,11 +63,13 @@ describe('extractApplyMethods (S25 R2)', () => {
     expect(m!.directApply).toBe(false);
   });
 
-  it('in person / phone → otherText', () => {
+  it('in person / phone → otherText (без «Advertised until» — граница панели)', () => {
     const m = extractApplyMethods(F('direct-panel-inperson.html'));
     expect(m!.email).toBeNull();
     expect(m!.otherText).toContain('In person');
     expect(m!.otherText).toContain('By phone');
+    expect(m!.otherText).not.toContain('Advertised until');
+    expect(m!.otherText).not.toContain('2026-10-23');
   });
 });
 

@@ -51,3 +51,19 @@ test('apply methods section visual baseline (S16/S17 tokens, B-011 threshold)', 
   await expect(section).toContainText('apply@fixture-e2e.example');
   await expect(section).toHaveScreenshot('s25-apply-methods.png', { threshold: 0.01 });
 });
+
+test('unrevealed state shows the Reveal button (visual baseline)', async ({ page }) => {
+  // Детерминированно находим jobbank-вакансию БЕЗ кэша методов (сид кладёт
+  // applyMethods только на первую relevant — она может быть adzuna-фикстурой).
+  const res = await page.request.get('/api/jobs?source=jobbank&rule=relevant');
+  const { jobs } = (await res.json()) as { jobs: Array<{ id: string; title: string }> };
+  const fixture = jobs.find((j) => j.title.startsWith('S19 e2e'));
+  expect(fixture, 'seed must contain an S19 jobbank row without applyMethods').toBeTruthy();
+  await page.goto(`/job/${fixture!.id}`);
+
+  const section = page.getByTestId('apply-methods');
+  await expect(section).toBeVisible();
+  await expect(section).not.toContainText('apply@fixture-e2e.example');
+  await expect(page.getByTestId('apply-methods-reveal')).toBeVisible();
+  await expect(section).toHaveScreenshot('s25-apply-methods-unrevealed.png', { threshold: 0.01 });
+});

@@ -33,12 +33,17 @@ export function buildRevealPostBody(jobId: string): string {
   return `seekeractivity%3Ajobid=${id}&seekeractivity_SUBMIT=1&jakarta.faces.ViewState=stateless`;
 }
 
-/** Панель целиком (или null): от id="howtoapply" до job-posting-detail-common. */
+/** Панель целиком (или null): от id="howtoapply" до «Advertised until» /
+ * job-posting-detail-common — что раньше (живая страница содержит блок
+ * «Advertised until» внутри #applynow ПОСЛЕ панели; он не часть методов). */
 function panelOf(pageHtml: string): string | null {
   const start = pageHtml.indexOf('id="howtoapply"');
   if (start < 0) return null;
-  const end = pageHtml.indexOf('job-posting-detail-common', start);
-  return pageHtml.slice(start, end > start ? end : undefined);
+  const ends = ['job-posting-detail-common', 'Advertised until']
+    .map((marker) => pageHtml.indexOf(marker, start))
+    .filter((idx) => idx > start);
+  const end = ends.length > 0 ? Math.min(...ends) : pageHtml.length;
+  return pageHtml.slice(start, end);
 }
 
 /** Первый email секции: mailto-ссылка приоритетна, иначе первый адрес в тексте. */

@@ -18,7 +18,9 @@
     "build": "turbo run build",
     "e2e": "pnpm --filter @chinook/worker run seed:e2e && pnpm --filter @chinook/tests exec playwright test",
     "e2e:update-snapshots": "pnpm exec turbo run build --force && pnpm --filter @chinook/worker run seed:e2e && pnpm --filter @chinook/tests exec playwright test --update-snapshots",
-    "prepare": "husky"
+    "prepare": "husky",
+    "smoke:reveal:browser": "pnpm --dir tests exec node scripts/s25-browser-reveal-probe.mjs",
+    "smoke:reveal:http": "pnpm --dir tests exec tsx scripts/s25-live-smoke.mjs"
   },
   "devDependencies": {
     "@chinook/eslint-plugin-arch": "workspace:*",
