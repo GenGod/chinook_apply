@@ -20,6 +20,8 @@ import {
   parseCachedApplyMethods,
   REVEAL_TTL_MIN,
   RevealJobNotFoundError,
+  RevealBrowserUnavailableError,
+  type RevealPageLike,
 } from '../../apps/web/src/lib/jobbank-dispatch-service';
 
 /**
@@ -249,5 +251,164 @@ describe('revealJobApplyMethods (S25 AC5/AC6)', () => {
 
   it('TTL-константа = 15 минут (спека R4)', () => {
     expect(REVEAL_TTL_MIN).toBe(15);
+  });
+});
+
+/**
+ * S25 R8 (дополнение 2026-10-04): дефолтный reveal — браузерный (Playwright).
+ * Live-диагностика: fetch-POST постбэка проходит клиентский фингерпринт-гейт
+ * Job Bank (панель не рендерится), реальный клик в chromium — раскрывает.
+ * Оркестрация тестируется через инъекцию fake-страницы (сеть не нужна):
+ * goto → content → капча-чек (11.3) → classify → клик #applynowbutton →
+ * wait #howtoapply → content → extractApplyMethods → persist.
+ */
+describe('revealJobApplyMethods — браузерная стратегия (S25 R8)', () => {
+  const JB_URL = 'https://www.jobbank.gc.ca/jobsearch/jobposting/50410350';
+  const jobIdsBrowser: string[] = [];
+
+  interface FakePageCalls { gotos: string[]; clicks: string[]; waits: string[]; closed: number }
+
+  function fakePage(captcha = false, panelAfterClick = true): {
+    page: RevealPageLike; calls: FakePageCalls;
+  } {
+    const calls: FakePageCalls = { gotos: [], clicks: [], waits: [], closed: 0 };
+    const page: RevealPageLike = {
+      async goto(u) {
+        calls.gotos.push(u);
+        return null;
+      },
+      async content() {
+        if (captcha) return FIX('direct-get.html').replace('<body>', '<body><div data-captcha="1">bot check</div>');
+        if (calls.clicks.length > 0 && panelAfterClick) return PANEL_PAGE;
+        return GET_PAGE;
+      },
+      async click(selector) {
+        calls.clicks.push(selector);
+      },
+      async waitForSelector(selector) {
+        calls.waits.push(selector);
+        if (!(calls.clicks.length > 0 && panelAfterClick)) throw new Error('timeout waiting for #howtoapply');
+        return null;
+      },
+      async close() {
+        calls.closed++;
+      },
+    };
+    return { page, calls };
+  }
+
+  async function seedJob(overrides: Record<string, unknown> = {}): Promise<string> {    const id = randomUUID();
+    await db
+      .insertInto('job')
+      .values({
+        id,
+        canonical_hash: `s25r8-${id}`,
+        title: 'S25 browser reveal job', employer: 'Fixture Corp', city: 'calgary',
+        province: 'AB', remote: false, url: JB_URL, urls: [],
+        source: 'jobbank', source_job_id: '50410350', posted_at: new Date(),
+        salary_currency: 'CAD', ingested_at: new Date(),
+        raw: { summary: { '#text': 'fixture' }, ...overrides },
+      })
+      .execute();
+    jobIdsBrowser.push(id);
+    return id;
+  }
+
+  afterAll(async () => {
+    for (const id of jobIdsBrowser) {
+      await db.deleteFrom('job').where('id', '=', id).execute();
+    }
+  });
+
+  it('success: goto → капча-чек → клик → панель → методы → raw.persist, страница закрыта', async () => {
+    const { page, calls } = fakePage();
+    const id = await seedJob();
+
+    const out = await revealJobApplyMethods(db, id, { launchPage: async () => page });
+
+    expect(out.status).toBe('revealed');
+    expect(out.methods?.email).toBe('careers@fixture.example');
+    expect(calls.gotos).toEqual([JB_URL]);
+    expect(calls.clicks).toEqual(['#applynowbutton']);
+    expect(calls.waits).toEqual(['#howtoapply']);
+    expect(calls.closed).toBe(1);
+
+    const stored = await db.selectFrom('job').select('raw').where('id', '=', id).executeTakeFirst();
+    const raw = stored!.raw as Record<string, unknown>;
+    expect((raw.applyMethods as Record<string, unknown>).email).toBe('careers@fixture.example');
+    expect(typeof (raw.applyMethods as Record<string, unknown>).revealedAt).toBe('string');
+  });
+
+  it('капча-маркер на странице → стоп ДО клика (ст. 11.3), status throttled + reason', async () => {
+    const { page, calls } = fakePage(true);
+    const id = await seedJob();
+
+    const out = await revealJobApplyMethods(db, id, { launchPage: async () => page });
+
+    expect(out.status).toBe('throttled');
+    expect(out.reason).toContain('captcha');
+    expect(calls.clicks).toHaveLength(0);
+    const stored = await db.selectFrom('job').select('raw').where('id', '=', id).executeTakeFirst();
+    expect((stored!.raw as Record<string, unknown>).applyMethods).toBeUndefined();
+  });
+
+  it('партнёрский постинг → partner без клика', async () => {
+    const { page, calls } = fakePage();
+    const id = await seedJob();
+    // подменяем content на партнёрскую страницу
+    (page as unknown as { content(): Promise<string> }).content = async () => FIX('partner.html');
+
+    const out = await revealJobApplyMethods(db, id, { launchPage: async () => page });
+
+    expect(out.status).toBe('partner');
+    expect(calls.clicks).toHaveLength(0);
+  });
+
+  it('панель не раскрылась после клика → throttled', async () => {
+    const { page, calls } = fakePage(false, false);
+    const id = await seedJob();
+
+    const out = await revealJobApplyMethods(db, id, { launchPage: async () => page });
+
+    expect(out.status).toBe('throttled');
+    expect(calls.clicks).toEqual(['#applynowbutton']);
+  });
+
+  it('не-jobbank URL без инъекций → guard ДО создания страницы (egress)', async () => {
+    const id = randomUUID();
+    await db
+      .insertInto('job')
+      .values({
+        id,
+        canonical_hash: `s25r8-evil-${id}`,
+        title: 'evil', employer: 'x', city: 'x', province: 'AB', remote: false,
+        url: 'https://evil.example/jobsearch/jobposting/1', urls: [],
+        source: 'jobbank', source_job_id: '1', posted_at: new Date(),
+        salary_currency: 'CAD', ingested_at: new Date(), raw: {},
+      })
+      .execute();
+    jobIdsBrowser.push(id);
+
+    let pagesCreated = 0;
+    const out = await revealJobApplyMethods(db, id, {
+      launchPage: async () => {
+        pagesCreated++;
+        return fakePage().page;
+      },
+    });
+
+    expect(out.status).toBe('unavailable');
+    expect(pagesCreated).toBe(0);
+  });
+
+  it('браузер недоступен → RevealBrowserUnavailableError (503)', async () => {
+    const id = await seedJob();
+    await expect(
+      revealJobApplyMethods(db, id, {
+        launchPage: async () => {
+          throw new RevealBrowserUnavailableError('no chromium binary');
+        },
+      }),
+    ).rejects.toBeInstanceOf(RevealBrowserUnavailableError);
   });
 });

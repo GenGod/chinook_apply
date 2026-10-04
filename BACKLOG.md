@@ -217,6 +217,8 @@ apps/web/Dockerfile + compose-сервис web (0.0.0.0:3000, restart unless-sto
 
 ---
 
+## B-006 · Drag&drop доски (канбан)
+
 - **Статус:** done — см. S18
 - **Приоритет:** later
 - **Автор:** процесс S7 (R3)
