@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { ensureSchema, type Database, type Kysely } from '@chinook/core';
 import { getDb } from '@/lib/db';
-import { revealJobApplyMethods, RevealJobNotFoundError } from '@/lib/jobbank-dispatch-service';
+import { revealJobApplyMethods, RevealJobNotFoundError, RevealBrowserUnavailableError } from '@/lib/jobbank-dispatch-service';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +29,9 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
   } catch (error) {
     if (error instanceof RevealJobNotFoundError) {
       return NextResponse.json({ error: 'not found' }, { status: 404 });
+    }
+    if (error instanceof RevealBrowserUnavailableError) {
+      return NextResponse.json({ error: error.message }, { status: 503 });
     }
     console.error('[reveal-apply] failed:', error instanceof Error ? error.message : error);
     return NextResponse.json({ error: 'reveal failed' }, { status: 500 });

@@ -2,10 +2,22 @@
 // job.raw.applyMethods, консервативная политика (ст. 11): только по действию
 // PO (кнопка/Send), TTL-кэш, троттлинг не ретраится. Прямых submit'ов в
 // Job Bank здесь нет (Direct Apply — S26, требует Plus-аккаунт).
+//
+// S25 R8 (2026-10-04): дефолтная стратегия — БРАУЗЕРНАЯ. Live-диагностика
+// показала, что «голый» fetch-POST постбэка проходит клиентский
+// фингерпринт-гейт Job Bank (панель не рендерится, 200 без rate-limit
+// заголовков), а реальный клик в chromium раскрывает панель с того же IP.
+// Раскрытие выполняется тем же действием, что и у пользователя (ст. 11):
+// goto → капча-стоп (11.3) → клик #applynowbutton → wait #howtoapply →
+// extract. Никакого спуфинга заголовков и каскадных ретраев.
 import type { Kysely } from 'kysely';
-import type { Database } from '@chinook/core';
 import {
-  httpRevealFetch,
+  detectCaptcha,
+  type Database,
+} from '@chinook/core';
+import {
+  classifyPosting,
+  extractApplyMethods,
   revealApplyMethods,
   type ApplyMethods,
   type RevealFetch,
@@ -15,11 +27,23 @@ import {
 /** Окно, в течение которого кэш раскрытия считается свежим (спека R4). */
 export const REVEAL_TTL_MIN = 15;
 
+/** Таймаут ожидания панели после клика по кнопке (спека R8). */
+export const REVEAL_CLICK_WAIT_MS = 15_000;
+
 export class RevealJobNotFoundError extends Error {
   readonly status = 404;
   constructor(message = 'job not found') {
     super(message);
     this.name = 'RevealJobNotFoundError';
+  }
+}
+
+/** Браузер недоступен в этом деплое (нет chromium/депсов) — как S9, 503. */
+export class RevealBrowserUnavailableError extends Error {
+  readonly status = 503;
+  constructor(message: string) {
+    super(message);
+    this.name = 'RevealBrowserUnavailableError';
   }
 }
 
@@ -57,6 +81,41 @@ export function parseCachedApplyMethods(raw: unknown): CachedApplyMethods | null
 export interface RevealServiceOutcome {
   status: 'revealed' | 'cached' | 'throttled' | 'partner' | 'unavailable';
   methods: ApplyMethods | null;
+  /** Причина неуспеха для аудита/UI (captcha-стоп и т.п.). */
+  reason?: string;
+}
+
+/** Минимальный интерфейс страницы для браузерного reveal (инъекция в тестах). */
+export interface RevealPageLike {
+  goto(url: string): Promise<unknown>;
+  content(): Promise<string>;
+  click(selector: string): Promise<void>;
+  waitForSelector(selector: string, options?: { timeout?: number }): Promise<unknown>;
+  close(): Promise<void>;
+}
+
+export type LaunchRevealPageFn = () => Promise<RevealPageLike>;
+
+async function defaultLaunchRevealPage(): Promise<RevealPageLike> {
+  try {
+    const { chromium } = await import('playwright');
+    const executablePath = process.env.CHROMIUM_EXECUTABLE_PATH;
+    const browser = await chromium.launch(executablePath ? { executablePath } : {});
+    const page = await browser.newPage();
+    return {
+      goto: (url) => page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45_000 }),
+      content: () => page.content(),
+      click: (selector) => page.click(selector),
+      waitForSelector: (selector, options) => page.waitForSelector(selector, options),
+      close: async () => {
+        await page.close();
+        await browser.close();
+      },
+    };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new RevealBrowserUnavailableError(`browser unavailable: ${detail.slice(0, 160)}`);
+  }
 }
 
 /**
@@ -65,16 +124,54 @@ export interface RevealServiceOutcome {
  * разные числа). Fallback — source_job_id.
  */
 function revealJobId(url: string, sourceJobId: unknown): string {
-  const fromUrl = /\/jobposting\/(\d+)/.exec(url)?.[1];
+  const fromUrl = url.match(/\/jobposting\/(\d+)/)?.[1];
   if (fromUrl) return fromUrl;
   if (typeof sourceJobId === 'string' && sourceJobId !== '') return sourceJobId;
   return 'unknown';
 }
 
+/** Браузерное раскрытие (R8): тот же экшн, что и у пользователя. */
+async function revealViaBrowser(
+  page: RevealPageLike,
+  postingUrl: string,
+): Promise<RevealOutcome & { reason?: string }> {
+  await page.goto(postingUrl);
+  const html = await page.content();
+
+  // Ст. 11.3: анти-бот/капча → немедленный стоп ДО клика, без ретраев.
+  const captcha = detectCaptcha(html);
+  if (captcha !== null) {
+    await page.close();
+    return { kind: 'throttled', reason: `captcha detected: ${captcha} — manual fallback (art. 11.3)` };
+  }
+
+  const kind = classifyPosting(html);
+  if (kind === 'partner') {
+    await page.close();
+    return { kind: 'partner' };
+  }
+  if (kind !== 'direct') {
+    await page.close();
+    return { kind: 'unavailable' };
+  }
+
+  await page.click('#applynowbutton');
+  try {
+    await page.waitForSelector('#howtoapply', { timeout: REVEAL_CLICK_WAIT_MS });
+  } catch {
+    await page.close();
+    return { kind: 'throttled' };
+  }
+  const expanded = await page.content();
+  await page.close();
+  const methods = extractApplyMethods(expanded);
+  return methods ? { kind: 'revealed', methods } : { kind: 'throttled' };
+}
+
 export async function revealJobApplyMethods(
   db: Kysely<Database>,
   jobId: string,
-  opts?: { fetcher?: RevealFetch; now?: Date; ttlMin?: number },
+  opts?: { fetcher?: RevealFetch; launchPage?: LaunchRevealPageFn; now?: Date; ttlMin?: number },
 ): Promise<RevealServiceOutcome> {
   const job = await db
     .selectFrom('job')
@@ -94,16 +191,27 @@ export async function revealJobApplyMethods(
   }
   if (job.source !== 'jobbank' || !job.url) return { status: 'unavailable', methods: null };
 
-  // Политика egress (B-010) живёт в httpRevealFetch; инъекция fetcher — для
-  // тестов/локального сервера (политика вызывающей стороны — урок Mimosa).
-  let outcome: RevealOutcome;
+  // Стратегия: инъекция fetcher — HTTP-постбэк (тесты/спец-деплои);
+  // дефолт — браузерная (R8). Egress-guard обязателен до сети/браузера.
+  let outcome: RevealOutcome & { reason?: string };
   try {
-    const fetcher = opts?.fetcher ?? httpRevealFetch(job.url);
-    outcome = await revealApplyMethods(fetcher, job.url, revealJobId(job.url, job.source_job_id));
-  } catch {
+    if (opts?.fetcher) {
+      outcome = await revealApplyMethods(opts.fetcher, job.url, revealJobId(job.url, job.source_job_id));
+    } else {
+      const target = new URL(job.url);
+      if (target.protocol !== 'https:' || !/^(www\.)?jobbank\.gc\.ca$/i.test(target.hostname)) {
+        return { status: 'unavailable', methods: null };
+      }
+      const page = await (opts?.launchPage ?? defaultLaunchRevealPage)();
+      outcome = await revealViaBrowser(page, job.url);
+    }
+  } catch (error) {
+    if (error instanceof RevealBrowserUnavailableError) throw error;
     return { status: 'unavailable', methods: null };
   }
-  if (outcome.kind !== 'revealed') return { status: outcome.kind, methods: null };
+  if (outcome.kind !== 'revealed') {
+    return { status: outcome.kind, methods: null, reason: outcome.reason };
+  }
 
   const enriched: Record<string, unknown> = {
     ...raw,

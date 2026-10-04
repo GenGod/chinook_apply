@@ -27,6 +27,7 @@ export function ApplyMethodsSection({
       const data = (await res.json()) as {
         status?: string;
         methods?: ApplyMethods | null;
+        reason?: string;
         error?: string;
       };
       if (!res.ok) {
@@ -37,7 +38,9 @@ export function ApplyMethodsSection({
         router.refresh(); // префилл email в dispatch-секциях
       } else if (data.status === 'throttled') {
         setStatus(
-          'Job Bank did not reveal the panel right now (rate limit). Open the posting and copy the details manually.',
+          data.reason
+            ? `Job Bank blocked the reveal: ${data.reason} Open the posting and copy the details manually.`
+            : 'Job Bank did not reveal the panel right now (rate limit). Open the posting and copy the details manually.',
         );
       } else if (data.status === 'partner') {
         setStatus('Partner posting — application happens on the linked external site.');
