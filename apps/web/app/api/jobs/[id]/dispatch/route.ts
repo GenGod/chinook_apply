@@ -15,6 +15,7 @@ import {
   DispatchIdentityUnavailableError,
   DispatchConfigError,
 } from '@/lib/dispatch-service';
+import { revealJobApplyMethods } from '@/lib/jobbank-dispatch-service';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +28,11 @@ function schemaReadyOnce(db: Kysely<Database>): Promise<unknown> {
 }
 
 const Body = z.object({
-  to: z.string().min(3),
+  // S25: to is optional (empty = auto) for Job Bank jobs — the recipient is
+  // resolved from the revealed apply panel (cached or fresh reveal). A typed
+  // garbage address still fails downstream (EMAIL_RE → 400). The Send click
+  // IS the approve (art. 1.2) for the resolved address, same as typed ones.
+  to: z.string().optional(),
   kinds: z.array(z.enum(['render_docx', 'render_pdf'])).min(1),
 });
 
@@ -41,8 +46,26 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 
   const db = getDb();
   await schemaReadyOnce(db);
+
+  const typedTo = parsed.data.to?.trim() ?? '';
+  let to = typedTo !== '' ? typedTo : undefined;
+  if (!to) {
+    // Auto-reveal (S25 R6): recipient from the apply panel (cache-first).
+    const reveal = await revealJobApplyMethods(db, uuid.data);
+    if (!reveal.methods?.email) {
+      return NextResponse.json(
+        {
+          error: 'no recipient available — reveal apply methods first',
+          reveal: { status: reveal.status },
+        },
+        { status: 409 },
+      );
+    }
+    to = reveal.methods.email;
+  }
+
   try {
-    const result = await sendApplicationEmail(db, uuid.data, parsed.data);
+    const result = await sendApplicationEmail(db, uuid.data, { to, kinds: parsed.data.kinds });
     return NextResponse.json({ dispatch: { id: result.dispatchId }, envelopeTo: result.envelopeTo, mode: process.env.DISPATCH_MODE ?? 'dry-run' });
   } catch (error) {
     if (error instanceof InvalidRecipientError) {

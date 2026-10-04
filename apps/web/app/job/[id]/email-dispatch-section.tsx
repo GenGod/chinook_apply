@@ -19,11 +19,14 @@ export function EmailDispatchSection({
   renders,
   candidates,
   mode,
+  autoRecipient = false,
 }: {
   jobId: string;
   renders: Array<{ view: ArtifactView; sourceLabel: string }>;
   candidates: string[];
   mode: string;
+  /** S25: the route resolves an empty recipient from the revealed Job Bank methods. */
+  autoRecipient?: boolean;
 }) {
   const [recipient, setRecipient] = useState(candidates[0] ?? '');
   const [selected, setSelected] = useState<Record<string, boolean>>(
@@ -100,7 +103,9 @@ export function EmailDispatchSection({
       )}
 
       <p className={styles.hint}>
-        Body: your cover letter text (preview above). Sending is a one-time approval of this package.
+        {autoRecipient && recipient === ''
+          ? 'Recipient: auto-resolves from the revealed Job Bank apply methods.'
+          : 'Body: your cover letter text (preview above). Sending is a one-time approval of this package.'}
       </p>
 
       {error ? (
@@ -118,7 +123,7 @@ export function EmailDispatchSection({
         type="button"
         className={styles.btn}
         data-testid="dispatch-send"
-        disabled={busy || renders.length === 0 || recipient === '' || kinds.length === 0}
+        disabled={busy || renders.length === 0 || (recipient === '' && !autoRecipient) || kinds.length === 0}
         onClick={send}
       >
         Send by email

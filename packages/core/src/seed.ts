@@ -265,6 +265,8 @@ export async function seedE2eExtras(artifactsDir?: string): Promise<void> {
       .execute();
     console.log('e2e seed: +formConfig (mock-form) on first relevant job');
     // S23: dispatch recipient prefill fixture (applyEmail wins over body scan)
+    // S25: revealed apply-methods cache — the email matches applyEmail so the
+    // prefill contract is unchanged; questions/directApply exercise the section.
     await db
       .updateTable('job')
       .set({
@@ -275,6 +277,15 @@ export async function seedE2eExtras(artifactsDir?: string): Promise<void> {
             successText: 'Thank you for your application!',
           },
           applyEmail: 'apply@fixture-e2e.example',
+          applyMethods: {
+            email: 'apply@fixture-e2e.example',
+            webUrl: null,
+            directApply: true,
+            screeningQuestions: ["Do you have a valid driver's licence?"],
+            notes: ['References attesting experience'],
+            otherText: null,
+            revealedAt: new Date().toISOString(),
+          },
         },
       })
       .where('id', '=', firstRelevant.id)
